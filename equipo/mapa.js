@@ -2,14 +2,14 @@
 // Cada flujo es un lienzo con tareas, personas y notas unidas por flechas.
 // Regla al conectar: tarea → persona asigna; tarea → tarea = «espera a».
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611241452';
+import { hoyISO } from './datos.js?v=202611241453';
 import {
   vigentes, participa, estatusVisible, dependenciaAbierta, siguienteEstatus, cambiarEstatus, crear, nuevaVacia,
   flujoDe, crearFlujo, renombrarFlujo, borrarFlujo, flujosDeActividad, avanceFlujo, flujoAuto,
   moverNodo, agregarNodo, quitarNodo, editarNota, conectar, desconectar,
-} from './store.js?v=202611241452';
-import { I, Anillo, Avatar, fechaRelativa } from './ui.js?v=202611241452';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241452';
+} from './store.js?v=202611241453';
+import { I, Anillo, Avatar, fechaRelativa } from './ui.js?v=202611241453';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241453';
 
 const TAM = { actividad: [240, 84], persona: [180, 62], nota: [200, 64] };
 const NOMBRE_EST = { pendiente: 'Pendiente', en_curso: 'En curso', esperando: 'Esperando cliente', bloqueado: 'Bloqueado', hecho: 'Hecho' };

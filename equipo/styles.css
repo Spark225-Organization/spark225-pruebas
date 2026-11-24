@@ -912,6 +912,10 @@ textarea.control { height: auto; padding: 10px 12px; resize: vertical; line-heig
 }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 1250px) {
+  .flujo-cab { left: 300px; right: 84px; transform: none; max-width: none; flex-wrap: wrap; }
+  .inspector { top: 120px; }
+}
 @media (max-width: 1000px) {
   .inicio.a-derecha, .inicio.a-izquierda { grid-template-columns: minmax(0, 1fr); }
   .semana { grid-template-columns: repeat(7, minmax(140px, 1fr)); overflow-x: auto; }

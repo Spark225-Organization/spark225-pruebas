@@ -277,9 +277,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// ─── Bypass de login (solo sitio de pruebas) ─────────────────────────────────
+// Cuando VITE_SSAM_BYPASS_LOGIN === "1" (lo pone el workflow de GitHub solo en
+// pruebas), la app entra directo como admin, sin pasar por Supabase Auth.
+// El código real de login de abajo queda intacto: al quitar esa variable
+// vuelve a usarse tal cual, cuando conectemos Supabase. NO usar en producción.
+const BYPASS_LOGIN = import.meta.env.VITE_SSAM_BYPASS_LOGIN === "1";
+
+const BYPASS_ADMIN_USER: User = {
+  id: "00000000-0000-0000-0000-000000000000",
+  name: "Admin (pruebas)",
+  email: "admin@pruebas.local",
+  role: "admin",
+  avatar: "AD",
+  clientId: null,
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(
+    BYPASS_LOGIN ? BYPASS_ADMIN_USER : null,
+  );
+  const [loading, setLoading] = useState(!BYPASS_LOGIN);
   const [pendingActivation, setPendingActivation] = useState(false);
 
   const loadProfile = useCallback(
@@ -320,6 +338,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   useEffect(() => {
+    if (BYPASS_LOGIN) return;
     let active = true;
     (async () => {
       const {
@@ -371,6 +390,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    if (BYPASS_LOGIN) {
+      setUser(BYPASS_ADMIN_USER);
+      return;
+    }
     await supabase.auth.signOut();
     setUser(null);
     setPendingActivation(false);

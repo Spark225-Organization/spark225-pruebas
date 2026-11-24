@@ -27,6 +27,8 @@ jobs:
         working-directory: ssam-app
         env:
           SSAM_BASE: /ssam/
+          # Solo pruebas: entra directo como admin. Quitar al conectar Supabase Auth.
+          VITE_SSAM_BYPASS_LOGIN: "1"
         run: |
           bun install --frozen-lockfile
           bun run build

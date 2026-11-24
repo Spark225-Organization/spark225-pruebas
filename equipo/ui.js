@@ -1,6 +1,6 @@
 // Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611241419';
+import { hoyISO } from './datos.js?v=202611241437';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
@@ -39,6 +39,18 @@ const P = {
   mas2: 'M12 5v14M5 12h14',
   externo: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5',
   arrastre: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+  columnas: 'M4 5h4v14H4zM10 5h4v14h-4zM16 5h4v14h-4z',
+  cuadricula: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  correo: 'M3 6h18v12H3zM3 7l9 6 9-6',
+  chat: 'M4 5h16v11H9l-5 4z',
+  factura: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3',
+  historial: 'M3 12a9 9 0 103-6.7L3 8M3 3v5h5M12 7v5l3 2',
+  mapa: 'M6 6a2 2 0 100-4 2 2 0 000 4zM18 22a2 2 0 100-4 2 2 0 000 4zM18 8a2 2 0 100-4 2 2 0 000 4zM8 4h4a4 4 0 014 4M6 6v8a4 4 0 004 4h6',
+  adjuntar: 'M15 7l-6.5 6.5a2 2 0 002.8 2.8L18 9.6a4 4 0 00-5.7-5.7L5.6 10.6a6 6 0 008.5 8.5L20 13',
+  enviar: 'M4 12l16-8-6 16-2-7z',
+  inicio: 'M4 11l8-7 8 7v9h-5v-6H9v6H4z',
+  diseno: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z',
+  brujula: 'M12 3a9 9 0 100 18 9 9 0 000-18zM15.5 8.5l-2 5-5 2 2-5z',
 };
 export function I(nombre, extra = '') {
   return html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class=${'i ' + extra}><path d=${P[nombre] || ''} /></svg>`;

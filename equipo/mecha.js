@@ -1,46 +1,26 @@
 // El día: la mecha (timeline) con arrastrar y soltar, la bandeja «sin hora» y el alta rápida.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTATUS } from './datos.js?v=202611241419';
-import { vigentes, participa, estatusVisible, dependenciaAbierta, visiblePara, crear, nuevaVacia } from './store.js?v=202611241419';
-import { I, Anillo, Estrella, Avatar, minutos, hhmm, duracion, fechaRelativa } from './ui.js?v=202611241419';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241419';
-import { Widgets } from './widgets.js?v=202611241419';
+import { hoyISO, ESTATUS } from './datos.js?v=202611241437';
+import { vigentes, participa, estatusVisible, dependenciaAbierta, visiblePara, crear, nuevaVacia } from './store.js?v=202611241437';
+import { I, Anillo, Estrella, Avatar, minutos, hhmm, duracion, fechaRelativa } from './ui.js?v=202611241437';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241437';
 
 const K = 1.15; // px por minuto
 const SNAP = 15;
 
-export function Dia(ctx) {
-  const { db, yo, persona, fecha } = ctx;
-  const ahora = useAhora();
+// Vista de día: bandeja «sin hora» + la mecha.
+export function DiaCal({ ctx, ahora }) {
+  const { yo, persona, fecha } = ctx;
   const hoy = hoyISO(ahora);
-  const p = db.personas.find((x) => x.id === persona) || db.personas[0];
-  const propia = persona === yo;
   const suyas = vigentes().filter((a) => participa(a, persona) && visiblePara(a, yo));
   const delDia = suyas.filter((a) => a.fecha === fecha);
   const vencidas = fecha === hoy ? suyas.filter((a) => a.fecha < hoy && a.estatus !== 'hecho') : [];
-  const conHora = delDia.filter((a) => a.bloque);
-  const sinHora = [...vencidas, ...delDia.filter((a) => !a.bloque)];
-  const titulo = fecha === hoy ? 'Hoy' : fechaRelativa(fecha) === 'mañana' ? 'Mañana' : fechaRelativa(fecha) === 'ayer' ? 'Ayer' : new Intl.DateTimeFormat('es-MX', { weekday: 'long' }).format(new Date(fecha + 'T12:00:00'));
-  const sub = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(new Date(fecha + 'T12:00:00'));
-  const abiertas = delDia.filter((a) => a.estatus !== 'hecho').length + vencidas.length;
-
   return html`
-    <div class="dia">
-      <section class="col-mecha">
-        <header class="cab-dia">
-          <h1>${titulo.charAt(0).toUpperCase() + titulo.slice(1)}</h1>
-          <span class="sub">${sub}</span>
-          ${abiertas > 0 && html`<span class="pildora num" title="Por cerrar">${abiertas}</span>`}
-          ${!propia && html`<a class="quien" href="#/" title="Volver a tu día"><${Avatar} p=${p} />${p.corto}${I('x')}</a>`}
-        </header>
-        <${Bandeja} lista=${sinHora} ctx=${ctx} hoy=${hoy} />
-        <${Mecha} bloques=${conHora} ctx=${ctx} ahora=${ahora} esHoy=${fecha === hoy} />
-      </section>
-      <${Widgets} ctx=${ctx} persona=${persona} editable=${propia} hoy=${hoy} />
-    </div>`;
+    <${Bandeja} lista=${[...vencidas, ...delDia.filter((a) => !a.bloque)]} ctx=${ctx} hoy=${hoy} />
+    <${Mecha} bloques=${delDia.filter((a) => a.bloque)} ctx=${ctx} ahora=${ahora} esHoy=${fecha === hoy} />`;
 }
 
-function useAhora() {
+export function useAhora() {
   const [t, set] = useState(() => new Date());
   useEffect(() => { const k = setInterval(() => set(new Date()), 30000); return () => clearInterval(k); }, []);
   return t;
@@ -156,12 +136,14 @@ function Bloque({ a, ctx, ini, carril, pasado }) {
 export function arrastrarActividad(e, a, ctx) {
   const cli = ctx.db.clientes.find((c) => c.id === a.cliente);
   // Si se toma un bloque de la mecha, se respeta el punto donde se tomó para que la hora caiga en su borde superior.
-  const dy = e.currentTarget.classList.contains('bloque') ? e.clientY - e.currentTarget.getBoundingClientRect().top : 0;
+  const dy = e.currentTarget.classList?.contains('bloque') ? e.clientY - e.currentTarget.getBoundingClientRect().top : 0;
   iniciarArrastre(e, {
     datos: { actividad: a.id, dy }, etiqueta: a.titulo, color: cli?.color,
     alClic: () => ctx.abrir(a.id),
     alSoltar: (d) => {
       if (d.tipo === 'papelera') return ctx.archivarConDeshacer(a);
+      if (d.tipo === 'estatus') return ctx.ponerEstatus(a, d.estatus);
+      if (d.tipo === 'cliente') return ctx.cambiarCliente(a, d.cliente);
       if (d.tipo === 'dia') return ctx.moverConRegla(a, { fecha: d.fecha });
       if (d.tipo === 'sinhora') return ctx.moverConRegla(a, { fecha: ctx.fecha, bloque: null });
       if (d.tipo === 'hora') {

@@ -1,14 +1,14 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611241419';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara } from './store.js?v=202611241419';
-import { I, Avatar, fechaRelativa, diasEntre } from './ui.js?v=202611241419';
-import { hoyISO } from './datos.js?v=202611241419';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241419';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611241437';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs } from './store.js?v=202611241437';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611241437';
+import { hoyISO } from './datos.js?v=202611241437';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241437';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
-export function Widgets({ ctx, persona, editable, hoy }) {
+export function Widgets({ ctx, persona, editable, hoy, ancho }) {
   const [editando, setEditando] = useState(false);
   const arr = useArrastre();
   const lista = layoutDe(persona).filter((w) => w.tipo !== 'cliente' || ctx.db.clientes.some((c) => c.id === w.cliente));
@@ -27,7 +27,7 @@ export function Widgets({ ctx, persona, editable, hoy }) {
   const datos = { ctx, persona, hoy, suyas, editable };
 
   return html`
-    <aside class=${'widgets' + (editando ? ' editando' : '')} aria-label="Widgets">
+    <aside class=${'widgets' + (editando ? ' editando' : '') + (ancho ? ' ancho' : '')} aria-label="Widgets" data-tour="widgets">
       ${editable && html`<div class="w-barra">
         <button class=${'btn ' + (editando ? 'prim' : 'fantasma')} onClick=${() => setEditando(!editando)} aria-pressed=${editando} aria-label=${editando ? 'Terminar de editar' : 'Editar widgets'} title="Editar widgets">${editando ? 'Listo' : I('ajustes')}</button>
       </div>`}
@@ -59,6 +59,15 @@ function Widget(props) {
   if (t === 'archivos') return html`<${WArchivos} ...${props} />`;
   if (t === 'personal') return html`<${WPersonal} ...${props} />`;
   if (t === 'nota') return html`<${WNota} ...${props} />`;
+  if (t === 'proxima') return html`<${WProxima} ...${props} />`;
+  if (t === 'jornada') return html`<${WJornada} ...${props} />`;
+  if (t === 'cumplimiento') return html`<${WCumplimiento} ...${props} />`;
+  if (t === 'facturas') return html`<${WFacturas} ...${props} />`;
+  if (t === 'correo') return html`<${WCorreo} ...${props} />`;
+  if (t === 'chat') return html`<${WChat} ...${props} />`;
+  if (t === 'clientes') return html`<${WClientes} ...${props} />`;
+  if (t === 'minimes') return html`<${WMiniMes} ...${props} />`;
+  if (t === 'historial') return html`<${WHistorial} ...${props} />`;
   return null;
 }
 
@@ -200,6 +209,126 @@ function WNota({ persona, ctx }) {
       onInput=${(e) => { setV(e.target.value); clearTimeout(t.current); const val = e.target.value; t.current = setTimeout(() => guardarPersonal(persona, { nota: val }), 400); }}></textarea>`
       : html`<div class="w-pie">${I('ojo')}</div>`}
   </div>`;
+}
+
+function useMinuto() {
+  const [t, set] = useState(() => new Date());
+  useEffect(() => { const k = setInterval(() => set(new Date()), 30000); return () => clearInterval(k); }, []);
+  return t;
+}
+
+// Lo siguiente: el próximo bloque con cuenta regresiva.
+function WProxima({ ctx, suyas, hoy }) {
+  const ahora = useMinuto();
+  const m = ahora.getHours() * 60 + ahora.getMinutes();
+  const sig = suyas.filter((a) => a.fecha === hoy && a.bloque && a.estatus !== 'hecho' && minutos(a.bloque.inicio) + a.bloque.min > m)
+    .sort((a, b) => minutos(a.bloque.inicio) - minutos(b.bloque.inicio))[0];
+  if (!sig) return html`<div class="w">${cab('reloj', 'Lo siguiente')}<div class="w-grande">${I('check')}</div></div>`;
+  const c = ctx.db.clientes.find((x) => x.id === sig.cliente);
+  const falta = minutos(sig.bloque.inicio) - m;
+  return html`<button class="w w-prox" style=${`--c:${c?.color}`} onClick=${() => ctx.abrir(sig.id)}>
+    ${cab('reloj', falta <= 0 ? 'Ahora' : 'En')}
+    <div class="w-grande num">${falta <= 0 ? sig.bloque.inicio : duracion(falta)}</div>
+    <div class="prox-t"><span class="bolita"></span>${sig.titulo}</div>
+  </button>`;
+}
+
+// Jornada: cuánto queda del día laboral.
+function WJornada() {
+  const ahora = useMinuto();
+  const m = ahora.getHours() * 60 + ahora.getMinutes();
+  const ini = 9 * 60, fin = 19 * 60;
+  const pct = Math.max(0, Math.min(1, (m - ini) / (fin - ini)));
+  return html`<div class="w">
+    ${cab('sol', 'Jornada')}
+    <div class="w-grande num">${m >= fin ? I('luna') : duracion(Math.max(0, fin - Math.max(m, ini)))}</div>
+    <span class="barra-c jornada"><i style=${`width:${pct * 100}%`}></i></span>
+  </div>`;
+}
+
+// A tiempo: porcentaje de lo cerrado esta semana antes de su fecha original.
+function WCumplimiento({ persona, hoy }) {
+  const l = sumarDias(hoy, -((new Date(hoy + 'T12:00:00').getDay() + 6) % 7));
+  const cerradas = vigentes().filter((a) => a.responsable === persona && a.estatus === 'hecho' && (a.cerrada || '').slice(0, 10) >= l);
+  const aTiempo = cerradas.filter((a) => (a.cerrada || '').slice(0, 10) <= (a.fechaOriginal || a.fecha)).length;
+  const pct = cerradas.length ? Math.round((aTiempo / cerradas.length) * 100) : null;
+  return html`<div class="w">
+    ${cab('check', 'A tiempo')}
+    <div class="w-grande num" style=${pct !== null && pct < 80 ? 'color:var(--brasa)' : ''}>${pct === null ? '—' : pct + '%'}</div>
+    <div class="w-pie num">${aTiempo}/${cerradas.length}</div>
+  </div>`;
+}
+
+function WFacturas({ ctx, persona }) {
+  const mias = ctx.db.chat.mensajes.filter((m) => m.tipo === 'factura' && (m.de === persona || m.para === persona));
+  const abiertas = mias.filter((m) => m.estatus !== 'pagada').length;
+  return html`<button class="w" onClick=${() => ctx.abrirChat()}>
+    ${cab('factura', 'Facturas')}
+    <div class="w-grande num">${abiertas}</div>
+    <div class="w-pie num">${mias.length - abiertas} ${I('check')}</div>
+  </button>`;
+}
+
+// Correo: simulado hasta conectar Gmail. Un toque lo vuelve actividad.
+function WCorreo({ ctx }) {
+  const l = ctx.db.correos;
+  const nuevos = l.filter((m) => !m.leido).length;
+  return html`<div class="w">
+    ${cab('correo', 'Correo', nuevos || null)}
+    <ul class="correos">${l.slice(0, 4).map((m) => {
+      const c = ctx.db.clientes.find((x) => x.id === m.cliente);
+      return html`<li key=${m.id} class=${m.leido ? '' : 'nuevo'} style=${`--c:${c?.color}`}>
+        <button class="c-cuerpo" onClick=${() => marcarCorreo(m.id, !m.leido)}>
+          <span class="c-de">${m.de}<em>${haceCuanto(m.cuando)}</em></span><span class="c-as">${m.asunto}</span></button>
+        ${m.actividad ? html`<span class="c-ok" title="Ya es actividad">${I('check')}</span>`
+          : html`<button class="icon-btn chico" title="Convertir en actividad" aria-label="Convertir en actividad" onClick=${() => { correoAActividad(m.id, ctx.yo); ctx.toast('Ahora es actividad'); }}>${I('mas')}</button>`}
+      </li>`;
+    })}</ul>
+    <div class="demo-tag">demo</div>
+  </div>`;
+}
+
+function WChat({ ctx }) {
+  const ult = [...ctx.db.chat.mensajes].filter((m) => ctx.db.chat.canales.find((c) => c.id === m.canal)?.miembros.includes(ctx.yo)).slice(-3).reverse();
+  const n = sinLeerChat(ctx.yo);
+  return html`<button class="w" onClick=${() => ctx.abrirChat()}>
+    ${cab('chat', 'Chat', n || null)}
+    <ul class="chat-mini">${ult.map((m) => { const p = ctx.db.personas.find((x) => x.id === m.de); return html`<li key=${m.id}><${Avatar} p=${p} /><span>${m.tipo === 'factura' ? html`${I('factura')} ${m.archivo}` : m.texto}</span></li>`; })}</ul>
+  </button>`;
+}
+
+function WClientes({ ctx, suyas, hoy }) {
+  const l = ctx.db.clientes.filter((c) => !c.privado).map((c) => {
+    const ab = suyas.filter((a) => a.cliente === c.id && a.estatus !== 'hecho');
+    return { c, n: ab.length, alerta: ab.some((a) => a.fecha < hoy || estatusVisible(a) === 'bloqueado') };
+  });
+  return html`<div class="w">
+    ${cab('clientes', 'Clientes')}
+    <div class="clientes-mini">${l.map(({ c, n, alerta }) => html`<span key=${c.id} class="cm" style=${`--c:${c.color}`} title=${c.nombre}>
+      <i></i><b class="num">${n}</b>${alerta ? html`<em></em>` : null}<small>${c.nombre}</small></span>`)}</div>
+  </div>`;
+}
+
+function WMiniMes({ ctx, suyas, hoy }) {
+  const ini = hoy.slice(0, 8) + '01';
+  const lun = sumarDias(ini, -((new Date(ini + 'T12:00:00').getDay() + 6) % 7));
+  const dias = Array.from({ length: 35 }, (_, i) => sumarDias(lun, i));
+  return html`<div class="w">
+    ${cab('semana', new Intl.DateTimeFormat('es-MX', { month: 'long' }).format(new Date(hoy + 'T12:00:00')))}
+    <div class="minimes">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => html`<span class="mm-s" key=${'s' + i}>${d}</span>`)}
+      ${dias.map((f) => { const n = suyas.filter((a) => a.fecha === f && a.estatus !== 'hecho').length; return html`<button key=${f}
+        class=${'mm-d' + (f === hoy ? ' hoy' : '') + (f.slice(5, 7) !== hoy.slice(5, 7) ? ' fuera' : '')} onClick=${() => { ctx.setFecha(f); guardarPrefs(ctx.yo, { vista: 'dia' }); }}>
+        <span class="num">${+f.slice(8)}</span>${n ? html`<i style=${`opacity:${Math.min(1, 0.35 + n * 0.25)}`}></i>` : null}</button>`; })}
+    </div>
+  </div>`;
+}
+
+function WHistorial({ ctx }) {
+  const l = historialGlobal().slice(0, 4);
+  return html`<button class="w" onClick=${() => { location.hash = '#/historial'; }}>
+    ${cab('historial', 'Movimientos')}
+    <ul class="hist-mini">${l.map((h, i) => { const p = ctx.db.personas.find((x) => x.id === h.quien); return html`<li key=${i}><${Avatar} p=${p} /><span><b>${p?.corto}</b> ${h.que}${h.titulo ? html` · <em>${h.titulo}</em>` : null}</span></li>`; })}</ul>
+  </button>`;
 }
 
 // ---------- Galería para agregar widgets ----------

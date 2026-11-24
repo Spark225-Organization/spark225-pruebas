@@ -1,14 +1,18 @@
 import { html, render, useState, useEffect, useRef, useCallback } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241419';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241437';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
-  borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara,
-} from './store.js?v=202611241419';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241419';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241419';
-import { Dia, AltaRapida } from './mecha.js?v=202611241419';
-import { useArrastre } from './arrastre.js?v=202611241419';
-import { Galeria } from './widgets.js?v=202611241419';
+  borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal,
+} from './store.js?v=202611241437';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241437';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241437';
+import { AltaRapida } from './mecha.js?v=202611241437';
+import { Inicio } from './vistas.js?v=202611241437';
+import { Mapa } from './mapa.js?v=202611241437';
+import { Chat } from './chat.js?v=202611241437';
+import { Bienvenida, Recorrido } from './tour.js?v=202611241437';
+import { useArrastre } from './arrastre.js?v=202611241437';
+import { Galeria } from './widgets.js?v=202611241437';
 
 function useStore() {
   const [, set] = useState(0);
@@ -42,9 +46,12 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [ultimoCliente, setUltimoCliente] = useState('interno');
   const [galeria, setGaleria] = useState(null);
+  const [chat, setChat] = useState(null);
+  const [tour, setTour] = useState(() => (leerLocal('ssam-equipo-tour', '') ? null : 'bienvenida'));
 
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
+  useEffect(() => { setChat(null); setCajon(null); }, [ruta]);
 
   const toast = useCallback((texto, accion) => {
     const id = Math.random();
@@ -53,10 +60,14 @@ function App() {
   }, []);
 
   const persona = ruta.startsWith('/persona/') ? ruta.split('/')[2] : yo;
-  const vista = ruta === '/equipo' ? 'equipo' : ruta === '/papelera' ? 'papelera' : 'dia';
+  const vista = { '/equipo': 'equipo', '/papelera': 'papelera', '/mapa': 'mapa', '/historial': 'historial' }[ruta] || 'dia';
+  const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
-    db, yo, persona, fecha, toast, ultimoCliente, setUltimoCliente,
+    db, yo, persona, fecha, setFecha, toast, ultimoCliente, setUltimoCliente,
+    abrirChat: (canal) => setChat({ canal }),
+    ponerEstatus: (a, e) => { const r = cambiarEstatus(a.id, e, yo); if (!r.ok) toast(r.motivo); },
+    cambiarCliente: (a, c) => { if (a.cliente !== c) { actualizar(a.id, { cliente: c, proyecto: 'g-' + c }, yo); toast('Cliente cambiado'); } },
     abrirGaleria: (agregar) => setGaleria({ agregar }),
     abrir: (id) => setCajon({ id }),
     abrirBorrador: (b) => setCajon({ nuevo: b }),
@@ -85,11 +96,11 @@ function App() {
   useEffect(() => {
     const f = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaleta((v) => !v); return; }
-      if (e.key === 'Escape') { setMenu(null); setPerfil(false); setPaleta(false); setAvisos(false); setRapida(null); return; }
-      if (escribiendo(document.activeElement) || e.metaKey || e.ctrlKey || e.altKey || cajon || paleta || menu) return;
+      if (e.key === 'Escape') { setMenu(null); setPerfil(false); setPaleta(false); setAvisos(false); setRapida(null); if (!document.querySelector('.hoja')) setChat(null); return; }
+      if (escribiendo(document.activeElement) || e.metaKey || e.ctrlKey || e.altKey || cajon || paleta || menu || chat || tour) return;
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); ctx.nueva(); }
-      if (e.key === 'ArrowRight' && vista === 'dia') setFecha((f) => sumarDias(f, 1));
-      if (e.key === 'ArrowLeft' && vista === 'dia') setFecha((f) => sumarDias(f, -1));
+      if (e.key === 'ArrowRight' && vista === 'dia' && vistaCal === 'dia') setFecha((f) => sumarDias(f, 1));
+      if (e.key === 'ArrowLeft' && vista === 'dia' && vistaCal === 'dia') setFecha((f) => sumarDias(f, -1));
       if (e.key === 't' || e.key === 'T') setFecha(hoyISO());
     };
     addEventListener('keydown', f);
@@ -99,21 +110,26 @@ function App() {
   const yoP = db.personas.find((p) => p.id === yo);
   const misAvisos = db.avisos.filter((n) => n.para === yo);
   const sinLeer = misAvisos.filter((n) => !n.leido).length;
-  const arrastrandoAlgo = !!arr;
+  const arrastrandoAlgo = !!arr && !arr.datos?.nodo;
+  const chatSinLeer = sinLeerChat(yo);
+  const cerrarTour = () => { setTour(null); escribirLocal('ssam-equipo-tour', '1'); };
 
   return html`
     <div class="app">
       <header class="top">
         <button class="yo-btn" onClick=${() => setPerfil(true)} aria-label="Tu perfil"><${Avatar} p=${yoP} grande /></button>
-        ${vista === 'dia' ? html`<${Dias} fecha=${fecha} setFecha=${setFecha} db=${db} persona=${persona} yo=${yo} />` : html`<div class="dias"></div>`}
+        ${vista === 'dia' && vistaCal === 'dia' ? html`<${Dias} fecha=${fecha} setFecha=${setFecha} db=${db} persona=${persona} yo=${yo} />` : html`<div class="dias titulo-top">${{ mapa: 'Mapa', equipo: 'Equipo', papelera: 'Papelera', historial: 'Historial' }[vista] || ''}</div>`}
         <div class="top-der">
-          <button class="icon-btn" onClick=${() => setPaleta(true)} aria-label="Buscar">${I('buscar')}</button>
+          <button class="icon-btn" onClick=${() => setPaleta(true)} aria-label="Buscar" data-tour="buscar">${I('buscar')}</button>
+          <a class="icon-btn" href="#/historial" aria-label="Historial" title="Historial">${I('historial')}</a>
           <button class="icon-btn" onClick=${() => setAvisos((v) => !v)} aria-label=${`Avisos${sinLeer ? `, ${sinLeer} nuevos` : ''}`}>${I('campana')}${sinLeer ? html`<span class="punto"></span>` : null}</button>
         </div>
       </header>
 
       <main class="principal">
-        ${vista === 'dia' && html`<${Dia} ...${ctx} />`}
+        ${vista === 'dia' && html`<${Inicio} ...${ctx} />`}
+        ${vista === 'mapa' && html`<${Mapa} db=${db} yo=${yo} abrir=${ctx.abrir} toast=${toast} />`}
+        ${vista === 'historial' && html`<${Historial} db=${db} />`}
         ${vista === 'equipo' && html`<${Equipo} db=${db} yo=${yo} />`}
         ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
       </main>
@@ -122,11 +138,11 @@ function App() {
         ${arrastrandoAlgo
           ? html`<div class=${'zona-papelera' + (arr?.destino?.tipo === 'papelera' ? ' sobre' : '')} data-drop="papelera">${I('papelera')}<span>Eliminar</span></div>`
           : html`
-            <a href="#/" class="dock-it" aria-current=${vista === 'dia' && persona === yo ? 'page' : null} onClick=${() => setFecha(hoyISO())}>${I('hoy')}<span>Hoy</span></a>
-            <a href="#/equipo" class="dock-it" aria-current=${vista === 'equipo' || persona !== yo ? 'page' : null}>${I('equipo')}<span>Equipo</span></a>
-            <button class="dock-mas" onClick=${() => ctx.nueva()} aria-label="Nueva actividad (N)">${I('mas')}</button>
-            <button class="dock-it" onClick=${() => setPaleta(true)}>${I('buscar')}<span>Buscar</span></button>
-            <a href="#/papelera" class="dock-it" aria-current=${vista === 'papelera' ? 'page' : null}>${I('papelera')}<span>Papelera</span></a>`}
+            <a href="#/" class="dock-it" aria-current=${vista === 'dia' && persona === yo ? 'page' : null} onClick=${() => setFecha(hoyISO())}>${I('inicio')}<span>Inicio</span></a>
+            <a href="#/mapa" class="dock-it" aria-current=${vista === 'mapa' ? 'page' : null} data-tour="mapa">${I('mapa')}<span>Mapa</span></a>
+            <button class="dock-mas" onClick=${() => ctx.nueva()} aria-label="Nueva actividad (N)" data-tour="mas">${I('mas')}</button>
+            <button class="dock-it" onClick=${() => setChat({})} data-tour="chat">${I('chat')}<span>Chat</span>${chatSinLeer ? html`<em class="dock-badge num">${chatSinLeer}</em>` : null}</button>
+            <a href="#/equipo" class="dock-it" aria-current=${vista === 'equipo' || persona !== yo ? 'page' : null}>${I('equipo')}<span>Equipo</span></a>`}
       </nav>
 
       ${arr && html`<div class="fantasma-arr" style=${`left:${arr.x}px;top:${arr.y}px;--c:${arr.color || 'var(--chispa)'}`}><i></i>${arr.etiqueta}</div>`}
@@ -134,9 +150,12 @@ function App() {
         pedirMotivo=${(f) => setMotivo({ ok: f })} />`}
       ${motivo && html`<${HojaMotivo} cancelar=${() => setMotivo(null)} elegir=${(m) => { const f = motivo.ok; setMotivo(null); f(m); }} />`}
       ${menu && html`<${MenuEstatus} menu=${menu} cerrar=${() => setMenu(null)} ctx=${ctx} />`}
-      ${perfil && html`<${Perfil} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} />`}
+      ${perfil && html`<${Perfil} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} cerrar=${() => setAvisos(false)} toast=${toast} />`}
+      ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
+      ${tour === 'bienvenida' && html`<${Bienvenida} nombre=${yoP?.corto} empezar=${() => { location.hash = '#/'; setTour('pasos'); }} saltar=${cerrarTour} />`}
+      ${tour === 'pasos' && html`<${Recorrido} terminar=${cerrarTour} />`}
       ${galeria && html`<${Galeria} db=${db} agregar=${galeria.agregar} cerrar=${() => setGaleria(null)} />`}
       ${rapida && html`<${AltaRapida} pos=${rapida} ctx=${ctx} cerrar=${() => setRapida(null)} />`}
       <div class="toasts" role="status" aria-live="polite">
@@ -153,7 +172,7 @@ function Dias({ fecha, setFecha, db, persona, yo }) {
   const fmtD = new Intl.DateTimeFormat('es-MX', { weekday: 'short' });
   const suyas = vigentes().filter((a) => participa(a, persona) && a.estatus !== 'hecho' && visiblePara(a, yo));
   return html`
-    <div class="dias" role="tablist" aria-label="Días">
+    <div class="dias" role="tablist" aria-label="Días" data-tour="dias">
       ${dias.map((f) => {
         const n = suyas.filter((a) => a.fecha === f).length;
         const sobre = arr?.destino?.tipo === 'dia' && arr.destino.fecha === f;
@@ -207,6 +226,27 @@ function Papelera({ db, yo, toast }) {
   })}</div>`;
 }
 
+// ---------- Historial: solo lectura ----------
+function Historial({ db }) {
+  const [quien, setQuien] = useState(null);
+  const todo = historialGlobal().filter((h) => !quien || h.quien === quien).slice(0, 200);
+  const dias = {};
+  todo.forEach((h) => { const d = h.cuando.slice(0, 10); (dias[d] = dias[d] || []).push(h); });
+  return html`<div class="historial-vista">
+    <div class="hist-filtros">
+      <button class="chip-op" aria-pressed=${!quien} onClick=${() => setQuien(null)}>Todos</button>
+      ${db.personas.map((p) => html`<button key=${p.id} class="per-op" aria-pressed=${quien === p.id} onClick=${() => setQuien(p.id)}><${Avatar} p=${p} />${p.corto}</button>`)}
+      <span class="solo-lectura" title="Nadie puede editar el historial">${I('ojo')}</span>
+    </div>
+    ${Object.entries(dias).map(([d, l]) => html`<section key=${d} class="hist-dia">
+      <h3>${fechaRelativa(d)}</h3>
+      <ul>${l.map((h, i) => { const p = db.personas.find((x) => x.id === h.quien); const c = db.clientes.find((x) => x.id === h.cliente); return html`<li key=${i}>
+        <${Avatar} p=${p} /><div><span><b>${p?.corto || '—'}</b> ${h.que}</span>${h.titulo && html`<span class="hist-act" style=${`--c:${c?.color}`}><i class="bolita"></i>${h.titulo}</span>`}${h.motivo && html`<span class="hist-motivo">${h.motivo}</span>`}</div>
+        <time class="num">${new Date(h.cuando).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</time></li>`; })}</ul>
+    </section>`)}
+  </div>`;
+}
+
 // ---------- Capas ----------
 function cerrarAlTocarFuera(ref, cerrar) {
   useEffect(() => {
@@ -239,7 +279,7 @@ function MenuEstatus({ menu, cerrar, ctx }) {
     </div>`;
 }
 
-function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast }) {
+function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
@@ -248,6 +288,9 @@ function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast }) {
       <div class="perfil-cab"><${Avatar} p=${p} grande /><div><b>${p.nombre}</b><span>${p.puesto}</span></div></div>
       <div class="perfil-op">
         <button class="op" onClick=${() => setTema(tema === 'dark' ? 'light' : 'dark')}>${I(tema === 'dark' ? 'sol' : 'luna')}<span>${tema === 'dark' ? 'Claro' : 'Oscuro'}</span></button>
+        <button class="op" onClick=${recorrido}>${I('brujula')}<span>Recorrido</span></button>
+        <a class="op" href="#/papelera" onClick=${cerrar}>${I('papelera')}<span>Papelera</span></a>
+        <a class="op" href="#/historial" onClick=${cerrar}>${I('historial')}<span>Historial</span></a>
         <button class="op" onClick=${() => { store.restablecer(); toast('Datos de prueba restablecidos'); cerrar(); }}>${I('reset')}<span>Reiniciar demo</span></button>
       </div>
       <div class="hoja-t chico">Ver como</div>
@@ -276,6 +319,9 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
   const t = norm(q.trim());
   const acciones = [
     { t: 'Nueva actividad', ico: 'mas', f: () => ctx.nueva() },
+    { t: 'Mapa', ico: 'mapa', f: () => { location.hash = '#/mapa'; } },
+    { t: 'Chat', ico: 'chat', f: () => ctx.abrirChat() },
+    { t: 'Historial', ico: 'historial', f: () => { location.hash = '#/historial'; } },
     { t: 'Equipo', ico: 'equipo', f: () => { location.hash = '#/equipo'; } },
     { t: 'Papelera', ico: 'papelera', f: () => { location.hash = '#/papelera'; } },
     { t: 'Claro / oscuro', ico: 'tema', f: setTema },

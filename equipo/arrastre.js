@@ -16,7 +16,7 @@ function destinoEn(x, y) {
   const el = document.elementFromPoint(x, y)?.closest('[data-drop]');
   if (!el) return null;
   const r = el.getBoundingClientRect();
-  return { tipo: el.dataset.drop, el, ...el.dataset, offsetY: y - r.top };
+  return { tipo: el.dataset.drop, el, ...el.dataset, offsetY: y - r.top, offsetX: x - r.left };
 }
 
 export function iniciarArrastre(e, { datos, etiqueta, color, alSoltar, alClic }) {

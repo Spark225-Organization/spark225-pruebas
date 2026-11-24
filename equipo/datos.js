@@ -33,6 +33,29 @@ export const WIDGETS = [
   { tipo: 'archivos', nombre: 'Mis archivos', tam: 'm', icono: 'carpeta' },
   { tipo: 'personal', nombre: 'Mis pendientes', tam: 'm', icono: 'lista' },
   { tipo: 'nota', nombre: 'Nota rápida', tam: 's', icono: 'nota' },
+  { tipo: 'proxima', nombre: 'Lo siguiente', tam: 's', icono: 'reloj' },
+  { tipo: 'jornada', nombre: 'Jornada', tam: 's', icono: 'sol' },
+  { tipo: 'cumplimiento', nombre: 'A tiempo', tam: 's', icono: 'check' },
+  { tipo: 'facturas', nombre: 'Facturas', tam: 's', icono: 'factura' },
+  { tipo: 'correo', nombre: 'Correo', tam: 'm', icono: 'correo' },
+  { tipo: 'chat', nombre: 'Chat', tam: 'm', icono: 'chat' },
+  { tipo: 'clientes', nombre: 'Todos los clientes', tam: 'm', icono: 'clientes' },
+  { tipo: 'minimes', nombre: 'Mes', tam: 'm', icono: 'semana' },
+  { tipo: 'historial', nombre: 'Movimientos', tam: 'm', icono: 'historial' },
+];
+
+export const VISTAS = [
+  { id: 'dia', nombre: 'Día', icono: 'hoy' },
+  { id: 'semana', nombre: 'Semana', icono: 'columnas' },
+  { id: 'mes', nombre: 'Mes', icono: 'semana' },
+  { id: 'tarjetas', nombre: 'Tarjetas', icono: 'cuadricula' },
+];
+export const ACOMODOS = [
+  { id: 'derecha', nombre: 'Widgets a la derecha' },
+  { id: 'izquierda', nombre: 'Widgets a la izquierda' },
+  { id: 'arriba', nombre: 'Widgets arriba' },
+  { id: 'calendario', nombre: 'Solo calendario' },
+  { id: 'widgets', nombre: 'Solo widgets' },
 ];
 
 export function hoyISO(d = new Date()) {
@@ -59,6 +82,8 @@ export const LAYOUT_INICIAL = [
   { id: 'w6', tipo: 'nota' },
   { id: 'w7', tipo: 'archivos' },
   { id: 'w8', tipo: 'carga' },
+  { id: 'w9', tipo: 'proxima' },
+  { id: 'w10', tipo: 'correo' },
 ];
 
 export function semilla() {
@@ -119,7 +144,7 @@ export function semilla() {
       historial: [{ cuando: hace(6), quien: 'adan', que: 'creó la actividad' }, { cuando: hace(3), quien: 'adan', que: 'movió la fecha límite', motivo: 'Dependencia externa' }] }),
     A({ titulo: 'Plan 2027 · LinkedIn y PR', responsable: 'adan', cliente: 'interno', proyecto: 'p-2027', fecha: d(1), esfuerzo: 'L', bloque: { inicio: '11:00', min: 120 }, colaboradores: ['carlos'] }),
     A({ titulo: 'KPIs con semáforo', responsable: 'adan', cliente: 'interno', fecha: d(2), esfuerzo: 'M' }),
-    A({ titulo: 'Video con IA', responsable: 'adan', cliente: 'carnot', proyecto: 'p-meta', fecha: d(3), esfuerzo: 'M', colaboradores: ['paco'] }),
+    A({ titulo: 'Video con IA', responsable: 'adan', cliente: 'carnot', proyecto: 'p-meta', fecha: d(3), esfuerzo: 'M', colaboradores: ['paco'], dependeDe: 'a3' }),
     A({ titulo: 'Alcance Novartis', responsable: 'adan', cliente: 'novartis', fecha: d(2), esfuerzo: 'M', colaboradores: ['carlos'] }),
     A({ titulo: 'Piezas campaña Carnot', responsable: 'paco', cliente: 'carnot', proyecto: 'p-meta', fecha: d(1), esfuerzo: 'L', estatus: 'en_curso', asignadaPor: 'adan' }),
     A({ titulo: 'Calendario de contenido Eisai', responsable: 'paco', cliente: 'eisai', fecha: d(2), esfuerzo: 'M' }),
@@ -150,5 +175,51 @@ export function semilla() {
     },
   };
 
-  return { version: 2, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, papeleraDias: 30 };
+  // Correos de ejemplo: así se verá el widget cuando se conecte Gmail. No son correos reales.
+  const correos = [
+    { id: 'm1', de: 'Equipo Carnot', cliente: 'carnot', asunto: 'Comentarios a las piezas de la campaña', cuando: hace(0.04), leido: false },
+    { id: 'm2', de: 'Carlos Gómez', cliente: 'interno', asunto: 'Resumen de la junta del lunes', cuando: hace(0.2), leido: false, tipo: 'minuta' },
+    { id: 'm3', de: 'Solumed', cliente: 'solumed', asunto: 'Datos para el reporte mensual', cuando: hace(0.5), leido: false },
+    { id: 'm4', de: 'Theramex', cliente: 'theramex', asunto: 'Agenda para revisar la propuesta', cuando: hace(0.9), leido: true },
+    { id: 'm5', de: 'Endodx', cliente: 'endodx', asunto: 'Fechas de entrega', cuando: hace(1.3), leido: true },
+    { id: 'm6', de: 'Novartis', cliente: 'novartis', asunto: 'Siguiente paso del alcance', cuando: hace(2.1), leido: true },
+  ];
+
+  const chat = {
+    canales: [
+      { id: 'general', nombre: 'General', miembros: ['adan', 'carlos', 'paco'] },
+      { id: 'dm-adan-carlos', miembros: ['adan', 'carlos'] },
+      { id: 'dm-adan-paco', miembros: ['adan', 'paco'] },
+    ],
+    mensajes: [
+      { id: 'x1', canal: 'general', de: 'carlos', cuando: hace(0.3), texto: '¿Cómo vamos con el deck para mañana?' },
+      { id: 'x2', canal: 'general', de: 'adan', cuando: hace(0.28), texto: 'Ya van 2 de 4 pasos, hoy lo cierro.' },
+      { id: 'x3', canal: 'general', de: 'paco', cuando: hace(0.1), texto: 'Subí las piezas de Carnot al Drive 🎨' },
+      { id: 'x4', canal: 'dm-adan-carlos', de: 'adan', cuando: hace(1.2), tipo: 'factura', archivo: 'Factura_Octubre.pdf', para: 'carlos', estatus: 'pagada' },
+      { id: 'x5', canal: 'dm-adan-carlos', de: 'carlos', cuando: hace(1.1), texto: 'Listo, ya quedó.' },
+      { id: 'x6', canal: 'dm-adan-paco', de: 'paco', cuando: hace(0.05), texto: '¿Revisas los banners cuando puedas?' },
+    ],
+    leidos: { adan: { general: hace(0.2), 'dm-adan-carlos': hace(0.5), 'dm-adan-paco': hace(1) } },
+  };
+
+  // Mapa de flujo: nodos y flechas. Actividad → persona = asignar. Actividad → actividad = «espera a».
+  const mapa = {
+    nodos: [
+      { id: 'n-ini', tipo: 'nota', texto: 'Campaña Carnot', x: 60, y: 200 },
+      { id: 'n-a13', tipo: 'actividad', ref: 'a13', x: 300, y: 120 },
+      { id: 'n-a3', tipo: 'actividad', ref: 'a3', x: 300, y: 290 },
+      { id: 'n-a11', tipo: 'actividad', ref: 'a11', x: 580, y: 290 },
+      { id: 'n-paco', tipo: 'persona', ref: 'paco', x: 600, y: 110 },
+      { id: 'n-adan', tipo: 'persona', ref: 'adan', x: 860, y: 290 },
+      { id: 'n-a5', tipo: 'actividad', ref: 'a5', x: 300, y: 470 },
+      { id: 'n-a6', tipo: 'actividad', ref: 'a6', x: 580, y: 470 },
+    ],
+    aristas: [
+      { id: 'e1', de: 'n-ini', a: 'n-a13' }, { id: 'e2', de: 'n-ini', a: 'n-a3' },
+      { id: 'e3', de: 'n-a13', a: 'n-paco' }, { id: 'e4', de: 'n-a3', a: 'n-a11' },
+      { id: 'e5', de: 'n-a11', a: 'n-adan' }, { id: 'e6', de: 'n-a5', a: 'n-a6' },
+    ],
+  };
+
+  return { version: 3, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, prefs: {}, correos, chat, mapa, eventos: [], papeleraDias: 30 };
 }

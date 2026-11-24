@@ -1,9 +1,9 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241419';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241437';
 
-const CLAVE = 'ssam-equipo-v2';
+const CLAVE = 'ssam-equipo-v3';
 const DIA_MS = 86400000;
 let estado = cargar();
 const oyentes = new Set();
@@ -13,7 +13,7 @@ function cargar() {
     const crudo = localStorage.getItem(CLAVE);
     if (crudo) {
       const e = JSON.parse(crudo);
-      if (e && e.version === 2) return purgar(e);
+      if (e && e.version === 3) return purgar(e);
     }
   } catch (_) { /* almacenamiento no disponible: se usa la semilla en memoria */ }
   return semilla();
@@ -198,3 +198,103 @@ export function mover(id, { fecha, bloque }, uId, motivo) {
   if (Object.keys(cambios).length) actualizar(id, cambios, uId, motivo);
 }
 export function visiblePara(a, uId) { return a.cliente !== 'personal' || a.responsable === uId; }
+
+// ---------- Preferencias de vista por persona ----------
+export function prefsDe(uId) { return { vista: 'dia', acomodo: 'derecha', ...(estado.prefs[uId] || {}) }; }
+export function guardarPrefs(uId, cambios) { estado.prefs = { ...estado.prefs, [uId]: { ...prefsDe(uId), ...cambios } }; guardar(); }
+
+// ---------- Eventos para el historial (chat, facturas, mapa) ----------
+function evento(quien, que, extra = {}) { estado.eventos = [{ id: uid('v'), cuando: ahora(), quien, que, ...extra }, ...(estado.eventos || [])].slice(0, 300); }
+
+// Historial global de solo lectura: cambios de actividades + eventos del sistema.
+export function historialGlobal() {
+  const deActs = estado.actividades.flatMap((a) => (a.historial || []).map((h) => ({ ...h, actividad: a.id, titulo: a.titulo, cliente: a.cliente })));
+  return [...deActs, ...(estado.eventos || [])].sort((x, y) => y.cuando.localeCompare(x.cuando));
+}
+
+// ---------- Correo (simulado hasta conectar Gmail) ----------
+export function marcarCorreo(id, leido = true) { const m = estado.correos.find((x) => x.id === id); if (m) { m.leido = leido; guardar(); } }
+export function correoAActividad(id, uId) {
+  const m = estado.correos.find((x) => x.id === id); if (!m) return null;
+  m.leido = true; m.actividad = true;
+  const a = crear(nuevaVacia(uId, { titulo: m.asunto, cliente: m.cliente, proyecto: 'g-' + m.cliente, esfuerzo: 'S', notas: `Desde el correo de ${m.de}` }), uId);
+  return a;
+}
+
+// ---------- Chat interno ----------
+export function enviarMensaje(canal, de, cuerpo) {
+  const msj = { id: uid('x'), canal, de, cuando: ahora(), ...cuerpo };
+  estado.chat.mensajes = [...estado.chat.mensajes, msj];
+  marcarLeidoCanal(canal, de, false);
+  if (msj.tipo === 'factura') { evento(de, `envió la factura ${msj.archivo} a ${persona(msj.para)?.corto}`); avisar(msj.para, `${persona(de)?.corto} te envió una factura.`, null, 'factura'); }
+  guardar();
+  return msj;
+}
+export function marcarLeidoCanal(canal, uId, guardarYa = true) {
+  estado.chat.leidos = { ...estado.chat.leidos, [uId]: { ...(estado.chat.leidos[uId] || {}), [canal]: ahora() } };
+  if (guardarYa) guardar();
+}
+export function sinLeerChat(uId) {
+  const l = estado.chat.leidos[uId] || {};
+  return estado.chat.mensajes.filter((m) => m.de !== uId && estado.chat.canales.find((c) => c.id === m.canal)?.miembros.includes(uId) && (!l[m.canal] || m.cuando > l[m.canal])).length;
+}
+export function canalDirecto(a, b) {
+  const id = 'dm-' + [a, b].sort().join('-');
+  if (!estado.chat.canales.some((c) => c.id === id)) { estado.chat.canales = [...estado.chat.canales, { id, miembros: [a, b] }]; guardar(); }
+  return id;
+}
+export const ESTATUS_FACTURA = ['enviada', 'recibida', 'pagada'];
+export function avanzarFactura(msjId, uId) {
+  const m = estado.chat.mensajes.find((x) => x.id === msjId); if (!m) return { ok: false };
+  if (m.para !== uId && persona(uId)?.permiso !== 'dueno') return { ok: false, motivo: 'Solo quien la recibe la puede marcar.' };
+  const i = ESTATUS_FACTURA.indexOf(m.estatus);
+  if (i >= ESTATUS_FACTURA.length - 1) return { ok: false };
+  m.estatus = ESTATUS_FACTURA[i + 1];
+  evento(uId, `marcó la factura ${m.archivo} como ${m.estatus}`);
+  if (m.de !== uId) avisar(m.de, `Tu factura ${m.archivo} está ${m.estatus}.`, null, 'factura');
+  estado.chat.mensajes = [...estado.chat.mensajes];
+  guardar();
+  return { ok: true };
+}
+
+// ---------- Mapa de flujo ----------
+export function moverNodo(id, x, y) { const n = estado.mapa.nodos.find((k) => k.id === id); if (n) { n.x = Math.round(x); n.y = Math.round(y); guardar(); } }
+export function agregarNodo(nodo, uId) {
+  const n = { id: uid('n'), ...nodo };
+  estado.mapa.nodos = [...estado.mapa.nodos, n];
+  evento(uId, `agregó ${nodo.tipo === 'nota' ? 'una nota' : 'un nodo'} al mapa`);
+  guardar(); return n;
+}
+export function quitarNodo(id) {
+  estado.mapa.nodos = estado.mapa.nodos.filter((n) => n.id !== id);
+  estado.mapa.aristas = estado.mapa.aristas.filter((e) => e.de !== id && e.a !== id);
+  guardar();
+}
+export function editarNota(id, texto) { const n = estado.mapa.nodos.find((k) => k.id === id); if (n) { n.texto = texto; guardar(); } }
+// Conectar aplica la regla: actividad → persona asigna; actividad → actividad crea la dependencia.
+export function conectar(de, a, uId) {
+  if (de === a || estado.mapa.aristas.some((e) => e.de === de && e.a === a)) return { ok: false };
+  const nDe = estado.mapa.nodos.find((n) => n.id === de), nA = estado.mapa.nodos.find((n) => n.id === a);
+  let efecto = null;
+  if (nDe?.tipo === 'actividad' && nA?.tipo === 'persona') {
+    actualizar(nDe.ref, { responsable: nA.ref }, uId);
+    efecto = `Asignada a ${persona(nA.ref)?.corto}`;
+  } else if (nDe?.tipo === 'persona' && nA?.tipo === 'actividad') {
+    actualizar(nA.ref, { responsable: nDe.ref }, uId);
+    efecto = `Asignada a ${persona(nDe.ref)?.corto}`;
+  } else if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad') {
+    actualizar(nA.ref, { dependeDe: nDe.ref }, uId);
+    log(act(nA.ref), uId, `ahora espera a «${act(nDe.ref)?.titulo}»`);
+    efecto = 'Ahora espera a la anterior';
+  }
+  estado.mapa.aristas = [...estado.mapa.aristas, { id: uid('e'), de, a }];
+  guardar();
+  return { ok: true, efecto };
+}
+export function desconectar(id, uId) {
+  const e = estado.mapa.aristas.find((x) => x.id === id); if (!e) return;
+  const nDe = estado.mapa.nodos.find((n) => n.id === e.de), nA = estado.mapa.nodos.find((n) => n.id === e.a);
+  if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad' && act(nA.ref)?.dependeDe === nDe.ref) actualizar(nA.ref, { dependeDe: null }, uId);
+  estado.mapa.aristas = estado.mapa.aristas.filter((x) => x.id !== id);
+  guardar();
+}

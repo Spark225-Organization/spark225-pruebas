@@ -1,9 +1,9 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241437';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241452';
 
-const CLAVE = 'ssam-equipo-v3';
+const CLAVE = 'ssam-equipo-v4';
 const DIA_MS = 86400000;
 let estado = cargar();
 const oyentes = new Set();
@@ -13,7 +13,7 @@ function cargar() {
     const crudo = localStorage.getItem(CLAVE);
     if (crudo) {
       const e = JSON.parse(crudo);
-      if (e && e.version === 3) return purgar(e);
+      if (e && e.version === 4) return purgar(e);
     }
   } catch (_) { /* almacenamiento no disponible: se usa la semilla en memoria */ }
   return semilla();
@@ -257,44 +257,76 @@ export function avanzarFactura(msjId, uId) {
   return { ok: true };
 }
 
-// ---------- Mapa de flujo ----------
-export function moverNodo(id, x, y) { const n = estado.mapa.nodos.find((k) => k.id === id); if (n) { n.x = Math.round(x); n.y = Math.round(y); guardar(); } }
-export function agregarNodo(nodo, uId) {
+// ---------- Flujos (mapas) ----------
+export const flujoDe = (fid) => estado.flujos.find((f) => f.id === fid);
+export function crearFlujo(nombre, uId, base = {}) {
+  const f = { id: uid('f'), nombre: nombre || 'Nuevo flujo', creador: uId, creado: ahora(), nodos: base.nodos || [], aristas: base.aristas || [] };
+  estado.flujos = [...estado.flujos, f];
+  evento(uId, `creó el flujo «${f.nombre}»`);
+  guardar(); return f.id;
+}
+export function renombrarFlujo(fid, nombre) { const f = flujoDe(fid); if (f && nombre.trim()) { f.nombre = nombre.trim(); estado.flujos = [...estado.flujos]; guardar(); } }
+export function borrarFlujo(fid, uId) { const f = flujoDe(fid); estado.flujos = estado.flujos.filter((x) => x.id !== fid); if (f) evento(uId, `borró el flujo «${f.nombre}»`); guardar(); }
+export function flujosDeActividad(aId) { return estado.flujos.filter((f) => f.nodos.some((n) => n.tipo === 'actividad' && n.ref === aId)); }
+// Avance de un flujo: tareas cerradas sobre el total de tareas vivas que contiene.
+export function avanceFlujo(f) {
+  const acts = f.nodos.filter((n) => n.tipo === 'actividad').map((n) => act(n.ref)).filter((a) => a && !a.archivada);
+  return { hechas: acts.filter((a) => a.estatus === 'hecho').length, total: acts.length, acts };
+}
+// Flujo automático de una tarea que no está en ningún flujo: su cadena de dependencias y responsables.
+export function flujoAuto(aId) {
+  const base = act(aId); if (!base) return null;
+  const cadena = [];
+  let x = base; const vistos = new Set();
+  while (x && x.dependeDe && !vistos.has(x.id)) { vistos.add(x.id); x = act(x.dependeDe); if (x) cadena.unshift(x); }
+  cadena.push(base);
+  let sig = estado.actividades.find((y) => y.dependeDe === base.id && !y.archivada);
+  while (sig && !cadena.includes(sig)) { cadena.push(sig); sig = estado.actividades.find((y) => y.dependeDe === sig.id && !y.archivada); }
+  const nodos = [], aristas = [];
+  cadena.forEach((a, i) => {
+    nodos.push({ id: 'auto-' + a.id, tipo: 'actividad', ref: a.id, x: i * 320, y: 120 });
+    if (i > 0) aristas.push({ id: 'ae-' + i, de: 'auto-' + cadena[i - 1].id, a: 'auto-' + a.id });
+  });
+  const personas = [...new Set(cadena.map((a) => a.responsable))];
+  personas.forEach((pid, k) => {
+    const suyas = cadena.map((a, i) => ({ a, i })).filter(({ a }) => a.responsable === pid);
+    nodos.push({ id: 'auto-p-' + pid, tipo: 'persona', ref: pid, x: cadena.length * 320 + 20, y: 40 + k * 120 + (personas.length === 1 ? 90 : 0) });
+    suyas.forEach(({ a }) => aristas.push({ id: 'ap-' + a.id, de: 'auto-' + a.id, a: 'auto-p-' + pid }));
+  });
+  return { id: 'auto', auto: true, nombre: base.titulo, creador: null, nodos, aristas, enfoque: 'auto-' + aId };
+}
+
+export function moverNodo(fid, id, x, y) { const n = flujoDe(fid)?.nodos.find((k) => k.id === id); if (n) { n.x = Math.round(x); n.y = Math.round(y); guardar(); } }
+export function agregarNodo(fid, nodo, uId) {
+  const f = flujoDe(fid); if (!f) return null;
   const n = { id: uid('n'), ...nodo };
-  estado.mapa.nodos = [...estado.mapa.nodos, n];
-  evento(uId, `agregó ${nodo.tipo === 'nota' ? 'una nota' : 'un nodo'} al mapa`);
+  f.nodos = [...f.nodos, n];
   guardar(); return n;
 }
-export function quitarNodo(id) {
-  estado.mapa.nodos = estado.mapa.nodos.filter((n) => n.id !== id);
-  estado.mapa.aristas = estado.mapa.aristas.filter((e) => e.de !== id && e.a !== id);
+export function quitarNodo(fid, id) {
+  const f = flujoDe(fid); if (!f) return;
+  f.nodos = f.nodos.filter((n) => n.id !== id);
+  f.aristas = f.aristas.filter((e) => e.de !== id && e.a !== id);
   guardar();
 }
-export function editarNota(id, texto) { const n = estado.mapa.nodos.find((k) => k.id === id); if (n) { n.texto = texto; guardar(); } }
+export function editarNota(fid, id, texto) { const n = flujoDe(fid)?.nodos.find((k) => k.id === id); if (n) { n.texto = texto; guardar(); } }
 // Conectar aplica la regla: actividad → persona asigna; actividad → actividad crea la dependencia.
-export function conectar(de, a, uId) {
-  if (de === a || estado.mapa.aristas.some((e) => e.de === de && e.a === a)) return { ok: false };
-  const nDe = estado.mapa.nodos.find((n) => n.id === de), nA = estado.mapa.nodos.find((n) => n.id === a);
+export function conectar(fid, de, a, uId) {
+  const f = flujoDe(fid); if (!f) return { ok: false };
+  if (de === a || f.aristas.some((e) => e.de === de && e.a === a)) return { ok: false };
+  const nDe = f.nodos.find((n) => n.id === de), nA = f.nodos.find((n) => n.id === a);
   let efecto = null;
-  if (nDe?.tipo === 'actividad' && nA?.tipo === 'persona') {
-    actualizar(nDe.ref, { responsable: nA.ref }, uId);
-    efecto = `Asignada a ${persona(nA.ref)?.corto}`;
-  } else if (nDe?.tipo === 'persona' && nA?.tipo === 'actividad') {
-    actualizar(nA.ref, { responsable: nDe.ref }, uId);
-    efecto = `Asignada a ${persona(nDe.ref)?.corto}`;
-  } else if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad') {
-    actualizar(nA.ref, { dependeDe: nDe.ref }, uId);
-    log(act(nA.ref), uId, `ahora espera a «${act(nDe.ref)?.titulo}»`);
-    efecto = 'Ahora espera a la anterior';
-  }
-  estado.mapa.aristas = [...estado.mapa.aristas, { id: uid('e'), de, a }];
+  if (nDe?.tipo === 'actividad' && nA?.tipo === 'persona') { actualizar(nDe.ref, { responsable: nA.ref }, uId); efecto = `Asignada a ${persona(nA.ref)?.corto}`; }
+  else if (nDe?.tipo === 'persona' && nA?.tipo === 'actividad') { actualizar(nA.ref, { responsable: nDe.ref }, uId); efecto = `Asignada a ${persona(nDe.ref)?.corto}`; }
+  else if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad') { actualizar(nA.ref, { dependeDe: nDe.ref }, uId); log(act(nA.ref), uId, `ahora espera a «${act(nDe.ref)?.titulo}»`); efecto = 'Ahora espera a la anterior'; }
+  f.aristas = [...f.aristas, { id: uid('e'), de, a }];
   guardar();
   return { ok: true, efecto };
 }
-export function desconectar(id, uId) {
-  const e = estado.mapa.aristas.find((x) => x.id === id); if (!e) return;
-  const nDe = estado.mapa.nodos.find((n) => n.id === e.de), nA = estado.mapa.nodos.find((n) => n.id === e.a);
+export function desconectar(fid, id, uId) {
+  const f = flujoDe(fid); const e = f?.aristas.find((x) => x.id === id); if (!e) return;
+  const nDe = f.nodos.find((n) => n.id === e.de), nA = f.nodos.find((n) => n.id === e.a);
   if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad' && act(nA.ref)?.dependeDe === nDe.ref) actualizar(nA.ref, { dependeDe: null }, uId);
-  estado.mapa.aristas = estado.mapa.aristas.filter((x) => x.id !== id);
+  f.aristas = f.aristas.filter((x) => x.id !== id);
   guardar();
 }

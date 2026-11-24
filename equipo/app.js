@@ -1,18 +1,18 @@
 import { html, render, useState, useEffect, useRef, useCallback } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241437';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241452';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal,
-} from './store.js?v=202611241437';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241437';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241437';
-import { AltaRapida } from './mecha.js?v=202611241437';
-import { Inicio } from './vistas.js?v=202611241437';
-import { Mapa } from './mapa.js?v=202611241437';
-import { Chat } from './chat.js?v=202611241437';
-import { Bienvenida, Recorrido } from './tour.js?v=202611241437';
-import { useArrastre } from './arrastre.js?v=202611241437';
-import { Galeria } from './widgets.js?v=202611241437';
+} from './store.js?v=202611241452';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241452';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241452';
+import { AltaRapida } from './mecha.js?v=202611241452';
+import { Inicio } from './vistas.js?v=202611241452';
+import { Mapa } from './mapa.js?v=202611241452';
+import { Chat } from './chat.js?v=202611241452';
+import { Bienvenida, Recorrido } from './tour.js?v=202611241452';
+import { useArrastre } from './arrastre.js?v=202611241452';
+import { Galeria } from './widgets.js?v=202611241452';
 
 function useStore() {
   const [, set] = useState(0);

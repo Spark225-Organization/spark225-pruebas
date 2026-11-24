@@ -150,7 +150,7 @@ export function semilla() {
     A({ titulo: 'Calendario de contenido Eisai', responsable: 'paco', cliente: 'eisai', fecha: d(2), esfuerzo: 'M' }),
     A({ titulo: 'Copys de redes Leadso', responsable: 'paco', cliente: 'leadso', fecha: H, esfuerzo: 'S', bloque: { inicio: '11:00', min: 60 } }),
     A({ titulo: 'Banners Solumed', responsable: 'paco', cliente: 'solumed', fecha: d(3), esfuerzo: 'M', asignadaPor: 'adan' }),
-    A({ titulo: 'Revisión del SSAM', responsable: 'carlos', cliente: 'interno', fecha: d(1), esfuerzo: 'S', colaboradores: ['adan'] }),
+    A({ titulo: 'Revisión del SSAM', responsable: 'carlos', cliente: 'interno', fecha: d(1), esfuerzo: 'S', colaboradores: ['adan'], dependeDe: 'a6' }),
     A({ titulo: 'Junta con Novartis', responsable: 'carlos', cliente: 'novartis', fecha: d(4), esfuerzo: 'S', bloque: { inicio: '10:00', min: 60 } }),
   ];
 
@@ -202,24 +202,33 @@ export function semilla() {
     leidos: { adan: { general: hace(0.2), 'dm-adan-carlos': hace(0.5), 'dm-adan-paco': hace(1) } },
   };
 
-  // Mapa de flujo: nodos y flechas. Actividad → persona = asignar. Actividad → actividad = «espera a».
-  const mapa = {
-    nodos: [
-      { id: 'n-ini', tipo: 'nota', texto: 'Campaña Carnot', x: 60, y: 200 },
-      { id: 'n-a13', tipo: 'actividad', ref: 'a13', x: 300, y: 120 },
-      { id: 'n-a3', tipo: 'actividad', ref: 'a3', x: 300, y: 290 },
-      { id: 'n-a11', tipo: 'actividad', ref: 'a11', x: 580, y: 290 },
-      { id: 'n-paco', tipo: 'persona', ref: 'paco', x: 600, y: 110 },
-      { id: 'n-adan', tipo: 'persona', ref: 'adan', x: 860, y: 290 },
-      { id: 'n-a5', tipo: 'actividad', ref: 'a5', x: 300, y: 470 },
-      { id: 'n-a6', tipo: 'actividad', ref: 'a6', x: 580, y: 470 },
-    ],
-    aristas: [
-      { id: 'e1', de: 'n-ini', a: 'n-a13' }, { id: 'e2', de: 'n-ini', a: 'n-a3' },
-      { id: 'e3', de: 'n-a13', a: 'n-paco' }, { id: 'e4', de: 'n-a3', a: 'n-a11' },
-      { id: 'e5', de: 'n-a11', a: 'n-adan' }, { id: 'e6', de: 'n-a5', a: 'n-a6' },
-    ],
-  };
+  // Flujos: cada uno es un mapa con nodos y flechas. Tarea → persona = asignar. Tarea → tarea = «espera a».
+  const flujos = [
+    { id: 'f-carnot', nombre: 'Campaña Carnot', creador: 'adan', creado: hace(2),
+      nodos: [
+        { id: 'n-ini', tipo: 'nota', texto: 'Arranque de campaña', x: 0, y: 190 },
+        { id: 'n-a13', tipo: 'actividad', ref: 'a13', x: 260, y: 90 },
+        { id: 'n-a3', tipo: 'actividad', ref: 'a3', x: 260, y: 290 },
+        { id: 'n-a11', tipo: 'actividad', ref: 'a11', x: 560, y: 290 },
+        { id: 'n-paco', tipo: 'persona', ref: 'paco', x: 580, y: 90 },
+        { id: 'n-adan', tipo: 'persona', ref: 'adan', x: 860, y: 300 },
+      ],
+      aristas: [
+        { id: 'e1', de: 'n-ini', a: 'n-a13' }, { id: 'e2', de: 'n-ini', a: 'n-a3' },
+        { id: 'e3', de: 'n-a13', a: 'n-paco' }, { id: 'e4', de: 'n-a3', a: 'n-a11' }, { id: 'e5', de: 'n-a11', a: 'n-adan' },
+      ] },
+    { id: 'f-portal', nombre: 'Portal de clientes', creador: 'adan', creado: hace(1),
+      nodos: [
+        { id: 'p-a5', tipo: 'actividad', ref: 'a5', x: 0, y: 140 },
+        { id: 'p-carlos', tipo: 'persona', ref: 'carlos', x: 20, y: 330 },
+        { id: 'p-a6', tipo: 'actividad', ref: 'a6', x: 320, y: 140 },
+        { id: 'p-a17', tipo: 'actividad', ref: 'a17', x: 640, y: 140 },
+        { id: 'p-adan', tipo: 'persona', ref: 'adan', x: 340, y: 330 },
+      ],
+      aristas: [
+        { id: 'q1', de: 'p-a5', a: 'p-carlos' }, { id: 'q2', de: 'p-a5', a: 'p-a6' }, { id: 'q3', de: 'p-a6', a: 'p-adan' }, { id: 'q4', de: 'p-a6', a: 'p-a17' },
+      ] },
+  ];
 
-  return { version: 3, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, prefs: {}, correos, chat, mapa, eventos: [], papeleraDias: 30 };
+  return { version: 4, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, prefs: {}, correos, chat, flujos, eventos: [], papeleraDias: 30 };
 }

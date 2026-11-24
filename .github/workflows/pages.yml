@@ -1,0 +1,55 @@
+# Publica pruebas.spark225.com: el sitio estático de la raíz + el SSAM compilado en /ssam/
+name: Publicar sitio de pruebas
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Compilar SSAM
+        working-directory: ssam-app
+        env:
+          SSAM_BASE: /ssam/
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Armar el sitio
+        run: |
+          mkdir -p _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'ssam-app' --exclude '_site' --exclude 'README.md' ./ _site/
+          mkdir -p _site/ssam
+          cp -R ssam-app/dist/. _site/ssam/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

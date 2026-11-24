@@ -36,7 +36,7 @@ jobs:
       - name: Armar el sitio
         run: |
           mkdir -p _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'ssam-app' --exclude '_site' --exclude 'README.md' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'ssam-app' --exclude '_respaldo-login' --exclude '_site' --exclude 'README.md' ./ _site/
           mkdir -p _site/ssam
           cp -R ssam-app/dist/. _site/ssam/
 

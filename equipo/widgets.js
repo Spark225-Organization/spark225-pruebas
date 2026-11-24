@@ -1,10 +1,10 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara } from './store.js';
-import { I, Avatar, fechaRelativa, diasEntre } from './ui.js';
-import { hoyISO } from './datos.js';
-import { iniciarArrastre, useArrastre } from './arrastre.js';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611241419';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara } from './store.js?v=202611241419';
+import { I, Avatar, fechaRelativa, diasEntre } from './ui.js?v=202611241419';
+import { hoyISO } from './datos.js?v=202611241419';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241419';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 

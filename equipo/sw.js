@@ -1,7 +1,7 @@
 // Service worker mínimo: permite instalar la app y abrirla sin conexión.
 // Red primero para los archivos propios (así siempre ves la última versión publicada);
 // caché primero para fuentes y librerías con versión fija.
-const CACHE = 'ssam-equipo-v2';
+const CACHE = 'ssam-equipo-202611241419';
 const BASE = ['./', './index.html', './styles.css', './app.js', './actividad.js', './store.js', './datos.js', './ui.js', './mecha.js', './widgets.js', './arrastre.js', './icons/iso.png', './icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {

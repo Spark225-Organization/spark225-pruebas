@@ -1,9 +1,9 @@
-// Datos de prueba FICTICIOS. pruebas.spark225.com es público: aquí no va nada real de clientes ni del equipo.
-// Las fechas se calculan a partir de hoy para que el demo siempre se vea vivo.
+// Datos para presentar. Equipo y clientes con nombres reales (solo nombre, sin cifras).
+// Las actividades son ejemplos: no hay datos de pacientes ni montos. Las fechas se calculan a partir de hoy.
 
-export const ESFUERZO_HORAS = { S: 1, M: 3, L: 6 }; // Supuesto para la carga de la semana; se puede ajustar.
+export const ESFUERZO_HORAS = { S: 1, M: 3, L: 6 }; // Supuesto para la carga de la semana.
 export const CAPACIDAD_SEMANA = 30; // Horas planeables por persona a la semana (supuesto).
-export const JORNADA = { inicio: '09:00', fin: '19:00' };
+export const JORNADA = { inicio: '08:00', fin: '20:00' };
 
 export const ESTATUS = [
   { id: 'pendiente', nombre: 'Pendiente', tecla: '1' },
@@ -13,7 +13,7 @@ export const ESTATUS = [
   { id: 'hecho', nombre: 'Hecho', tecla: '5' },
 ];
 
-export const MOTIVOS_FECHA = ['El cliente pidió el cambio', 'Dependencia externa', 'Carga del equipo', 'Error de captura', 'Otro'];
+export const MOTIVOS_FECHA = ['Lo pidió el cliente', 'Dependencia externa', 'Carga del equipo', 'Error de captura', 'Otro'];
 
 export const REPETICION = [
   { id: 'no', nombre: 'No se repite' },
@@ -21,6 +21,18 @@ export const REPETICION = [
   { id: 'semanal', nombre: 'Cada semana' },
   { id: 'mensual', nombre: 'Cada mes' },
   { id: 'cada_n', nombre: 'Cada N días' },
+];
+
+// Catálogo de widgets que cada persona puede agregar a su inicio.
+export const WIDGETS = [
+  { tipo: 'foco', nombre: 'Foco de hoy', tam: 'm', icono: 'foco' },
+  { tipo: 'cliente', nombre: 'Cliente', tam: 's', icono: 'clientes', porCliente: true },
+  { tipo: 'esperando', nombre: 'Esperando cliente', tam: 's', icono: 'espera' },
+  { tipo: 'carga', nombre: 'Carga del equipo', tam: 'm', icono: 'equipo' },
+  { tipo: 'sigue', nombre: 'Lo que sigue', tam: 'm', icono: 'semana' },
+  { tipo: 'archivos', nombre: 'Mis archivos', tam: 'm', icono: 'carpeta' },
+  { tipo: 'personal', nombre: 'Mis pendientes', tam: 'm', icono: 'lista' },
+  { tipo: 'nota', nombre: 'Nota rápida', tam: 's', icono: 'nota' },
 ];
 
 export function hoyISO(d = new Date()) {
@@ -38,6 +50,17 @@ export function sumarDiasHabiles(iso, n) {
   return d;
 }
 
+export const LAYOUT_INICIAL = [
+  { id: 'w1', tipo: 'foco' },
+  { id: 'w2', tipo: 'cliente', cliente: 'carnot' },
+  { id: 'w3', tipo: 'cliente', cliente: 'solumed' },
+  { id: 'w4', tipo: 'personal' },
+  { id: 'w5', tipo: 'esperando' },
+  { id: 'w6', tipo: 'nota' },
+  { id: 'w7', tipo: 'archivos' },
+  { id: 'w8', tipo: 'carga' },
+];
+
 export function semilla() {
   const H = hoyISO();
   const d = (n) => sumarDias(H, n);
@@ -45,81 +68,87 @@ export function semilla() {
   const hace = (dias) => new Date(Date.now() - dias * 86400000).toISOString();
 
   const personas = [
-    { id: 'u1', nombre: 'Andrea Solís', corto: 'Andrea', puesto: 'Growth & Performance', permiso: 'admin', correo: 'andrea@spark225.com', color: '#7A6CE0', clientes: ['aurora', 'nexo', 'orbis', 'dermika'] },
-    { id: 'u2', nombre: 'Rodrigo Vela', corto: 'Rodrigo', puesto: 'Dirección', permiso: 'dueno', correo: 'rodrigo@spark225.com', color: '#C2581F', clientes: ['aurora', 'nexo', 'vertice', 'orbis', 'dermika'] },
-    { id: 'u3', nombre: 'Paula Ortiz', corto: 'Paula', puesto: 'Diseño', permiso: 'colaborador', correo: 'paula@spark225.com', color: '#1F8A73', clientes: ['aurora', 'dermika', 'vertice'] },
-    { id: 'u4', nombre: 'Iván Reyes', corto: 'Iván', puesto: 'Medical', permiso: 'colaborador', correo: 'ivan@spark225.com', color: '#3478C6', clientes: ['orbis', 'nexo'] },
-    { id: 'u5', nombre: 'Sofía Lara', corto: 'Sofía', puesto: 'Cuentas', permiso: 'colaborador', correo: 'sofia@spark225.com', color: '#B8467A', clientes: ['vertice', 'dermika', 'aurora'] },
+    { id: 'adan', nombre: 'Adán Limones', corto: 'Adán', puesto: 'Sr. Growth & Performance', permiso: 'admin', color: '#E47739' },
+    { id: 'carlos', nombre: 'Carlos Gómez', corto: 'Carlos', puesto: 'Dirección', permiso: 'dueno', color: '#4E5964' },
+    { id: 'paco', nombre: 'Paco', corto: 'Paco', puesto: 'Creativo', permiso: 'colaborador', color: '#1F8A73' },
   ];
 
   const clientes = [
-    { id: 'interno', nombre: 'Interno Spark', color: '#8A96A3' },
-    { id: 'aurora', nombre: 'Clínica Aurora', color: '#8B7CF6' },
-    { id: 'nexo', nombre: 'Laboratorio Nexo', color: '#4A9BE8' },
-    { id: 'vertice', nombre: 'Grupo Vértice', color: '#2BB59A' },
-    { id: 'dermika', nombre: 'Dermika', color: '#E0628E' },
-    { id: 'orbis', nombre: 'Orbis Pharma', color: '#A3C94A' },
+    { id: 'carnot', nombre: 'Carnot', color: '#8B7CF6' },
+    { id: 'interno', nombre: 'Spark', color: '#8A96A3' },
+    { id: 'solumed', nombre: 'Solumed', color: '#2BB59A' },
+    { id: 'endodx', nombre: 'Endodx', color: '#4A9BE8' },
+    { id: 'novartis', nombre: 'Novartis', color: '#E0628E' },
+    { id: 'theramex', nombre: 'Theramex', color: '#A3C94A' },
+    { id: 'eisai', nombre: 'Eisai', color: '#38B2C9' },
+    { id: 'leadso', nombre: 'Leadso', color: '#C77DDB' },
+    { id: 'personal', nombre: 'Personal', color: '#B9A27E', privado: true },
   ];
 
+  // Cada cliente tiene un proyecto «General» para que crear sea rápido.
   const proyectos = [
-    { id: 'p-op', nombre: 'Operación interna', cliente: 'interno' },
+    ...clientes.map((c) => ({ id: 'g-' + c.id, nombre: 'General', cliente: c.id })),
     { id: 'p-2027', nombre: 'Plan 2027', cliente: 'interno' },
     { id: 'p-portal', nombre: 'Portal de clientes', cliente: 'interno' },
-    { id: 'p-web', nombre: 'Relanzamiento web', cliente: 'aurora' },
-    { id: 'p-q1', nombre: 'Campaña Q1', cliente: 'nexo' },
-    { id: 'p-cont', nombre: 'Contenido mensual', cliente: 'vertice' },
-    { id: 'p-social', nombre: 'Redes sociales', cliente: 'dermika' },
-    { id: 'p-lanz', nombre: 'Lanzamiento de producto', cliente: 'orbis' },
+    { id: 'p-meta', nombre: 'Campaña Meta', cliente: 'carnot' },
   ];
 
   let n = 0;
   const A = (x) => ({
     id: 'a' + (++n), estatus: 'pendiente', colaboradores: [], checklist: [], enlaces: [], notas: '',
-    repeticion: { tipo: 'no', cada: 7 }, dependeDe: null, foco: null, bloque: null,
+    repeticion: { tipo: 'no', cada: 7 }, dependeDe: null, foco: null, bloque: null, esfuerzo: 'S',
     asignadaPor: x.responsable, creada: hace(3), archivada: null, cerrada: null,
-    fechaOriginal: x.fecha, historial: [{ cuando: hace(3), quien: x.asignadaPor || x.responsable, que: 'creó la actividad' }],
+    fechaOriginal: x.fecha, proyecto: 'g-' + x.cliente,
+    historial: [{ cuando: hace(3), quien: x.asignadaPor || x.responsable, que: 'creó la actividad' }],
     ...x,
   });
 
   const actividades = [
-    A({ titulo: 'Daily del equipo', responsable: 'u1', cliente: 'interno', proyecto: 'p-op', fecha: H, esfuerzo: 'S',
-      bloque: { inicio: '09:11', min: 20 }, repeticion: { tipo: 'diaria', cada: 1 }, estatus: 'hecho', cerrada: ahora,
-      colaboradores: ['u2', 'u3', 'u4', 'u5'] }),
-    A({ titulo: 'Deck de 5 láminas para la junta de dirección', responsable: 'u1', cliente: 'interno', proyecto: 'p-2027', fecha: H, esfuerzo: 'M',
-      bloque: { inicio: '10:00', min: 90 }, estatus: 'en_curso', foco: H, colaboradores: ['u2'], asignadaPor: 'u2',
-      checklist: [{ id: 'c1', texto: 'Estructura de las 5 láminas', hecho: true }, { id: 'c2', texto: 'Datos de cierre de noviembre', hecho: true }, { id: 'c3', texto: 'Propuesta de prioridades 2027', hecho: false }, { id: 'c4', texto: 'Revisión con Rodrigo', hecho: false }],
-      enlaces: [{ id: 'e1', titulo: 'Carpeta del deck en Drive', url: 'https://drive.google.com/' }] }),
-    A({ titulo: 'Revisar copy de la landing de servicios', responsable: 'u1', cliente: 'aurora', proyecto: 'p-web', fecha: H, esfuerzo: 'S',
-      bloque: { inicio: '12:00', min: 45 }, foco: H, colaboradores: ['u3'] }),
-    A({ titulo: 'Propuesta de contenido de enero', responsable: 'u1', cliente: 'dermika', proyecto: 'p-social', fecha: H, esfuerzo: 'M',
-      bloque: { inicio: '13:30', min: 60 }, foco: H, colaboradores: ['u5'] }),
-    A({ titulo: 'Pedir acceso al registrador del dominio', responsable: 'u2', cliente: 'interno', proyecto: 'p-portal', fecha: H, esfuerzo: 'S', asignadaPor: 'u1' }),
-    A({ titulo: 'Configurar DNS de portal.spark225.com', responsable: 'u1', cliente: 'interno', proyecto: 'p-portal', fecha: H, esfuerzo: 'S',
-      bloque: { inicio: '16:00', min: 45 }, dependeDe: 'a5' }),
-    A({ titulo: 'Entrega de banners para la campaña Q1', responsable: 'u1', cliente: 'nexo', proyecto: 'p-q1', fecha: H, esfuerzo: 'M',
-      estatus: 'esperando', colaboradores: ['u3'], historial: [{ cuando: hace(3), quien: 'u1', que: 'creó la actividad' }, { cuando: hace(1), quien: 'u1', que: 'cambió el estatus a Esperando cliente' }] }),
-    A({ titulo: 'Reporte mensual de KPIs', responsable: 'u1', cliente: 'orbis', proyecto: 'p-lanz', fecha: d(-1), fechaOriginal: d(-3), esfuerzo: 'M',
-      repeticion: { tipo: 'mensual', cada: 1 }, colaboradores: ['u4'],
-      historial: [{ cuando: hace(6), quien: 'u1', que: 'creó la actividad' }, { cuando: hace(3), quien: 'u1', que: 'movió la fecha límite', motivo: 'Dependencia externa: faltaban los datos de la plataforma' }] }),
-    A({ titulo: 'Validar claims del folleto con el área médica', responsable: 'u4', cliente: 'orbis', proyecto: 'p-lanz', fecha: d(1), esfuerzo: 'M', asignadaPor: 'u1', colaboradores: ['u1'] }),
-    A({ titulo: 'Calendario de publicaciones de diciembre', responsable: 'u5', cliente: 'vertice', proyecto: 'p-cont', fecha: d(2), esfuerzo: 'M', estatus: 'en_curso' }),
-    A({ titulo: 'Diseño de 6 piezas para redes', responsable: 'u3', cliente: 'dermika', proyecto: 'p-social', fecha: d(1), esfuerzo: 'L', estatus: 'en_curso', asignadaPor: 'u1' }),
-    A({ titulo: 'Maquetar la nueva página de inicio', responsable: 'u3', cliente: 'aurora', proyecto: 'p-web', fecha: d(3), esfuerzo: 'L', asignadaPor: 'u1' }),
-    A({ titulo: 'Retoque de fotografías de producto', responsable: 'u3', cliente: 'orbis', proyecto: 'p-lanz', fecha: d(2), esfuerzo: 'M' }),
-    A({ titulo: 'Revisión de presupuesto de pauta Q1', responsable: 'u2', cliente: 'nexo', proyecto: 'p-q1', fecha: d(4), esfuerzo: 'S' }),
-    A({ titulo: 'Plan de comunicación 2027 (LinkedIn y PR)', responsable: 'u1', cliente: 'interno', proyecto: 'p-2027', fecha: d(3), esfuerzo: 'L', colaboradores: ['u2', 'u5'] }),
-    A({ titulo: 'Semáforo de KPIs por cliente', responsable: 'u1', cliente: 'interno', proyecto: 'p-op', fecha: d(2), esfuerzo: 'M' }),
-    A({ titulo: 'Minuta de la junta con Grupo Vértice', responsable: 'u5', cliente: 'vertice', proyecto: 'p-cont', fecha: H, esfuerzo: 'S', estatus: 'hecho', cerrada: ahora, asignadaPor: 'u1' }),
-    A({ titulo: 'Guion del video de lanzamiento', responsable: 'u4', cliente: 'orbis', proyecto: 'p-lanz', fecha: d(4), esfuerzo: 'M', estatus: 'bloqueado',
-      notas: 'Falta la aprobación del área médica del cliente.' }),
-    A({ titulo: 'Respuestas a comentarios del cliente', responsable: 'u5', cliente: 'aurora', proyecto: 'p-web', fecha: d(-2), esfuerzo: 'S', estatus: 'esperando' }),
-    A({ titulo: 'Facturación mensual de colaboradores', responsable: 'u2', cliente: 'interno', proyecto: 'p-op', fecha: d(5), esfuerzo: 'S', repeticion: { tipo: 'mensual', cada: 1 } }),
+    A({ titulo: 'Daily', responsable: 'adan', cliente: 'interno', fecha: H, bloque: { inicio: '09:11', min: 20 },
+      repeticion: { tipo: 'diaria', cada: 1 }, estatus: 'hecho', cerrada: ahora, colaboradores: ['carlos', 'paco'] }),
+    A({ titulo: 'Deck de 5 láminas', responsable: 'adan', cliente: 'interno', proyecto: 'p-2027', fecha: H, esfuerzo: 'M',
+      bloque: { inicio: '10:00', min: 90 }, estatus: 'en_curso', foco: H, colaboradores: ['carlos'], asignadaPor: 'carlos',
+      checklist: [{ id: 'c1', texto: 'Estructura', hecho: true }, { id: 'c2', texto: 'Cierre de noviembre', hecho: true }, { id: 'c3', texto: 'Prioridades 2027', hecho: false }, { id: 'c4', texto: 'Revisión con Carlos', hecho: false }] }),
+    A({ titulo: 'Revisar campaña Meta', responsable: 'adan', cliente: 'carnot', proyecto: 'p-meta', fecha: H, bloque: { inicio: '12:00', min: 45 }, foco: H, colaboradores: ['paco'] }),
+    A({ titulo: 'Propuesta Theramex', responsable: 'adan', cliente: 'theramex', fecha: H, esfuerzo: 'M', bloque: { inicio: '13:30', min: 60 }, foco: H }),
+    A({ titulo: 'Acceso al registrador del dominio', responsable: 'carlos', cliente: 'interno', proyecto: 'p-portal', fecha: H, asignadaPor: 'adan' }),
+    A({ titulo: 'DNS de portal.spark225.com', responsable: 'adan', cliente: 'interno', proyecto: 'p-portal', fecha: H, bloque: { inicio: '16:00', min: 45 }, dependeDe: 'a5' }),
+    A({ titulo: 'Endodx · entregables día 5', responsable: 'adan', cliente: 'endodx', fecha: H, esfuerzo: 'M', estatus: 'esperando', colaboradores: ['paco'],
+      historial: [{ cuando: hace(3), quien: 'adan', que: 'creó la actividad' }, { cuando: hace(1), quien: 'adan', que: 'cambió el estatus a Esperando cliente' }] }),
+    A({ titulo: 'Reporte mensual Solumed', responsable: 'adan', cliente: 'solumed', fecha: d(-1), fechaOriginal: d(-3), esfuerzo: 'M', repeticion: { tipo: 'mensual', cada: 1 },
+      historial: [{ cuando: hace(6), quien: 'adan', que: 'creó la actividad' }, { cuando: hace(3), quien: 'adan', que: 'movió la fecha límite', motivo: 'Dependencia externa' }] }),
+    A({ titulo: 'Plan 2027 · LinkedIn y PR', responsable: 'adan', cliente: 'interno', proyecto: 'p-2027', fecha: d(1), esfuerzo: 'L', bloque: { inicio: '11:00', min: 120 }, colaboradores: ['carlos'] }),
+    A({ titulo: 'KPIs con semáforo', responsable: 'adan', cliente: 'interno', fecha: d(2), esfuerzo: 'M' }),
+    A({ titulo: 'Video con IA', responsable: 'adan', cliente: 'carnot', proyecto: 'p-meta', fecha: d(3), esfuerzo: 'M', colaboradores: ['paco'] }),
+    A({ titulo: 'Alcance Novartis', responsable: 'adan', cliente: 'novartis', fecha: d(2), esfuerzo: 'M', colaboradores: ['carlos'] }),
+    A({ titulo: 'Piezas campaña Carnot', responsable: 'paco', cliente: 'carnot', proyecto: 'p-meta', fecha: d(1), esfuerzo: 'L', estatus: 'en_curso', asignadaPor: 'adan' }),
+    A({ titulo: 'Calendario de contenido Eisai', responsable: 'paco', cliente: 'eisai', fecha: d(2), esfuerzo: 'M' }),
+    A({ titulo: 'Copys de redes Leadso', responsable: 'paco', cliente: 'leadso', fecha: H, esfuerzo: 'S', bloque: { inicio: '11:00', min: 60 } }),
+    A({ titulo: 'Banners Solumed', responsable: 'paco', cliente: 'solumed', fecha: d(3), esfuerzo: 'M', asignadaPor: 'adan' }),
+    A({ titulo: 'Revisión del SSAM', responsable: 'carlos', cliente: 'interno', fecha: d(1), esfuerzo: 'S', colaboradores: ['adan'] }),
+    A({ titulo: 'Junta con Novartis', responsable: 'carlos', cliente: 'novartis', fecha: d(4), esfuerzo: 'S', bloque: { inicio: '10:00', min: 60 } }),
   ];
 
   const avisos = [
-    { id: 'n1', para: 'u1', cuando: hace(0.05), leido: false, tipo: 'cierre', texto: 'Sofía cerró «Minuta de la junta con Grupo Vértice».', actividad: 'a17' },
-    { id: 'n2', para: 'u1', cuando: hace(0.6), leido: true, tipo: 'asignacion', texto: 'Rodrigo te asignó «Deck de 5 láminas para la junta de dirección».', actividad: 'a2' },
+    { id: 'n1', para: 'adan', cuando: hace(0.05), leido: false, tipo: 'cierre', texto: 'Paco cerró «Copys de redes Leadso».', actividad: 'a15' },
+    { id: 'n2', para: 'adan', cuando: hace(0.6), leido: true, tipo: 'asignacion', texto: 'Carlos te asignó «Deck de 5 láminas».', actividad: 'a2' },
   ];
 
-  return { version: 1, creado: H, personas, clientes, proyectos, actividades, avisos, papeleraDias: 30 };
+  const personal = {
+    adan: {
+      archivos: [
+        { id: 'f1', titulo: 'Drive Spark', url: 'https://drive.google.com/' },
+        { id: 'f2', titulo: 'Master Entregables', url: 'https://www.notion.so/' },
+        { id: 'f3', titulo: 'Tablero de KPIs', url: 'https://drive.google.com/' },
+      ],
+      pendientes: [
+        { id: 'p1', texto: 'Leer Scaling Up, cap. 3', hecho: false },
+        { id: 'p2', texto: 'Ordenar facturas del mes', hecho: false },
+        { id: 'p3', texto: 'Respaldo de la Mac', hecho: true },
+      ],
+      nota: 'Llevar a la daily: estado del DNS y del portal.',
+    },
+  };
+
+  return { version: 2, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, papeleraDias: 30 };
 }

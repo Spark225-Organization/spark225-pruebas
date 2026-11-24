@@ -31,6 +31,14 @@ const P = {
   reset: 'M4 4v6h6M20 20v-6h-6M5.6 15A8 8 0 0019 14M18.4 9A8 8 0 005 10',
   drive: 'M8 3h8l6 11-4 7H6l-4-7z M8 3l6 11M2 14h12M16 3L10 14',
   ojo: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 100 6 3 3 0 000-6z',
+  carpeta: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z',
+  nota: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5',
+  ajustes: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4',
+  menos: 'M6 12h12',
+  persona: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5',
+  mas2: 'M12 5v14M5 12h14',
+  externo: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5',
+  arrastre: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
 };
 export function I(nombre, extra = '') {
   return html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class=${'i ' + extra}><path d=${P[nombre] || ''} /></svg>`;

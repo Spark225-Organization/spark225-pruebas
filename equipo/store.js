@@ -1,9 +1,9 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS } from './datos.js';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js';
 
-const CLAVE = 'ssam-equipo-v1';
+const CLAVE = 'ssam-equipo-v2';
 const DIA_MS = 86400000;
 let estado = cargar();
 const oyentes = new Set();
@@ -13,7 +13,7 @@ function cargar() {
     const crudo = localStorage.getItem(CLAVE);
     if (crudo) {
       const e = JSON.parse(crudo);
-      if (e && e.version === 1) return purgar(e);
+      if (e && e.version === 2) return purgar(e);
     }
   } catch (_) { /* almacenamiento no disponible: se usa la semilla en memoria */ }
   return semilla();
@@ -182,3 +182,19 @@ export function borrarDefinitivo(id, uId) {
 export function marcarAvisosLeidos(uId) { estado.avisos.forEach((n) => { if (n.para === uId) n.leido = true; }); guardar(); }
 
 export function horasEstimadas(a) { return ({ S: 1, M: 3, L: 6 })[a.esfuerzo] || 0; }
+
+// ---------- Inicio personalizable y espacio personal ----------
+export function layoutDe(uId) { return estado.layouts[uId] || LAYOUT_INICIAL; }
+export function guardarLayout(uId, lista) { estado.layouts = { ...estado.layouts, [uId]: lista }; guardar(); }
+export function personalDe(uId) { return estado.personal[uId] || { archivos: [], pendientes: [], nota: '' }; }
+export function guardarPersonal(uId, cambios) { estado.personal = { ...estado.personal, [uId]: { ...personalDe(uId), ...cambios } }; guardar(); }
+
+// Mover con arrastrar: a otra hora, a otro día o fuera de la mecha.
+export function mover(id, { fecha, bloque }, uId, motivo) {
+  const a = act(id); if (!a) return;
+  const cambios = {};
+  if (fecha && fecha !== a.fecha) cambios.fecha = fecha;
+  if (bloque !== undefined) cambios.bloque = bloque;
+  if (Object.keys(cambios).length) actualizar(id, cambios, uId, motivo);
+}
+export function visiblePara(a, uId) { return a.cliente !== 'personal' || a.responsable === uId; }

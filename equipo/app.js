@@ -1,18 +1,19 @@
 import { html, render, useState, useEffect, useRef, useCallback } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241453';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241457';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal,
-} from './store.js?v=202611241453';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241453';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241453';
-import { AltaRapida } from './mecha.js?v=202611241453';
-import { Inicio } from './vistas.js?v=202611241453';
-import { Mapa } from './mapa.js?v=202611241453';
-import { Chat } from './chat.js?v=202611241453';
-import { Bienvenida, Recorrido } from './tour.js?v=202611241453';
-import { useArrastre } from './arrastre.js?v=202611241453';
-import { Galeria } from './widgets.js?v=202611241453';
+} from './store.js?v=202611241457';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241457';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241457';
+import { AltaRapida } from './mecha.js?v=202611241457';
+import { Inicio } from './vistas.js?v=202611241457';
+import { Mapa } from './mapa.js?v=202611241457';
+import { Chat } from './chat.js?v=202611241457';
+import { Login } from './login.js?v=202611241457';
+import { Bienvenida, Recorrido } from './tour.js?v=202611241457';
+import { useArrastre } from './arrastre.js?v=202611241457';
+import { Galeria } from './widgets.js?v=202611241457';
 
 function useStore() {
   const [, set] = useState(0);
@@ -47,7 +48,8 @@ function App() {
   const [ultimoCliente, setUltimoCliente] = useState('interno');
   const [galeria, setGaleria] = useState(null);
   const [chat, setChat] = useState(null);
-  const [tour, setTour] = useState(() => (leerLocal('ssam-equipo-tour', '') ? null : 'bienvenida'));
+  const [sesion, setSesion] = useState(() => leerLocal('ssam-equipo-sesion', ''));
+  const [tour, setTour] = useState(null);
 
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
@@ -107,6 +109,12 @@ function App() {
     return () => removeEventListener('keydown', f);
   });
 
+  // Login de demostración: con cualquier dato entra y arranca el recorrido.
+  if (!sesion) return html`<${Login} personas=${db.personas} entrar=${(id) => {
+    setYo(id); escribirLocal('ssam-equipo-sesion', '1'); setSesion('1'); location.hash = '#/'; setTimeout(() => setTour('pasos'), 450);
+  }} />`;
+  const salir = () => { try { localStorage.removeItem('ssam-equipo-sesion'); } catch (_) { /* sin almacenamiento */ } setPerfil(false); setTour(null); setSesion(''); };
+
   const yoP = db.personas.find((p) => p.id === yo);
   const misAvisos = db.avisos.filter((n) => n.para === yo);
   const sinLeer = misAvisos.filter((n) => !n.leido).length;
@@ -150,7 +158,7 @@ function App() {
         pedirMotivo=${(f) => setMotivo({ ok: f })} />`}
       ${motivo && html`<${HojaMotivo} cancelar=${() => setMotivo(null)} elegir=${(m) => { const f = motivo.ok; setMotivo(null); f(m); }} />`}
       ${menu && html`<${MenuEstatus} menu=${menu} cerrar=${() => setMenu(null)} ctx=${ctx} />`}
-      ${perfil && html`<${Perfil} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} />`}
+      ${perfil && html`<${Perfil} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
@@ -279,7 +287,7 @@ function MenuEstatus({ menu, cerrar, ctx }) {
     </div>`;
 }
 
-function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido }) {
+function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
@@ -292,6 +300,7 @@ function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido }) {
         <a class="op" href="#/papelera" onClick=${cerrar}>${I('papelera')}<span>Papelera</span></a>
         <a class="op" href="#/historial" onClick=${cerrar}>${I('historial')}<span>Historial</span></a>
         <button class="op" onClick=${() => { store.restablecer(); toast('Datos de prueba restablecidos'); cerrar(); }}>${I('reset')}<span>Reiniciar demo</span></button>
+        <button class="op" onClick=${salir}>${I('salir')}<span>Cerrar sesión</span></button>
       </div>
       <div class="hoja-t chico">Ver como</div>
       <div class="ver-como">${db.personas.map((x) => html`<button key=${x.id} aria-pressed=${x.id === yo} onClick=${() => { setYo(x.id); cerrar(); }}><${Avatar} p=${x} grande /><span>${x.corto}</span></button>`)}</div>

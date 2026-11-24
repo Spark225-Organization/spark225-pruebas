@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241453';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241457';
 
 const CLAVE = 'ssam-equipo-v4';
 const DIA_MS = 86400000;

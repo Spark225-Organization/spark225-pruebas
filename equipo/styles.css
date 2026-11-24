@@ -808,6 +808,41 @@ textarea.control { height: auto; padding: 10px 12px; resize: vertical; line-heig
 .tg-puntos i { width: 6px; height: 6px; border-radius: 50%; background: var(--tinta-4); }
 .tg-puntos i.on { background: var(--chispa); width: 16px; border-radius: 3px; }
 
+/* ---------- Login de demostración ---------- */
+.login { position: fixed; inset: 0; display: grid; place-items: center; padding: 20px; overflow: hidden;
+  background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--chispa) 18%, var(--noche)), var(--noche) 70%); }
+.login-fondo { position: absolute; inset: 0; pointer-events: none; }
+.lf-linea { position: absolute; left: 0; right: 0; top: 72%; height: 2px; background: linear-gradient(90deg, transparent, var(--trazo-fuerte) 20%, var(--trazo-fuerte) 80%, transparent); }
+.lf-linea::after { content: ""; position: absolute; left: 0; top: 0; height: 2px; width: 0; background: linear-gradient(90deg, transparent, #F5C245, #E47739); animation: lf-quema 6s linear infinite; }
+.lf-chispa { position: absolute; top: calc(72% - 13px); left: 0; width: 28px; height: 28px; animation: lf-chispa 6s linear infinite; }
+.lf-chispa svg { width: 28px; height: 28px; filter: drop-shadow(0 0 10px rgba(228, 119, 57, .8)); }
+@keyframes lf-quema { from { width: 0; } to { width: 100%; } }
+@keyframes lf-chispa { from { transform: translateX(-14px) rotate(0); } to { transform: translateX(calc(100vw - 14px)) rotate(360deg); } }
+.login-caja { position: relative; z-index: 1; width: min(400px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 28px 24px 18px; border-radius: 28px;
+  background: var(--vidrio); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); box-shadow: var(--sombra-pop); animation: caer-solo 420ms var(--ease); }
+.login-marca { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.login-marca img { width: 44px; }
+.login-marca b { display: block; font: 600 24px Sora, sans-serif; letter-spacing: -0.03em; }
+.login-marca span { font-size: 13px; color: var(--tinta-3); }
+.login-tabs { margin-bottom: 4px; }
+.login-tabs button { height: 34px; }
+.login-t { font: 600 20px Sora, sans-serif; margin: 0 0 4px; }
+.login-campo { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border-radius: 14px; background: var(--campo); border: 1px solid var(--trazo); color: var(--tinta-3); transition: border-color 140ms, box-shadow 140ms; }
+.login-campo:focus-within { border-color: var(--chispa); box-shadow: 0 0 0 3px rgba(228, 119, 57, .18); color: var(--chispa); }
+.login-campo input { flex: 1; min-width: 0; border: 0; background: none; font-size: 15px; color: var(--tinta); }
+.login-campo input:focus { outline: none; }
+.login-nota { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 12px; color: var(--tinta-2); }
+.login-nota .i { width: 14px; height: 14px; color: var(--chispa); }
+.login-nota.ok { color: var(--tinta); }
+.login-btn { height: 48px; font-size: 15px; margin-top: 4px; }
+.login-btn:disabled { opacity: .85; }
+.login-google { height: 46px; background: var(--carbon); box-shadow: var(--anillo); }
+.login-pie { display: flex; justify-content: center; min-height: 20px; }
+.enlace { border: 0; background: none; color: var(--tinta-2); font-size: 13px; padding: 4px; }
+.enlace:hover { color: var(--chispa); }
+.login-demo { margin: 2px 0 0; text-align: center; font-size: 11px; color: var(--tinta-3); }
+.girando { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: girar 700ms linear infinite; }
+
 /* Mini animaciones del recorrido */
 .tg-nav { display: flex; align-items: center; gap: 4px; }
 .bv-gestos { display: flex; justify-content: center; gap: 18px; margin: 4px 0 14px; font-size: 12px; color: var(--tinta-2); }

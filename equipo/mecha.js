@@ -1,9 +1,9 @@
 // El día: la mecha (timeline) con arrastrar y soltar, la bandeja «sin hora» y el alta rápida.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTATUS } from './datos.js?v=202611241453';
-import { vigentes, participa, estatusVisible, dependenciaAbierta, visiblePara, crear, nuevaVacia } from './store.js?v=202611241453';
-import { I, Anillo, Estrella, Avatar, minutos, hhmm, duracion, fechaRelativa } from './ui.js?v=202611241453';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241453';
+import { hoyISO, ESTATUS } from './datos.js?v=202611241457';
+import { vigentes, participa, estatusVisible, dependenciaAbierta, visiblePara, crear, nuevaVacia } from './store.js?v=202611241457';
+import { I, Anillo, Estrella, Avatar, minutos, hhmm, duracion, fechaRelativa } from './ui.js?v=202611241457';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241457';
 
 const K = 1.15; // px por minuto
 const SNAP = 15;

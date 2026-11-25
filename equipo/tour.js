@@ -1,7 +1,7 @@
 // Recorrido de inducción: bienvenida y pasos con foco sobre cada parte de la app.
 // Cada paso trae una mini animación que muestra el gesto (arrastrar, tocar, conectar).
 import { html, useState, useEffect, useLayoutEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611251540';
+import { I, Estrella } from './ui.js?v=202611251720';
 
 export const PASOS = [
   { sel: '[data-tour="dias"]', demo: 'dias', t: 'Tus días', d: 'Toca un día para verlo. Para mover una tarea a otro día, arrástrala y suéltala sobre el día que quieras.' },

@@ -1,6 +1,6 @@
 {
-  "name": "SSAM · Equipo Spark225",
-  "short_name": "SSAM",
+  "name": "Portal de colaboradores · Spark225",
+  "short_name": "Colaboradores",
   "description": "Actividades y pendientes del equipo de Spark225.",
   "lang": "es-MX",
   "start_url": "./",

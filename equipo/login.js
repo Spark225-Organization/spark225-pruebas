@@ -1,8 +1,8 @@
 // Entrada real con Supabase: correo @spark225.com + contraseña, o Google.
 // La demo con datos ficticios sigue disponible para enseñar el sistema sin cuenta.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611251540';
-import { entrar, registrar, recuperar, nuevaClave, entrarConGoogle, conexionSegura, salirNube } from './nube.js?v=202611251540';
+import { I, Estrella } from './ui.js?v=202611251720';
+import { entrar, registrar, recuperar, nuevaClave, entrarConGoogle, conexionSegura, salirNube } from './nube.js?v=202611251720';
 
 const traducir = (m = '') => {
   if (/invalid login/i.test(m)) return 'Correo o contraseña incorrectos.';
@@ -20,7 +20,7 @@ function Marco({ children, onSubmit }) {
     <div class="login">
       <div class="login-fondo" aria-hidden="true"><span class="lf-linea"></span><span class="lf-chispa"><${Estrella} /></span></div>
       <form class="login-caja" onSubmit=${(e) => { e.preventDefault(); onSubmit?.(); }}>
-        <div class="login-marca"><img src="./icons/iso.png" alt="" /><div><b>SSAM</b><span>Equipo Spark225</span></div></div>
+        <div class="login-marca"><img src="./icons/iso.png" alt="" /><div><b>Portal de colaboradores</b><span>Spark225</span></div></div>
         ${children}
       </form>
     </div>`;

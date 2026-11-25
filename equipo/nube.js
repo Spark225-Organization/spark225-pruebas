@@ -1,7 +1,7 @@
 // Conexión con Supabase: sesión, carga inicial, guardado con reintentos y cambios en vivo.
 // La app trabaja en memoria (rápida) y esta capa sube cada cambio en segundo plano.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611251540';
+import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611251720';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'ssam-equipo-auth' },
@@ -19,8 +19,13 @@ export async function sesionActual() {
 }
 export function alCambiarSesion(f) {
   const { data } = sb.auth.onAuthStateChange((evento, sesion) => {
-    // Google entrega un permiso temporal para leer correo y calendario: se guarda solo en este navegador.
+    // Google entrega un permiso temporal (1 h) para leer correo y calendario: se guarda en este navegador.
     if (sesion?.provider_token) guardarTokenGoogle(sesion.provider_token);
+    // Y una renovación: se guarda en la bóveda del servidor para que el permiso no venza.
+    if (sesion?.provider_refresh_token) {
+      colaborador('google_guardar', { refresh_token: sesion.provider_refresh_token })
+        .then((r) => r.ok && marcarGoogle(true)).catch(() => {});
+    }
     f(evento, sesion);
   });
   return () => data.subscription.unsubscribe();
@@ -36,7 +41,7 @@ export const entrarConGoogle = () => sb.auth.signInWithOAuth({
   options: { redirectTo: URL_APP, scopes: ALCANCES_GOOGLE, queryParams: { access_type: 'offline', prompt: 'consent', hd: 'spark225.com' } },
 });
 export async function salirNube() {
-  try { localStorage.removeItem('ssam-google'); } catch (_) { /* nada */ }
+  try { localStorage.removeItem('ssam-google'); localStorage.removeItem('ssam-google-conectado'); } catch (_) { /* nada */ }
   await sb.auth.signOut();
 }
 
@@ -46,6 +51,53 @@ function guardarTokenGoogle(token) {
 }
 export function tokenGoogle() {
   try { const g = JSON.parse(localStorage.getItem('ssam-google') || 'null'); return g && g.vence > Date.now() ? g.token : null; } catch (_) { return null; }
+}
+// ¿Google está conectado? (permiso vigente en este navegador o renovación guardada en el servidor)
+export function marcarGoogle(si) {
+  try { si ? localStorage.setItem('ssam-google-conectado', '1') : localStorage.removeItem('ssam-google-conectado'); } catch (_) { /* nada */ }
+}
+export function googleConectado() {
+  try { return !!tokenGoogle() || localStorage.getItem('ssam-google-conectado') === '1'; } catch (_) { return !!tokenGoogle(); }
+}
+// Permiso fresco: el del navegador si sigue vigente; si no, el servidor lo renueva sin pedir nada.
+let renovando = null;
+export async function obtenerTokenGoogle() {
+  const t = tokenGoogle();
+  if (t) return t;
+  if (!googleConectado()) return null;
+  if (!renovando) {
+    renovando = colaborador('google_token')
+      .then((r) => {
+        if (r.ok && r.access_token) {
+          try { localStorage.setItem('ssam-google', JSON.stringify({ token: r.access_token, vence: Date.now() + Math.max(60, (r.expira_en || 3600) - 300) * 1000 })); } catch (_) { /* nada */ }
+          return r.access_token;
+        }
+        if (r.reconectar) marcarGoogle(false);
+        return null;
+      })
+      .catch(() => null)
+      .finally(() => { renovando = null; });
+  }
+  return renovando;
+}
+
+// ---------- Conexiones del colaborador (función «colaborador» del servidor) ----------
+export async function colaborador(accion, datos = {}) {
+  const { data } = await sb.auth.getSession();
+  const jwt = data.session?.access_token;
+  if (!jwt) return { ok: false, error: 'Sin sesión' };
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/colaborador`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + jwt, apikey: SUPABASE_ANON, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, ...datos }),
+  });
+  return r.json().catch(() => ({ ok: false, error: 'Respuesta inválida' }));
+}
+export const buscarNotion = () => colaborador('notion_buscar');
+export const confirmarNotion = (notion_user) => colaborador('notion_confirmar', { notion_user });
+export async function terminarBienvenida(id) {
+  const { error } = await sb.from('perfiles').update({ bienvenida: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
 }
 
 // ---------- Datos ----------

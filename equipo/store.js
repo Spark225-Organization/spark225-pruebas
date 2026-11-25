@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251540';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251720';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -83,7 +83,7 @@ export const store = {
   importar(texto) {
     let e;
     try { e = JSON.parse(texto); } catch (_) { return { ok: false, motivo: 'El archivo no es un respaldo válido.' }; }
-    if (!e || !(e.version === 4 || e.version === VERSION_DATOS) || !Array.isArray(e.actividades)) return { ok: false, motivo: 'El archivo no es un respaldo del SSAM.' };
+    if (!e || !(e.version === 4 || e.version === VERSION_DATOS) || !Array.isArray(e.actividades)) return { ok: false, motivo: 'El archivo no es un respaldo del Portal de colaboradores.' };
     estado = purgar(reparar(migrar(e))); guardar();
     return { ok: true, n: estado.actividades.length };
   },
@@ -413,7 +413,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611251540';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611251720';
 
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube

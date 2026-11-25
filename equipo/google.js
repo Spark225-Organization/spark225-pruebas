@@ -1,15 +1,21 @@
 // Google: correo (solo lectura) y agenda de hoy, con el permiso que da Google al entrar.
 // Las transcripciones de juntas (notas de Gemini, Plaud, etc.) se vuelven minuta para todo el equipo.
-import { tokenGoogle } from './nube.js?v=202611251540';
+import { obtenerTokenGoogle } from './nube.js?v=202611251720';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const ES_TRANSCRIPCION = /(notas?\b.*(reuni|junta|meeting)|transcrip|minuta|meeting notes|notes by gemini|resumen de la reuni)/i;
 const REMITENTES_NOTAS = /(gemini-notes@google\.com|plaud|otter|fireflies|fathom|tldv|read\.ai)/i;
 
 async function pedir(url) {
-  const t = tokenGoogle();
+  const t = await obtenerTokenGoogle();
   if (!t) throw Object.assign(new Error('Conecta Google'), { sinPermiso: true });
-  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + t } });
+  let r = await fetch(url, { headers: { Authorization: 'Bearer ' + t } });
+  if (r.status === 401) {
+    // Venció antes de tiempo: se pide uno nuevo al servidor y se reintenta una vez.
+    try { localStorage.removeItem('ssam-google'); } catch (_) { /* nada */ }
+    const t2 = await obtenerTokenGoogle();
+    if (t2) r = await fetch(url, { headers: { Authorization: 'Bearer ' + t2 } });
+  }
   if (r.status === 401 || r.status === 403) throw Object.assign(new Error('El permiso de Google venció'), { sinPermiso: true });
   if (!r.ok) throw new Error('Google respondió ' + r.status);
   return r.json();

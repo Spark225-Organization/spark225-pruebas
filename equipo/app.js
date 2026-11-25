@@ -1,22 +1,23 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251540';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251720';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611251540';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251540';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251540';
-import { AltaRapida } from './mecha.js?v=202611251540';
-import { Inicio } from './vistas.js?v=202611251540';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251540';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611251540';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251540';
-import { Chat } from './chat.js?v=202611251540';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251540';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion } from './nube.js?v=202611251540';
-import { Bienvenida, Recorrido } from './tour.js?v=202611251540';
-import { useArrastre } from './arrastre.js?v=202611251540';
-import { Galeria } from './widgets.js?v=202611251540';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611251720';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251720';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251720';
+import { AltaRapida } from './mecha.js?v=202611251720';
+import { Inicio } from './vistas.js?v=202611251720';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251720';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611251720';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251720';
+import { Chat } from './chat.js?v=202611251720';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251720';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611251720';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611251720';
+import { Bienvenida, Recorrido } from './tour.js?v=202611251720';
+import { useArrastre } from './arrastre.js?v=202611251720';
+import { Galeria } from './widgets.js?v=202611251720';
 
 function useStore() {
   const [, set] = useState(0);
@@ -63,6 +64,8 @@ function App() {
   const [asis, setAsis] = useState(null);
   const [menuCrear, setMenuCrear] = useState(false);
   const [minuta, setMinuta] = useState(null);
+  // Bienvenida: 'inicio' la primera vez; 'conexiones' desde el perfil.
+  const [bienvenida, setBienvenida] = useState(null);
 
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
@@ -86,7 +89,7 @@ function App() {
       vistos.current.add(n.id);
       if (n.leido) return;
       toast(n.texto, n.actividad ? { texto: 'Ver', f: () => setCajon({ id: n.actividad }) } : null);
-      try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('SSAM', { body: n.texto, icon: './icons/icon-192.png', tag: n.id }); } catch (_) { /* sin notificaciones */ }
+      try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Portal de colaboradores', { body: n.texto, icon: './icons/icon-192.png', tag: n.id }); } catch (_) { /* sin notificaciones */ }
     });
   }, [db.avisos, fase, yo]);
   // Arranque: con sesión de Supabase carga tus datos reales; sin sesión, pantalla de entrada (o la demo si la elegiste).
@@ -98,10 +101,15 @@ function App() {
       setFase('cargando');
       const p = await miPerfil(s.user.id);
       if (!p || p.permiso === 'pendiente') { setCorreoPend(s.user.email); setFase('pendiente'); return; }
+      if (p.google_conectado) marcarGoogle(true);
       await conectarNube(p);
       setYo(p.id);
       setFase('nube');
-      if (!leerLocal('ssam-equipo-tour-' + p.id, '')) { escribirLocal('ssam-equipo-tour-' + p.id, '1'); setTimeout(() => setTour('pasos'), 500); }
+      // Primera vez (o regreso de conectar Google a mitad de la bienvenida): bienvenida antes del recorrido.
+      let pasoPendiente = null;
+      try { pasoPendiente = localStorage.getItem('ssam-bienvenida-paso'); } catch (_) { /* nada */ }
+      if (!p.bienvenida || pasoPendiente) setTimeout(() => setBienvenida(p.bienvenida ? 'conexiones' : 'inicio'), 300);
+      else if (!leerLocal('ssam-equipo-tour-' + p.id, '')) { escribirLocal('ssam-equipo-tour-' + p.id, '1'); setTimeout(() => setTour('pasos'), 500); }
     } catch (err) { setFallo(String(err?.message || err)); setFase('error'); }
     finally { iniciando.current = false; }
   };
@@ -233,7 +241,11 @@ function App() {
         pedirMotivo=${(f) => setMotivo({ ok: f })} />`}
       ${motivo && html`<${HojaMotivo} cancelar=${() => setMotivo(null)} elegir=${(m) => { const f = motivo.ok; setMotivo(null); f(m); }} />`}
       ${menu && html`<${MenuEstatus} menu=${menu} cerrar=${() => setMenu(null)} ctx=${ctx} />`}
-      ${perfil && html`<${Perfil} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
+      ${bienvenida && html`<${Conexiones} persona=${yoP} desdeConexiones=${bienvenida === 'conexiones'} toast=${toast} cerrar=${() => {
+        setBienvenida(null);
+        if (!leerLocal('ssam-equipo-tour-' + yo, '')) { escribirLocal('ssam-equipo-tour-' + yo, '1'); setTimeout(() => setTour('pasos'), 400); }
+      }} />`}
+      ${perfil && html`<${Perfil} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
@@ -422,7 +434,7 @@ function Protegido({ children }) {
   return children;
 }
 
-function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir }) {
+function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir, conexiones }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
@@ -432,6 +444,7 @@ function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido
       <div class="perfil-op">
         <button class="op" onClick=${() => setTema(tema === 'dark' ? 'light' : 'dark')}>${I(tema === 'dark' ? 'sol' : 'luna')}<span>${tema === 'dark' ? 'Claro' : 'Oscuro'}</span></button>
         <button class="op" onClick=${recorrido}>${I('brujula')}<span>Recorrido</span></button>
+        ${enNube && html`<button class="op" onClick=${conexiones}>${I('enlace')}<span>Conexiones</span></button>`}
         <a class="op" href="#/papelera" onClick=${cerrar}>${I('papelera')}<span>Papelera</span></a>
         <a class="op" href="#/historial" onClick=${cerrar}>${I('historial')}<span>Historial</span></a>
         <button class="op" onClick=${descargarRespaldo}>${I('archivar')}<span>Descargar respaldo</span></button>

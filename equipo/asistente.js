@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE } from './datos.js?v=202611251540';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611251540';
-import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611251540';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE } from './datos.js?v=202611251720';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611251720';
+import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611251720';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {
@@ -167,7 +167,7 @@ export function AsistenteCliente({ ctx, cerrar }) {
   const libre = COLORES_CLIENTE.find((c) => !db.clientes.some((x) => x.color === c)) || COLORES_CLIENTE[0];
   const pasos = [
     { id: 'nombre', tipo: 'texto', corto: 'Nombre', pregunta: '¿Cómo se llama el cliente?', placeholder: 'Ej. Clínica del Valle', falta: 'Escribe el nombre.', resumen: (x) => x?.trim() },
-    { id: 'color', tipo: 'color', corto: 'Color', pregunta: 'Elige su color', ayuda: 'Así lo reconoces en todo el SSAM.', resumen: (x) => html`<i class="bolita" style=${`--c:${x}`}></i>` },
+    { id: 'color', tipo: 'color', corto: 'Color', pregunta: 'Elige su color', ayuda: 'Así lo reconoces en todo el Portal.', resumen: (x) => html`<i class="bolita" style=${`--c:${x}`}></i>` },
     { id: 'responsable', tipo: 'opciones', corto: 'Lleva la cuenta', pregunta: '¿Quién lleva la cuenta?',
       opciones: db.personas.map((p) => ({ id: p.id, nombre: p.id === yo ? 'Yo' : p.corto, sub: p.puesto, persona: p })), resumen: (x) => db.personas.find((p) => p.id === x)?.corto },
     { id: 'salud', tipo: 'salud', corto: 'Cómo va', pregunta: '¿Cómo va la relación?', resumen: (x) => SALUD.find((s) => s.id === x)?.nombre },

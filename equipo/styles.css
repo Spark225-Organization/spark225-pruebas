@@ -691,7 +691,7 @@ textarea.control { height: auto; padding: 10px 12px; resize: vertical; line-heig
   background: var(--vidrio); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); box-shadow: var(--sombra-pop); animation: caer-solo 420ms var(--ease); }
 .login-marca { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .login-marca img { width: 44px; }
-.login-marca b { display: block; font: 600 24px Sora, sans-serif; letter-spacing: -0.03em; }
+.login-marca b { display: block; font: 600 20px Sora, sans-serif; letter-spacing: -0.02em; line-height: 1.15; }
 .login-marca span { font-size: 13px; color: var(--tinta-3); }
 .login-tabs { margin-bottom: 4px; }
 .login-tabs button { height: 34px; }
@@ -1170,3 +1170,39 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
 .filtro-inicio { margin: -4px 0 16px; }
 .aviso-permiso { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; margin-bottom: 6px; border: 0; border-radius: 12px; background: var(--brasa-fondo); color: var(--chispa); font-size: 13px; font-weight: 500; text-align: left; }
 .aviso-permiso .i { width: 16px; height: 16px; }
+
+/* ---------- Bienvenida: conectar correo, agenda y Notion ---------- */
+.bienv { position: fixed; z-index: 90; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow: auto;
+  background: var(--carbon); border-radius: var(--r-panel); box-shadow: var(--sombra-pop); padding: 22px 24px 24px; animation: asis-in .35s var(--ease) both; }
+.bienv-pasos { display: flex; gap: 6px; list-style: none; margin: 0 0 18px; padding: 0; font-size: 11px; color: var(--tinta-3); }
+.bienv-pasos li { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.bienv-pasos li span { display: grid; place-items: center; height: 4px; border-radius: 4px; background: var(--grafito); font-size: 0; overflow: hidden; transition: background .3s var(--ease); }
+.bienv-pasos li.hecho span { background: var(--verde); }
+.bienv-pasos li.actual span { background: var(--chispa); }
+.bienv-pasos li.actual { color: var(--tinta); font-weight: 600; }
+.bienv-cuerpo { animation: paso-der .35s var(--ease) both; }
+.bienv-cuerpo h2 { font: 600 22px/1.2 Sora, sans-serif; letter-spacing: -0.02em; margin: 10px 0 6px; }
+.bienv-sub { color: var(--tinta-2); margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+.bienv-iso { width: 52px; }
+.bienv-ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--brasa-fondo); color: var(--brasa); font: 700 22px Sora, sans-serif; }
+.bienv-ico.notion { background: var(--tinta); color: var(--noche); }
+.bienv-lista { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
+.bienv-lista li { display: flex; gap: 10px; align-items: flex-start; color: var(--tinta); }
+.bienv-lista li svg { flex: none; width: 18px; height: 18px; color: var(--verde); margin-top: 1px; }
+.bienv-lista.tenue li { color: var(--tinta-2); font-size: 13px; }
+.bienv-lista.tenue li svg { color: var(--tinta-3); }
+.bienv-lista li.falta svg { color: var(--ambar); }
+.bienv-ok { display: flex; gap: 8px; align-items: center; margin: 0 0 6px; color: var(--verde); font-weight: 600; }
+.bienv-ok svg { width: 18px; height: 18px; }
+.bienv-error { display: flex; gap: 8px; align-items: flex-start; color: var(--rojo); font-size: 13px; }
+.bienv-error svg { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+.bienv-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+.bienv-cuentas { display: grid; gap: 8px; }
+.bienv-cuenta { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: var(--r-fila); border: 1px solid var(--trazo-fuerte); background: var(--grafito); color: var(--tinta); text-align: left; cursor: pointer; transition: border-color .2s var(--ease), transform .2s var(--ease); }
+.bienv-cuenta:hover { border-color: var(--chispa); transform: translateY(-1px); }
+.bienv-cuenta:focus-visible { outline: 2px solid var(--chispa); outline-offset: 2px; }
+.bienv-cuenta img, .bienv-ini { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: none; }
+.bienv-ini { display: grid; place-items: center; background: var(--humo); font-weight: 700; }
+.bienv-cuenta-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bienv-cuenta-t small { color: var(--tinta-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+@media (prefers-reduced-motion: reduce) { .bienv, .bienv-cuerpo { animation: none; } .bienv-cuenta:hover { transform: none; } }

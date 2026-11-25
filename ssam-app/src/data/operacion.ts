@@ -264,15 +264,15 @@ async function loadOperacion(): Promise<OperacionData> {
     const h = hierMap?.[m.id];
     return {
       ...m,
-      client_id: met?.client_id ?? m.client_id ?? null,
+      client_id: met?.client_id ?? (m as any).cliente_id ?? m.client_id ?? null,
       client_name:
         (met?.client_id ? clientMap[met.client_id] : null) ??
         h?.cliente ??
         m.client_name ??
         null,
-      product_id: met?.product_id ?? m.product_id ?? null,
+      product_id: met?.product_id ?? (m as any).producto_id ?? m.product_id ?? null,
       product_name: met?.product_name ?? h?.producto ?? m.product_name ?? null,
-      indication_id: met?.indication_id ?? m.indication_id ?? null,
+      indication_id: met?.indication_id ?? (m as any).indicacion_id ?? m.indication_id ?? null,
       indication_name:
         met?.indication_name ?? h?.indicacion ?? m.indication_name ?? null,
       responsible_id: met?.responsible_id ?? m.responsible_id ?? null,

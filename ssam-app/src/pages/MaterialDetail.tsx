@@ -53,6 +53,8 @@ const MaterialDetail = () => {
   const { can, user } = useAuth();
   const data = useOperacion();
   const [comment, setComment] = useState("");
+  // Los comentarios del equipo son internos salvo que se marque este switch.
+  const [paraCliente, setParaCliente] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
 
@@ -137,6 +139,7 @@ const MaterialDetail = () => {
       author_id: user.id,
       author_name: user.name,
       body,
+      interno: !paraCliente,
     });
     if (res.error) {
       toast.error(res.error);
@@ -264,8 +267,18 @@ const MaterialDetail = () => {
                         </div>
                         <div className="flex-1 space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-sm">
+                            <span className="flex items-center gap-2 font-bold text-sm">
                               {c.author_name}
+                              <span
+                                className={cn(
+                                  "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                                  c.interno
+                                    ? "bg-[#4E5964]/10 text-[#4E5964]"
+                                    : "bg-[#E37439]/12 text-[#E37439]",
+                                )}
+                              >
+                                {c.interno ? "Interno" : "Lo ve el cliente"}
+                              </span>
                             </span>
                             <span className="text-[10px] text-muted-foreground">
                               {formatDate(c.created_at)}
@@ -289,7 +302,17 @@ const MaterialDetail = () => {
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                     />
-                    <div className="flex justify-end">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <label className="flex items-center gap-2 text-xs text-[#4E5964]">
+                        <Switch
+                          checked={paraCliente}
+                          onCheckedChange={setParaCliente}
+                          aria-label="Visible para el cliente"
+                        />
+                        {paraCliente
+                          ? "Lo verá el cliente en su portal"
+                          : "Solo lo ve el equipo Spark225"}
+                      </label>
                       <Button
                         onClick={sendComment}
                         className="gap-2 bg-[#E37439] hover:bg-[#C45B24] text-white shadow-soft"

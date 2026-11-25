@@ -65,7 +65,9 @@ const ClientPortal = () => {
     const cid = user?.clientId ?? null;
     return data.materials.filter(
       (m) =>
-        (cid ? m.client_id === cid : true) &&
+        // Sin laboratorio asignado no se muestra nada (antes mostraba todo).
+        !!cid &&
+        (m.client_id ?? (m as any).cliente_id) === cid &&
         m.visible_para_cliente !== false &&
         !data.demoIds.has(m.id) &&
         m.status !== "archivado",

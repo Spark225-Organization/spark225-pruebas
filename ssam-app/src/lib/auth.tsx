@@ -277,12 +277,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// ─── Bypass de login (solo sitio de pruebas) ─────────────────────────────────
-// Cuando VITE_SSAM_BYPASS_LOGIN === "1" (lo pone el workflow de GitHub solo en
-// pruebas), la app entra directo como admin, sin pasar por Supabase Auth.
-// El código real de login de abajo queda intacto: al quitar esa variable
-// vuelve a usarse tal cual, cuando conectemos Supabase. NO usar en producción.
-const BYPASS_LOGIN = import.meta.env.VITE_SSAM_BYPASS_LOGIN === "1";
 
 // Si se llega desde un correo de invitación o de recuperación, Supabase abre la
 // sesión con el token del enlace; aquí se recuerda el tipo para mandar a la
@@ -297,20 +291,10 @@ const TIPO_LLEGADA = (() => {
 })();
 const URL_APP = `${window.location.origin}${import.meta.env.BASE_URL}`;
 
-const BYPASS_ADMIN_USER: User = {
-  id: "00000000-0000-0000-0000-000000000000",
-  name: "Admin (pruebas)",
-  email: "admin@pruebas.local",
-  role: "admin",
-  avatar: "AD",
-  clientId: null,
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(
-    BYPASS_LOGIN ? BYPASS_ADMIN_USER : null,
-  );
-  const [loading, setLoading] = useState(!BYPASS_LOGIN);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [pendingActivation, setPendingActivation] = useState(false);
 
   const loadProfile = useCallback(
@@ -323,7 +307,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const su = session.user;
       const { data: profile } = (await supabase
         .from("profiles")
-        .select("id, rol, nombre, cliente_id")
+        .select("id, rol, nombre, cliente_id, estado")
         .eq("id", su.id)
         .maybeSingle()) as { data: ProfileRow | null };
 
@@ -337,7 +321,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         normalizedRole !== "client" &&
         ["admin", "medical", "creative", "veeva"].includes(normalizedRole);
       const hasClient = !!profile?.cliente_id;
-      if (profile && !hasInternalRole && !hasClient) {
+      // Sin perfil, sin rol válido o dado de baja -> pendiente. Nunca se asume
+      // que una cuenta sin perfil es cliente: podría ver de más.
+      const inactivo = String((profile as any)?.estado ?? "activo").toLowerCase() === "inactivo";
+      if (!profile || inactivo || (!hasInternalRole && !hasClient)) {
         setPendingActivation(true);
         setUser(null);
         return null;
@@ -351,7 +338,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   useEffect(() => {
-    if (BYPASS_LOGIN) return;
     let active = true;
     (async () => {
       const {
@@ -406,10 +392,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    if (BYPASS_LOGIN) {
-      setUser(BYPASS_ADMIN_USER);
-      return;
-    }
     await supabase.auth.signOut();
     setUser(null);
     setPendingActivation(false);

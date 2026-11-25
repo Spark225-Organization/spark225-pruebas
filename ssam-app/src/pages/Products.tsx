@@ -75,10 +75,7 @@ const Products = () => {
             Gestión de portafolio de productos por cliente.
           </p>
         </div>
-        <Button className="gap-2 bg-[#E37439] hover:bg-[#C45B24] text-white shadow-soft">
-          <Plus className="h-4 w-4" />
-          Nuevo Producto
-        </Button>
+        {/* «Nuevo Producto» se ocultó: aún no tiene función (fase 3 lo conecta). */}
       </div>
 
       <Card className="border-none shadow-sm">

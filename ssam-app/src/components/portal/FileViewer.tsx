@@ -36,7 +36,8 @@ export const FileViewer = ({ materialId }: { materialId: string }) => {
     let active = true;
     StorageService.list(materialId).then((fs) => {
       if (!active) return;
-      const sorted = [...fs].sort((a, b) => b.version - a.version);
+      // La primera es la última que se subió: la misma que se aprueba.
+      const sorted = [...fs].sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || "") || b.version - a.version);
       setFiles(sorted);
       setSelected(sorted[0] ?? null);
     });

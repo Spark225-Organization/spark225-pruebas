@@ -35,8 +35,10 @@ export const commentsApi = {
     const dbPayload: any = { material_id: payload.material_id };
     if (payload.body != null) dbPayload.texto = payload.body;
     if (payload.author_id != null) dbPayload.autor_id = payload.author_id;
+    // Por seguridad, un comentario es interno salvo que se pida explícitamente
+    // mostrarlo al cliente (interno === false). Así un olvido nunca lo expone.
     dbPayload.visibilidad =
-      payload.interno === true ? "interno" : "visible_para_cliente";
+      payload.interno === false ? "visible_para_cliente" : "interno";
     if (payload.parent_id != null) dbPayload.parent_id = payload.parent_id;
     if (payload.version_id != null) dbPayload.version_id = payload.version_id;
     if (payload.requiere_cambio != null)

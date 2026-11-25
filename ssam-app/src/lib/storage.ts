@@ -165,7 +165,8 @@ const supabaseDriver: StorageDriver = {
       )
       .eq("material_id", materialId)
       .order("created_at", { ascending: false });
-    if (error || !data) return [];
+    if (error) throw new Error(error.message);
+    if (!data) return [];
 
     const filas: StoredFile[] = [];
     for (const f of data as any[]) {
@@ -232,7 +233,10 @@ const ACTIVE_DRIVER: StorageDriver = supabaseDriver;
 
 export const StorageService = {
   upload: (opts: UploadOptions) => ACTIVE_DRIVER.upload(opts),
-  list: (materialId: string) => ACTIVE_DRIVER.list(materialId),
+  /** Lista los archivos; si falla devuelve [] (para vistas que solo muestran). */
+  list: (materialId: string) => ACTIVE_DRIVER.list(materialId).catch(() => [] as StoredFile[]),
+  /** Igual que list, pero avisa si falló: para decisiones que dependen de la versión. */
+  listStrict: (materialId: string) => ACTIVE_DRIVER.list(materialId),
   delete: (fileId: string) => ACTIVE_DRIVER.delete(fileId),
   getUrl: (file: StoredFile) => ACTIVE_DRIVER.getUrl(file),
 
@@ -241,7 +245,7 @@ export const StorageService = {
     fileId: string,
     materialId: string,
   ): Promise<StoredFile[]> {
-    const all = await ACTIVE_DRIVER.list(materialId);
+    const all = await ACTIVE_DRIVER.list(materialId).catch(() => [] as StoredFile[]);
     const target = all.find((f) => f.id === fileId);
     if (!target) return [];
 
@@ -258,7 +262,7 @@ export const StorageService = {
 
   /** Returns storage usage summary for a material */
   async getStorageSummary(materialId: string) {
-    const files = await ACTIVE_DRIVER.list(materialId);
+    const files = await ACTIVE_DRIVER.list(materialId).catch(() => [] as StoredFile[]);
     const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
     return {
       fileCount: files.length,

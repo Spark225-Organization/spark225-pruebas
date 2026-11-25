@@ -22,7 +22,8 @@ export const approvalsApi = {
       id: r.id,
       material_id: r.material_id,
       stage: r.stage ?? null,
-      decision: r.decision === "aprobado" ? "aprobado" : "cambios",
+      // La base guarda approved / changes_requested / rejected; la app usa aprobado / cambios.
+      decision: r.decision === "aprobado" || r.decision === "approved" ? "aprobado" : "cambios",
       approver_id: r.approver_id ?? null,
       usuario_name: r.profiles?.nombre ?? null,
       comentario: r.comentario ?? null,

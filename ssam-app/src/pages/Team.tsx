@@ -61,10 +61,7 @@ const Team = () => {
             Gestiona los miembros del equipo y sus permisos de acceso.
           </p>
         </div>
-        <Button className="gap-2 bg-[#E37439] hover:bg-[#C45B24] text-white shadow-soft">
-          <Plus className="h-4 w-4" />
-          Invitar Miembro
-        </Button>
+        {/* «Invitar Miembro» se ocultó: aún no tiene función (fase 3 lo conecta). */}
       </div>
 
       <Card className="border-none shadow-sm">

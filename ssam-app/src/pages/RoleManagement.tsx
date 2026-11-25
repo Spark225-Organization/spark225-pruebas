@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -321,13 +322,12 @@ const PermissionMatrix = ({
 };
 
 const RoleManagement = () => {
-  const { perms, toggle } = useRolePermissions();
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+  const { perms } = useRolePermissions();
+  // Los permisos de cada rol están fijos en el código y en la base. Mientras
+  // no se guarden de verdad, los interruptores solo informan (antes parecían
+  // guardar y no hacían nada).
+  const toggle = (..._args: unknown[]) =>
+    toast.info("Los permisos por rol son fijos por ahora. Pide el cambio al equipo de sistemas.");
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -341,20 +341,9 @@ const RoleManagement = () => {
             SSAM.
           </p>
         </div>
-        <Button
-          onClick={handleSave}
-          className={cn(
-            "gap-2 bg-[#E37439] hover:bg-[#C45B24] text-white shadow-soft transition-all hover:opacity-90",
-            saved && "bg-success shadow-success/20",
-          )}
-        >
-          {saved ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Shield className="h-4 w-4" />
-          )}
-          {saved ? "Guardado" : "Guardar Cambios"}
-        </Button>
+        <p className="max-w-xs rounded-lg border border-[#DBDBDB] bg-[#F8F9FA] px-3 py-2 text-xs text-[#4E5964]">
+          Vista de consulta: muestra qué puede hacer cada rol. Los cambios aún no se guardan desde aquí.
+        </p>
       </div>
 
       {/* Summary cards */}

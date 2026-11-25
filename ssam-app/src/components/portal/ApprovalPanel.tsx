@@ -38,7 +38,10 @@ export const ApprovalPanel = ({
   const [open, setOpen] = useState<"aprobado" | "cambios" | null>(null);
   const [comentario, setComentario] = useState("");
   const [busy, setBusy] = useState(false);
-  const [vigenteId, setVigenteId] = useState<string | null>(null);
+  // Versión sobre la que se decide: la última que se subió (no la de número
+  // más alto entre todos los archivos). "error" impide decidir a ciegas.
+  const [vigente, setVigente] = useState<StoredFile | null>(null);
+  const [versionEstado, setVersionEstado] = useState<"cargando" | "ok" | "sin_archivos" | "error">("cargando");
 
   const canDecide = isClienteAprobacion(material.status);
 
@@ -46,12 +49,15 @@ export const ApprovalPanel = ({
   const openDialog = async (decision: "aprobado" | "cambios") => {
     setComentario("");
     setOpen(decision);
+    setVigente(null);
+    setVersionEstado("cargando");
     try {
-      const fs = await StorageService.list(material.id);
-      const sorted = [...fs].sort((a, b) => b.version - a.version);
-      setVigenteId(sorted[0]?.id ?? null);
+      const fs = await StorageService.listStrict(material.id);
+      const ultima = [...fs].sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || "") || b.version - a.version)[0];
+      setVigente(ultima ?? null);
+      setVersionEstado(ultima ? "ok" : "sin_archivos");
     } catch {
-      setVigenteId(null);
+      setVersionEstado("error");
     }
   };
 
@@ -60,11 +66,15 @@ export const ApprovalPanel = ({
       toast.error("Para solicitar cambios debes incluir un comentario.");
       return;
     }
+    if (versionEstado === "error" || versionEstado === "cargando") {
+      toast.error("No pudimos confirmar qué versión estás revisando. Cierra y vuelve a intentarlo.");
+      return;
+    }
     setBusy(true);
     const res = await mutateClientDecision(
       material.id,
       open!,
-      vigenteId,
+      vigente?.id ?? null,
       comentario.trim(),
     );
     setBusy(false);
@@ -124,6 +134,18 @@ export const ApprovalPanel = ({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <div className="rounded-lg border border-[#DBDBDB] bg-[#F8F9FA] px-3 py-2 text-xs text-[#4E5964]">
+              {versionEstado === "cargando" && "Buscando la versión vigente…"}
+              {versionEstado === "ok" && vigente && (
+                <>
+                  Tu decisión aplica a <b className="text-[#0E1E2A]">{vigente.name}</b> · versión {vigente.version}
+                </>
+              )}
+              {versionEstado === "sin_archivos" && "Este material aún no tiene archivos; la decisión queda registrada sin versión."}
+              {versionEstado === "error" && (
+                <span className="text-[#D64545]">No pudimos leer los archivos. Cierra y vuelve a intentarlo.</span>
+              )}
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="ap-comentario">
                 {open === "cambios" ? (
@@ -157,7 +179,7 @@ export const ApprovalPanel = ({
             </Button>
             <Button
               onClick={confirm}
-              disabled={busy || (open === "cambios" && !comentario.trim())}
+              disabled={busy || versionEstado === "cargando" || versionEstado === "error" || (open === "cambios" && !comentario.trim())}
               className={cn(
                 open === "aprobado"
                   ? "bg-[#2E9E5B] hover:bg-[#238048] text-white"

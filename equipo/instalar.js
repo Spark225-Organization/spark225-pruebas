@@ -1,8 +1,8 @@
 // Guía para instalar el Portal como app (iPhone, Android o computadora) y activar los avisos.
 // Elige sola la pestaña según el dispositivo; se abre desde Perfil › Instalar en tu teléfono.
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I } from './ui.js?v=202611252200';
-import { pedirAvisos, activarPush, pushDisponible } from './avisos.js?v=202611252200';
+import { I } from './ui.js?v=202611252230';
+import { pedirAvisos, activarPush, pushDisponible } from './avisos.js?v=202611252230';
 
 const ua = navigator.userAgent;
 const esIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -54,8 +54,18 @@ export function Instalar({ cerrar, toast, persona }) {
   const activar = async () => {
     const r = await pedirAvisos();
     setPermiso(r);
-    if (r === 'granted') await activarPush(persona);
-    toast(r === 'granted' ? 'Listo: te llegarán los avisos importantes' : r === 'denied' ? 'Los avisos están bloqueados: actívalos en los ajustes del navegador' : 'Instala primero la app para activar los avisos');
+    if (r === 'granted' && await activarPush(persona)) {
+      const { avisoDePrueba } = await import('./nube.js?v=202611252230');
+      const p = await avisoDePrueba().catch(() => ({}));
+      return toast(p.ok ? 'Listo: te mandamos un aviso de prueba' : 'Avisos activados');
+    }
+    toast(r === 'granted' ? 'Avisos activados en este navegador' : r === 'denied' ? 'Los avisos están bloqueados: actívalos en los ajustes del navegador' : 'Instala primero la app para activar los avisos');
+  };
+  const probar = async () => {
+    if (!(await activarPush(persona))) return toast('No pude dar de alta este dispositivo');
+    const { avisoDePrueba } = await import('./nube.js?v=202611252230');
+    const p = await avisoDePrueba().catch(() => ({}));
+    toast(p.ok ? 'Enviado: debe llegarte en unos segundos' : 'No pude mandar el aviso de prueba');
   };
   const iosSinInstalar = esIOS && !yaInstalada;
 
@@ -83,7 +93,7 @@ export function Instalar({ cerrar, toast, persona }) {
       <div class="bienv-acc">
         ${puede && !yaInstalada && tab !== 'iphone' && html`<button class="btn prim" onClick=${instalarAhora}>Instalar ahora</button>`}
         ${permiso !== 'granted' && permiso !== 'no' && html`<button class=${'btn ' + (puede && !yaInstalada ? 'fantasma' : 'prim')} disabled=${iosSinInstalar} onClick=${activar}>Activar avisos</button>`}
-        ${permiso === 'granted' && html`<button class="btn prim" onClick=${cerrar}>Listo</button>`}
+        ${permiso === 'granted' && html`<button class="btn fantasma" onClick=${probar}>Mandarme un aviso de prueba</button><button class="btn prim" onClick=${cerrar}>Listo</button>`}
       </div>
       ${iosSinInstalar && permiso !== 'granted' && html`<p class="inst-nota">${I('alerta')}En iPhone, «Activar avisos» funciona después de instalarla y abrirla desde el ícono.</p>`}
       <p class="inst-nota tenue">${I('reloj')}Con los avisos activados te llegan aunque el Portal esté cerrado, como WhatsApp (pueden tardar hasta 5 minutos).</p>

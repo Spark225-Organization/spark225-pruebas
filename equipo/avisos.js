@@ -25,7 +25,7 @@ export async function activarPush(persona) {
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(VAPID_PUBLICA) }));
-    const { guardarSuscripcion } = await import('./nube.js?v=202611252200');
+    const { guardarSuscripcion } = await import('./nube.js?v=202611252230');
     const ua = navigator.userAgent;
     await guardarSuscripcion(persona, sub, /iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : 'Computadora');
     return true;

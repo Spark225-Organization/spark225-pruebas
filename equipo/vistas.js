@@ -1,11 +1,11 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS } from './datos.js?v=202611252200';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio } from './store.js?v=202611252200';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611252200';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611252200';
-import { Widgets } from './widgets.js?v=202611252200';
-import { useArrastre } from './arrastre.js?v=202611252200';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS } from './datos.js?v=202611252230';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio } from './store.js?v=202611252230';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611252230';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611252230';
+import { Widgets } from './widgets.js?v=202611252230';
+import { useArrastre } from './arrastre.js?v=202611252230';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };

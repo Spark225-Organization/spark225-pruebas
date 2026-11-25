@@ -1,7 +1,7 @@
 // Conexión con Supabase: sesión, carga inicial, guardado con reintentos y cambios en vivo.
 // La app trabaja en memoria (rápida) y esta capa sube cada cambio en segundo plano.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611252200';
+import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611252230';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'ssam-equipo-auth' },
@@ -171,4 +171,14 @@ export async function guardarSuscripcion(persona, sub, dispositivo) {
   const j = sub.toJSON();
   const { error } = await sb.from('push_suscripciones').upsert({ endpoint: j.endpoint, persona, p256dh: j.keys.p256dh, auth: j.keys.auth, dispositivo }, { onConflict: 'endpoint' });
   if (error) throw error;
+}
+// Manda un aviso de prueba a mis dispositivos (desde el servidor, como llegarán los de verdad).
+export async function avisoDePrueba() {
+  const { data } = await sb.auth.getSession();
+  const jwt = data.session?.access_token;
+  if (!jwt) return { ok: false };
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/avisos-push`, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + jwt, apikey: SUPABASE_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ prueba: true }),
+  });
+  return r.json().catch(() => ({ ok: false }));
 }

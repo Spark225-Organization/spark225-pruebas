@@ -1,25 +1,25 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611252130';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611252200';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611252130';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252130';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611252130';
-import { AltaRapida } from './mecha.js?v=202611252130';
-import { Inicio } from './vistas.js?v=202611252130';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611252130';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611252130';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611252130';
-import { Chat } from './chat.js?v=202611252130';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611252130';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611252130';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611252130';
-import { Instalar } from './instalar.js?v=202611252130';
-import { notificar } from './avisos.js?v=202611252130';
-import { Bienvenida, Recorrido } from './tour.js?v=202611252130';
-import { useArrastre } from './arrastre.js?v=202611252130';
-import { Galeria } from './widgets.js?v=202611252130';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611252200';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252200';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611252200';
+import { AltaRapida } from './mecha.js?v=202611252200';
+import { Inicio } from './vistas.js?v=202611252200';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611252200';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611252200';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611252200';
+import { Chat } from './chat.js?v=202611252200';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611252200';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611252200';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611252200';
+import { Instalar } from './instalar.js?v=202611252200';
+import { notificar, activarPush } from './avisos.js?v=202611252200';
+import { Bienvenida, Recorrido } from './tour.js?v=202611252200';
+import { useArrastre } from './arrastre.js?v=202611252200';
+import { Galeria } from './widgets.js?v=202611252200';
 
 function useStore() {
   const [, set] = useState(0);
@@ -92,10 +92,10 @@ function App() {
       vistos.current.add(n.id);
       if (n.leido) return;
       const accion = n.actividad ? { texto: 'Ver', f: () => setCajon({ id: n.actividad }) }
-        : n.minuta ? { texto: 'Ver minuta', f: () => setMinuta(n.minuta) }
+        : minutaDeAviso(n, db) ? { texto: 'Ver minuta', f: () => setMinuta(minutaDeAviso(n, db)) }
         : n.url ? { texto: 'Abrir', f: () => window.open(n.url, '_blank', 'noopener') } : null;
       toast(n.texto, accion);
-      if (document.hidden || n.tipo === 'importante') notificar(n.texto, { tag: n.id, url: n.url });
+      if (!n.push && (document.hidden || n.tipo === 'importante')) notificar(n.texto, { tag: n.clave || n.id, url: n.url }); // si vino del servidor, el teléfono ya lo recibió
     });
   }, [db.avisos, fase, yo]);
   // Arranque: con sesión de Supabase carga tus datos reales; sin sesión, pantalla de entrada (o la demo si la elegiste).
@@ -108,6 +108,7 @@ function App() {
       const p = await miPerfil(s.user.id);
       if (!p || p.permiso === 'pendiente') { setCorreoPend(s.user.email); setFase('pendiente'); return; }
       if (p.google_conectado) marcarGoogle(true);
+      activarPush(p.id); // si ya dio permiso de avisos, mantiene dado de alta este dispositivo
       await conectarNube(p);
       setYo(p.id);
       setFase('nube');
@@ -251,7 +252,7 @@ function App() {
         setBienvenida(null);
         if (!leerLocal('ssam-equipo-tour-' + yo, '')) { escribirLocal('ssam-equipo-tour-' + yo, '1'); setTimeout(() => setTour('pasos'), 400); }
       }} />`}
-      ${instalar && html`<${Instalar} toast=${toast} cerrar=${() => setInstalar(false)} />`}
+      ${instalar && html`<${Instalar} persona=${yo} toast=${toast} cerrar=${() => setInstalar(false)} />`}
       ${perfil && html`<${Perfil} instalar=${() => { setPerfil(false); setInstalar(true); }} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} abrirMinuta=${ctx.abrirMinuta} cerrar=${() => setAvisos(false)} toast=${toast} />`}
@@ -465,18 +466,21 @@ function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido
     </div>`;
 }
 
+// La minuta de un aviso de notas de Gemini (si el aviso lo creó el servidor, se busca por el correo).
+const minutaDeAviso = (n, db) => n.minuta || (n.clave?.startsWith('tr-') ? db.minutas.find((m) => m.correo === 'g-' + n.clave.slice(3))?.id : null) || null;
+
 function Avisos({ avisos, yo, db, abrir, cerrar, toast, abrirMinuta }) {
   const ref = useRef();
   cerrarAlTocarFuera(ref, cerrar);
   useEffect(() => () => marcarAvisosLeidos(yo), []);
   return html`
     <div class="avisos-panel" ref=${ref} role="dialog" aria-label="Avisos">
-      ${'Notification' in window && Notification.permission === 'default' && html`<button class="aviso-permiso" onClick=${() => Notification.requestPermission().then((r) => toast(r === 'granted' ? 'Listo: te avisaré aunque estés en otra pestaña' : 'Notificaciones desactivadas'))}>${I('campana')}Avisarme aunque esté en otra pestaña</button>`}
+      ${'Notification' in window && Notification.permission === 'default' && html`<button class="aviso-permiso" onClick=${() => Notification.requestPermission().then((r) => { if (r === 'granted') activarPush(yo); toast(r === 'granted' ? 'Listo: te avisaré aunque tengas el Portal cerrado' : 'Notificaciones desactivadas'); })}>${I('campana')}Avisarme aunque tenga el Portal cerrado</button>`}
       ${avisos.length === 0 ? html`<div class="paleta-vacia">${I('check')}</div>` : avisos.slice(0, 12).map((n) => {
         const a = db.actividades.find((x) => x.id === n.actividad);
         return html`<button class=${'aviso-it' + (n.leido ? '' : ' nuevo') + (n.tipo === 'importante' ? ' importante' : '')} key=${n.id} onClick=${() => {
           if (a && !a.archivada) { abrir(a.id); cerrar(); }
-          else if (n.minuta) { abrirMinuta(n.minuta); cerrar(); }
+          else if (minutaDeAviso(n, db)) { abrirMinuta(minutaDeAviso(n, db)); cerrar(); }
           else if (n.url) { window.open(n.url, '_blank', 'noopener'); cerrar(); }
         }}>
           <span class="cuerpo">${n.texto}<span class="cuando">${haceCuanto(n.cuando)}</span></span></button>`;

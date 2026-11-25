@@ -1,9 +1,9 @@
 // Archivero de clientes: cada cliente es una carpeta. Al abrirla ves cómo va la cuenta,
 // qué tan contento está, el avance de sus proyectos y qué le toca a cada quien.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, SALUD, CARITAS } from './datos.js?v=202611252130';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs } from './store.js?v=202611252130';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252130';
+import { hoyISO, SALUD, CARITAS } from './datos.js?v=202611252200';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs } from './store.js?v=202611252200';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252200';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
 const ultimaSat = (c) => c.satisfaccion?.length ? c.satisfaccion[c.satisfaccion.length - 1].valor : 0;

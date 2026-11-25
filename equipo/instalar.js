@@ -1,8 +1,8 @@
 // Guía para instalar el Portal como app (iPhone, Android o computadora) y activar los avisos.
 // Elige sola la pestaña según el dispositivo; se abre desde Perfil › Instalar en tu teléfono.
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I } from './ui.js?v=202611252130';
-import { pedirAvisos } from './avisos.js?v=202611252130';
+import { I } from './ui.js?v=202611252200';
+import { pedirAvisos, activarPush, pushDisponible } from './avisos.js?v=202611252200';
 
 const ua = navigator.userAgent;
 const esIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -36,7 +36,7 @@ const PASOS = {
   ],
 };
 
-export function Instalar({ cerrar, toast }) {
+export function Instalar({ cerrar, toast, persona }) {
   const [tab, setTab] = useState(esIOS ? 'iphone' : esAndroid ? 'android' : 'compu');
   const [permiso, setPermiso] = useState('Notification' in window ? Notification.permission : 'no');
   const [puede, setPuede] = useState(!!aviso);
@@ -54,6 +54,7 @@ export function Instalar({ cerrar, toast }) {
   const activar = async () => {
     const r = await pedirAvisos();
     setPermiso(r);
+    if (r === 'granted') await activarPush(persona);
     toast(r === 'granted' ? 'Listo: te llegarán los avisos importantes' : r === 'denied' ? 'Los avisos están bloqueados: actívalos en los ajustes del navegador' : 'Instala primero la app para activar los avisos');
   };
   const iosSinInstalar = esIOS && !yaInstalada;
@@ -85,6 +86,6 @@ export function Instalar({ cerrar, toast }) {
         ${permiso === 'granted' && html`<button class="btn prim" onClick=${cerrar}>Listo</button>`}
       </div>
       ${iosSinInstalar && permiso !== 'granted' && html`<p class="inst-nota">${I('alerta')}En iPhone, «Activar avisos» funciona después de instalarla y abrirla desde el ícono.</p>`}
-      <p class="inst-nota tenue">${I('reloj')}Por ahora los avisos llegan mientras tienes el Portal abierto. Que lleguen con la app cerrada, como WhatsApp, es el siguiente paso.</p>
+      <p class="inst-nota tenue">${I('reloj')}Con los avisos activados te llegan aunque el Portal esté cerrado, como WhatsApp (pueden tardar hasta 5 minutos).</p>
     </div>`;
 }

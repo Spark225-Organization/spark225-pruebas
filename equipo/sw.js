@@ -1,7 +1,7 @@
 // Service worker mínimo: permite instalar la app y abrirla sin conexión.
 // Red primero para los archivos propios (así siempre ves la última versión publicada);
 // caché primero para fuentes y librerías con versión fija.
-const CACHE = 'ssam-equipo-202611252130';
+const CACHE = 'ssam-equipo-202611252200';
 const BASE = ['./', './index.html', './styles.css', './app.js', './actividad.js', './store.js', './datos.js', './ui.js', './mecha.js', './widgets.js', './arrastre.js', './vistas.js', './chat.js', './tour.js', './login.js', './nube.js', './nube-config.js', './google.js', './pipeline.js', './archivero.js', './asistente.js', './bienvenida.js', './instalar.js', './avisos.js', './icons/iso.png', './icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -35,5 +35,14 @@ self.addEventListener('notificationclick', (e) => {
     const abierta = ws.find((w) => w.url.includes(self.registration.scope));
     if (abierta) return abierta.focus();
     return self.clients.openWindow(url.startsWith('http') && !url.includes(self.registration.scope) ? './' : url);
+  }));
+});
+
+// Aviso que manda el servidor (aunque el Portal esté cerrado).
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { cuerpo: e.data?.text() }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Portal de colaboradores', {
+    body: d.cuerpo || 'Tienes algo nuevo en el Portal.', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: d.tag, data: { url: './' },
   }));
 });

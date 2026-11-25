@@ -1,7 +1,7 @@
 // Conexión con Supabase: sesión, carga inicial, guardado con reintentos y cambios en vivo.
 // La app trabaja en memoria (rápida) y esta capa sube cada cambio en segundo plano.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611252130';
+import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611252200';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'ssam-equipo-auth' },
@@ -163,4 +163,12 @@ export async function sincronizarNotion() {
 export async function estadoNotion() {
   const { data } = await sb.from('sync_estado').select('ultimo,error').eq('clave', 'notion').maybeSingle();
   return data;
+}
+
+// ---------- Avisos al teléfono (push) ----------
+// Guarda la «dirección» de este dispositivo para que el servidor le mande avisos con la app cerrada.
+export async function guardarSuscripcion(persona, sub, dispositivo) {
+  const j = sub.toJSON();
+  const { error } = await sb.from('push_suscripciones').upsert({ endpoint: j.endpoint, persona, p256dh: j.keys.p256dh, auth: j.keys.auth, dispositivo }, { onConflict: 'endpoint' });
+  if (error) throw error;
 }

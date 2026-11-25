@@ -1,6 +1,6 @@
 // Google: correo (solo lectura) y agenda de hoy, con el permiso que da Google al entrar.
 // Las transcripciones de juntas (notas de Gemini, Plaud, etc.) se vuelven minuta para todo el equipo.
-import { obtenerTokenGoogle } from './nube.js?v=202611252030';
+import { obtenerTokenGoogle } from './nube.js?v=202611252045';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const ES_TRANSCRIPCION = /(notas?\b.*(reuni|junta|meeting)|transcrip|minuta|meeting notes|notes by gemini|resumen de la reuni)/i;
@@ -28,7 +28,7 @@ export async function correosRecientes(clientes, max = 8) {
   // Bandeja reciente + búsqueda aparte de notas de juntas (para que no queden enterradas entre muchos correos).
   const [lista, notas] = await Promise.all([
     pedir(`${API}/messages?maxResults=${max}&q=${encodeURIComponent('in:inbox newer_than:14d')}`),
-    pedir(`${API}/messages?maxResults=5&q=${encodeURIComponent('newer_than:3d (from:gemini-notes@google.com OR subject:(notas reunión) OR subject:(notes meeting))')}`).catch(() => ({})),
+    pedir(`${API}/messages?maxResults=5&q=${encodeURIComponent('newer_than:1d (from:gemini-notes@google.com OR subject:(notas reunión) OR subject:(notes meeting))')}`).catch(() => ({})),
   ]);
   const ids = [...new Map([...(lista.messages || []), ...(notas.messages || [])].map((m) => [m.id, m])).values()];
   const msgs = await Promise.all(ids.map((m) => pedir(`${API}/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`)));

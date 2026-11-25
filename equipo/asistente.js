@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE } from './datos.js?v=202611252030';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611252030';
-import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611252030';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE } from './datos.js?v=202611252045';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611252045';
+import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611252045';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {

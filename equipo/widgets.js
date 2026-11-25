@@ -1,12 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611252030';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611252030';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611252030';
-import { hoyISO } from './datos.js?v=202611252030';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611252030';
-import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611252030';
-import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611252030';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611252045';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611252045';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611252045';
+import { hoyISO } from './datos.js?v=202611252045';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611252045';
+import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611252045';
+import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611252045';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -384,7 +384,7 @@ const fechaJunta = (j) => {
   const dia = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
   return j.todoElDia ? dia : `${dia}, ${d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}`;
 };
-const RECIENTE = 3 * 864e5; // notas de Gemini de los últimos 3 días
+const RECIENTE = 864e5; // notas de Gemini de las últimas 24 horas
 
 // Tu Gmail: últimos correos. Las transcripciones de juntas se vuelven minuta solas, para todo el equipo.
 function WCorreoReal({ ctx }) {
@@ -430,9 +430,11 @@ function WCorreoReal({ ctx }) {
     const m = minutaDe(c);
     if (m) ctx.abrirMinuta(m); else window.open(c.url, '_blank', 'noopener');
   };
-  const resto = l.filter((c) => !notas.includes(c));
+  const juntasVis = juntas.slice(0, 3);
+  const notasVis = notas.slice(0, Math.max(1, 3 - juntasVis.length));
+  const resto = l.filter((c) => !notasVis.includes(c));
   const nuevos = resto.filter((m) => !m.leido).length;
-  const importantes = juntas.length + notas.length;
+  const importantes = juntasVis.length + notasVis.length;
   return html`<div class="w">
     ${cab('correo', 'Correo', nuevos || null)}
     ${estado === 'sin' ? html`<${ConectarGoogle} texto="Conecta tu Google para ver tu correo y volver minutas las juntas." />`
@@ -442,12 +444,12 @@ function WCorreoReal({ ctx }) {
         ${importantes > 0 && html`<section class="importantes" aria-label="Importante">
           <p class="imp-t">${I('campana')}Importante<b>${importantes}</b></p>
           <ul>
-            ${juntas.map((j) => html`<li key=${j.id} class="imp">
+            ${juntasVis.map((j) => html`<li key=${j.id} class="imp">
               <span class="imp-ico">${I('semana')}</span>
               <span class="imp-cuerpo"><b>${j.de} te invitó a «${j.titulo}»</b><small>${fechaJunta(j)} · Acéptala para que se refleje en tu calendario.</small></span>
               <a class="btn prim chico" href=${j.url} target="_blank" rel="noopener">Aceptar en Calendar</a>
             </li>`)}
-            ${notas.map((c) => html`<li key=${c.id} class="imp">
+            ${notasVis.map((c) => html`<li key=${c.id} class="imp">
               <span class="imp-ico">${I('nota')}</span>
               <span class="imp-cuerpo"><b>Notas de Gemini de la junta</b><small>${c.asunto} · ${haceCuanto(c.cuando)}</small></span>
               <button class="btn prim chico" onClick=${() => verNota(c)}>${minutaDe(c) ? 'Ver minuta' : 'Abrir correo'}</button>

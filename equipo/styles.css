@@ -1243,3 +1243,14 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
 .inst-nota { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; font-size: 12px; line-height: 1.45; color: var(--tinta-2); }
 .inst-nota.tenue { color: var(--tinta-3); }
 .inst-nota .i { flex: none; width: 14px; height: 14px; margin-top: 1px; }
+
+/* ---------- App instalada en iPhone/Android: nada debajo de la hora, la batería o la muesca ---------- */
+.top { padding-top: calc(12px + env(safe-area-inset-top)); padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+.avisos-panel { top: calc(68px + env(safe-area-inset-top)); }
+.cajon { top: calc(12px + env(safe-area-inset-top)); }
+.bienv, .asis { max-height: calc(100vh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+@media (max-width: 640px) {
+  .top { padding-top: calc(10px + env(safe-area-inset-top)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .cajon { top: auto; height: min(92vh, calc(100vh - env(safe-area-inset-top) - 8px)); }
+  .avisos-panel { top: calc(60px + env(safe-area-inset-top)); right: 12px; }
+}

@@ -7,7 +7,7 @@
 import { crearBase, calcularVista, nuevoId, iso, fecha, hoy0, estadosOrden, IDX, type Base, type Fila } from "./demoData";
 import { rolDemo, guardarRolDemo, DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA } from "./demoState";
 
-const CLAVE_BASE = "ssam-demo-base-v1";
+const CLAVE_BASE = "ssam-demo-base-v2";
 
 function cargar(): Base {
   try {
@@ -66,6 +66,8 @@ function baseVisible(): Base {
     final_package_items: porMaterial(db.final_package_items),
     candado_events: [],
     material_assignees: porMaterial(db.material_assignees),
+    pre_send_items: [],
+    checklist_templates: [],
   };
 }
 

@@ -128,6 +128,8 @@ const supabaseDriver: StorageDriver = {
         tamano_bytes: opts.file?.size ?? null,
         es_final: true,
         subido_por: opts.uploadedBy,
+        // La evidencia que sube el cliente la ven él y el equipo.
+        ...(opts.stage === "cambios_cliente" ? { visibilidad: "visible_para_cliente" } : {}),
       })
       .select("id, fecha_carga")
       .single();

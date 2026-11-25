@@ -19,6 +19,7 @@ import {
   ActivosPorEtapa,
   DesempenoClienteUnidad,
   type ClientUnitRow,
+  type AgruparPor,
 } from "@/components/report/MgmtCharts";
 import { SectionTitle, CompactChip } from "@/components/MgmtSubcomponents";
 import { MgmtPlanning } from "@/components/MgmtPlanning";
@@ -202,9 +203,11 @@ export const ManagementDashboard = () => {
     [data, filters],
   );
 
+  // La tabla de desempeño se puede ver por cliente, producto o indicación.
+  const [agrupar, setAgrupar] = useState<AgruparPor>("cliente");
   const clientUnitRows = useMemo<ClientUnitRow[]>(
-    () => selectSaludPorCliente(data, filters),
-    [data, filters],
+    () => selectSaludPorCliente(data, filters, agrupar),
+    [data, filters, agrupar],
   );
 
   if (data.loading) {
@@ -382,7 +385,7 @@ export const ManagementDashboard = () => {
           <IngresoVsAprobados6m data={trendData} />
         </div>
         <div className="mt-4">
-          <DesempenoClienteUnidad rows={clientUnitRows} />
+          <DesempenoClienteUnidad rows={clientUnitRows} agrupar={agrupar} onAgrupar={setAgrupar} />
         </div>
       </div>
     </div>

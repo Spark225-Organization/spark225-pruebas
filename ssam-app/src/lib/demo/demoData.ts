@@ -4,6 +4,7 @@
 // tableros se vean vivos.
 
 import { DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA } from "./demoState";
+import { CHECKLIST_DEMO } from "./checklistDemo";
 
 export type Fila = Record<string, any>;
 export type Base = Record<string, Fila[]>;
@@ -241,6 +242,18 @@ export function crearBase(): Base {
     candado_events: candados,
     material_assignees: [],
     regulatory_reviews: [],
+    checklist_templates: CHECKLIST_DEMO.map((c, i) => ({
+      id: `c1000000-0000-4000-8000-${(i + 1).toString().padStart(12, "0")}`,
+      cliente_id: null,
+      tipo: c.tipo,
+      item: c.item,
+      detalle: c.detalle,
+      formatos: c.formatos === "todos" ? null : String(c.formatos).split(", "),
+      orden: c.orden,
+      activo: true,
+      created_at: iso(masDias(hoy, -60)),
+    })),
+    pre_send_items: [],
   };
 }
 

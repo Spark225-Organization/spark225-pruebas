@@ -3,6 +3,7 @@
 // versiones. Derecha: en qué va, lo que le toca (aprobar / pedir cambios),
 // fechas y la conversación con Spark225.
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeft, Download, FileText, ImageIcon, Check, MessageSquare, CalendarClock, ExternalLink } from "lucide-react";
 import { StorageService, type StoredFile } from "@/lib/storage";
 import type { Material } from "@/lib/api-types";
@@ -71,7 +72,8 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
   const sem = semaforo(material);
   const piezaActual = piezas.find((p) => p.versiones.some((v) => v.id === verId));
 
-  return (
+  // Se monta en <body> para que ningún margen o transformación del listado la desplace.
+  return createPortal(
     <div className="ssam-ficha fixed inset-0 z-50 flex flex-col bg-[#F3F4F6]" role="dialog" aria-label={`Material ${material.name}`}>
       {/* Barra superior */}
       <header className="flex flex-wrap items-center gap-3 border-b border-[#E3E6EA] bg-white px-4 py-3 sm:px-6">
@@ -157,7 +159,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
 
         {/* Panel lateral */}
         <aside className="min-h-0 space-y-4 overflow-y-auto border-t border-[#E3E6EA] bg-white p-4 sm:p-5 lg:border-l lg:border-t-0" aria-label="Detalle y acciones">
-          {momento(material) === "revisar" && <RevisionCliente material={material} vigente={vigente} onDone={() => { setRecarga((n) => n + 1); onCambio(); }} />}
+          {momento(material) === "revisar" && <RevisionCliente material={material} vigente={ver ?? vigente} onDone={() => { setRecarga((n) => n + 1); onCambio(); }} />}
 
           <div>
             <p className="mb-2 text-xs font-semibold text-[#7A8590]">En qué va</p>
@@ -195,6 +197,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
           </div>
         </aside>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

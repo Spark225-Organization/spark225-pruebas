@@ -512,7 +512,11 @@ export function selectTendencia(data: OperacionData, f: FilterState) {
   return computeMonthlyTrend(selectMetrics(data, f), w.hasta, 6);
 }
 
-export function selectSaludPorCliente(data: OperacionData, f: FilterState) {
+export function selectSaludPorCliente(
+  data: OperacionData,
+  f: FilterState,
+  agrupar: "cliente" | "producto" | "indicacion" = "cliente",
+) {
   const w = periodWindows(f);
   const fc = filterForecast(data.forecast, f, data.demoIds);
   return computeClientRows(
@@ -523,6 +527,7 @@ export function selectSaludPorCliente(data: OperacionData, f: FilterState) {
     w.hasta,
     f.hideDemo,
     data.demoIds,
+    agrupar,
   );
 }
 

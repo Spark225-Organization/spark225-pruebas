@@ -396,20 +396,26 @@ export function computeClientRows(
   hasta: Date,
   hideDemo = false,
   demoIds?: DemoIdSet,
+  agrupar: "cliente" | "producto" | "indicacion" = "cliente",
 ) {
   const blockedIds = new Set(candado.map((c) => c.material_id));
+  // Misma lógica para las tres vistas: solo cambia la llave de agrupación.
+  const llaveFc = (f: MaterialForecast) =>
+    agrupar === "producto" ? f.producto : agrupar === "indicacion" ? f.indicacion : f.cliente;
+  const llaveM = (m: MaterialMetric) =>
+    agrupar === "producto" ? m.product_name : agrupar === "indicacion" ? m.indication_name : m.client_name;
   const fcByClient: Record<string, MaterialForecast[]> = {};
   for (const f of forecast) {
     if (!isActiveMaterial(f.status)) continue;
     if (hideDemo && isDemoForecast(f, demoIds)) continue;
-    const key = f.cliente ?? "Sin cliente";
+    const key = llaveFc(f) ?? "Sin cliente";
     if (key === "Sin cliente") continue;
     (fcByClient[key] ??= []).push(f);
   }
   const mByClient: Record<string, MaterialMetric[]> = {};
   for (const m of metrics) {
     if (hideDemo && isDemoMetric(m, demoIds)) continue;
-    const key = m.client_name ?? "Sin cliente";
+    const key = llaveM(m) ?? "Sin cliente";
     if (key === "Sin cliente") continue;
     (mByClient[key] ??= []).push(m);
   }

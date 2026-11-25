@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Archivero } from "@/components/material/Archivero";
 import { useOperacion } from "@/data/operacion";
 import { useFilters } from "@/lib/useFilters";
 import {
@@ -39,6 +40,7 @@ const Materials = () => {
   const data = useOperacion();
   const { state: filters } = useFilters();
   const [searchTerm, setSearchTerm] = useState("");
+  const [agrupar, setAgrupar] = useState<"ninguno" | "cliente" | "producto">("ninguno");
 
   const filtered = data.materials.filter(
     (m) =>
@@ -108,10 +110,19 @@ const Materials = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <div className="inline-flex rounded-lg border bg-background p-0.5" role="tablist" aria-label="Agrupar materiales">
+              {([["ninguno", "Lista"], ["cliente", "Por cliente"], ["producto", "Por producto"]] as const).map(([v, t]) => (
+                <button key={v} type="button" role="tab" aria-selected={agrupar === v} onClick={() => setAgrupar(v)} className={cn("rounded-md px-3 py-1.5 text-xs font-semibold transition-colors", agrupar === v ? "bg-[#0E1E2A] text-white" : "text-muted-foreground hover:bg-muted")}>
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {data.loading ? (
+          {!data.loading && agrupar !== "ninguno" ? (
+            <Archivero materiales={filtered} agrupar={agrupar} />
+          ) : data.loading ? (
             <div className="space-y-2">
               <Skeleton className="h-14 rounded-lg" />
               <Skeleton className="h-14 rounded-lg" />

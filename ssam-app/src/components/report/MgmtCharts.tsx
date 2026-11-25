@@ -208,19 +208,40 @@ export interface ClientUnitRow {
   enRiesgo: number;
 }
 
-export function DesempenoClienteUnidad({ rows }: { rows: ClientUnitRow[] }) {
-  if (!rows.length) return <EmptyReport />;
+export type AgruparPor = "cliente" | "producto" | "indicacion";
+const NOMBRE_AGRUPAR: Record<AgruparPor, string> = { cliente: "Cliente / Unidad", producto: "Producto", indicacion: "Indicación" };
+
+export function DesempenoClienteUnidad({
+  rows,
+  agrupar = "cliente",
+  onAgrupar,
+}: {
+  rows: ClientUnitRow[];
+  agrupar?: AgruparPor;
+  onAgrupar?: (a: AgruparPor) => void;
+}) {
+  const selector = onAgrupar && (
+    <div className="mb-3 inline-flex rounded-lg border border-[#E4E7EC] bg-white p-0.5" role="tablist" aria-label="Agrupar por">
+      {(["cliente", "producto", "indicacion"] as AgruparPor[]).map((a) => (
+        <button key={a} type="button" role="tab" aria-selected={agrupar === a} onClick={() => onAgrupar(a)} className={cn("rounded-md px-3 py-1 text-xs font-semibold transition-colors", agrupar === a ? "bg-[#0F1B2D] text-white" : "text-[#4E5964] hover:bg-[#F8F9FA]")}>
+          Por {a === "indicacion" ? "indicación" : a}
+        </button>
+      ))}
+    </div>
+  );
+  if (!rows.length) return <>{selector}<EmptyReport /></>;
   return (
     <ChartCard
-      title="Desempeño por cliente y unidad"
+      title={agrupar === "cliente" ? "Desempeño por cliente y unidad" : `Desempeño por ${agrupar === "producto" ? "producto" : "indicación"}`}
       desc="A tiempo vs requerida, ciclo, quién retiene el tiempo, errores Spark y riesgo."
     >
+      {selector}
       <div className="overflow-x-auto rounded-[10px] border border-[#E4E7EC]">
         <table className="w-full text-sm">
           <thead className="bg-[#F8F9FA] text-[11px] text-[#4E5964]">
             <tr>
               <th className="px-3 py-2 text-left font-semibold">
-                Cliente / Unidad
+                {NOMBRE_AGRUPAR[agrupar]}
               </th>
               <th className="px-3 py-2 text-center font-semibold">Activos</th>
               <th className="px-3 py-2 text-center font-semibold">

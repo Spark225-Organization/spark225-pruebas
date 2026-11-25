@@ -1,0 +1,25 @@
+// Copia del checklist de envío que Spark225 presentó a Eisai Oncología (tabla
+// checklist_templates de la base real). Solo se usa en el modo demo.
+export const CHECKLIST_DEMO = [
+  {"tipo": "paquete_final", "orden": 10, "item": "Códigos del cliente insertados en el arte", "detalle": "Código de aprobación interna y aviso regulatorio colocados en el material.", "formatos": "todos"},
+  {"tipo": "paquete_final", "orden": 20, "item": "PDF final", "detalle": "Versión final en PDF con códigos.", "formatos": "todos"},
+  {"tipo": "paquete_final", "orden": 30, "item": "JPG", "detalle": "Versión en imagen JPG de cada pieza/cara.", "formatos": "todos"},
+  {"tipo": "paquete_final", "orden": 40, "item": "Archivo editable", "detalle": "Editable fuente (AI, PPT o DOCX) con códigos.", "formatos": "todos"},
+  {"tipo": "paquete_final", "orden": 50, "item": "Archivo en alta para impresión", "detalle": "Alta resolución lista para imprenta, con barniz UV a registro marcado en capa separada.", "formatos": "tarjet, folder, díptico, diptico, tríptico, triptico, infograf, banner, stand, roll, brochure, impreso"},
+  {"tipo": "paquete_final", "orden": 60, "item": "Especificaciones de impresión para proveedor", "detalle": "Sustrato, gramaje, tamaño final, acabados, suaje y barniz UV a registro (por defecto).", "formatos": "tarjet, folder, díptico, diptico, tríptico, triptico, infograf, banner, stand, roll, brochure, impreso"},
+  {"tipo": "paquete_final", "orden": 70, "item": "HTML listo para el sistema de aprobación", "detalle": "HTML del mailing según especificaciones del sistema del cliente (ej. Veeva).", "formatos": "mailing"},
+  {"tipo": "paquete_final", "orden": 80, "item": "Paquete digital según especificaciones del sistema", "detalle": "Ayuda visual/CLM programada con las medidas y requisitos del sistema del cliente (ej. Veeva CLM).", "formatos": "ayuda vi, ayuda vu, clm"},
+  {"tipo": "paquete_final", "orden": 90, "item": "Archivos cargados en la carpeta del cliente", "detalle": "Todo lo anterior subido a la carpeta compartida del cliente, con liga registrada.", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 10, "item": "Validación médica final del arte", "detalle": "El médico revisó el arte final contra el contenido aprobado.", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 20, "item": "Marca con ® en cada mención", "detalle": "El símbolo ® aparece en cada mención de la marca, no solo en la primera.", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 30, "item": "Logo y nombre comercial vigentes del país", "detalle": "Logo y nombre comercial locales correctos (ej. Lenvixi en México, no Lenvima); aplica también a materiales reg", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 40, "item": "Registro sanitario completo en una sola línea", "detalle": "Número de registro sanitario completo, sin cortes de línea.", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 50, "item": "Leyendas regulatorias completas", "detalle": "Leyendas regulatorias obligatorias del país y espacio reservado para código interno y aviso.", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 60, "item": "Identidad visual de la indicación", "detalle": "El material respeta la identidad visual de su indicación y se distingue de las otras indicaciones del mismo pr", "formatos": "todos"},
+  {"tipo": "pre_envio_grafico", "orden": 70, "item": "Elementos en zona segura", "detalle": "Ningún texto queda tapado por pantallas, dobleces, suajes o zonas de corte.", "formatos": "todos"},
+  {"tipo": "pre_envio_medico", "orden": 10, "item": "Validación médica interna completa", "detalle": "Todo material, incluidos stands, banners y promocionales, pasa por el área médica antes de ir al cliente.", "formatos": "todos"},
+  {"tipo": "pre_envio_medico", "orden": 20, "item": "Referencias en el formato del laboratorio", "detalle": "Cuando la IPP se usa como referencia, citarla exactamente en el formato que pide el cliente (ej. Eisai: \"IPPA-", "formatos": "todos"},
+  {"tipo": "pre_envio_medico", "orden": 30, "item": "Indicación textual conforme a la IPP", "detalle": "La indicación va tal cual aparece en la IPP vigente, sin parafrasear.", "formatos": "todos"},
+  {"tipo": "pre_envio_medico", "orden": 40, "item": "Terminología, siglas y escalas oficiales", "detalle": "Términos clínicos, siglas y nombres de escalas validados (ej. infusión vs perfusión, MAFLD vs MASLD, nombre of", "formatos": "todos"},
+  {"tipo": "pre_envio_medico", "orden": 50, "item": "Datos y fuentes vigentes", "detalle": "Cifras epidemiológicas y de eficacia con la fuente más reciente aceptada por el cliente (ej. Globocan 2022), c", "formatos": "todos"},
+];

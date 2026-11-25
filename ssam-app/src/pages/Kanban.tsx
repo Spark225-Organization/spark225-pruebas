@@ -22,6 +22,7 @@ import {
   type MaterialStatus,
 } from "@/lib/statusModel";
 import { cn } from "@/lib/utils";
+import { ChecklistEnvio, pideChecklist } from "@/components/material/ChecklistEnvio";
 
 type ClientMap = Record<string, Client>;
 
@@ -35,6 +36,12 @@ const Kanban = () => {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<MaterialStatus | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  // Filtros por cliente, producto e indicación.
+  const [fCliente, setFCliente] = useState("");
+  const [fProducto, setFProducto] = useState("");
+  const [fIndicacion, setFIndicacion] = useState("");
+  // Movimiento hacia revisión del cliente: primero el checklist de envío.
+  const [pendiente, setPendiente] = useState<{ mat: Material; status: MaterialStatus } | null>(null);
 
   const clients: ClientMap = useMemo(
     () => Object.fromEntries(data.clients.map((c) => [c.id, c])),
@@ -48,10 +55,13 @@ const Kanban = () => {
     () =>
       data.materials
         .filter((m) => !filters.hideDemo || !data.demoIds.has(m.id))
+        .filter((m) => !fCliente || m.client_id === fCliente)
+        .filter((m) => !fProducto || m.product_name === fProducto)
+        .filter((m) => !fIndicacion || m.indication_name === fIndicacion)
         .map((m) =>
           optimistic[m.id] ? { ...m, status: optimistic[m.id] } : m,
         ),
-    [data.materials, data.demoIds, optimistic, filters.hideDemo],
+    [data.materials, data.demoIds, optimistic, filters.hideDemo, fCliente, fProducto, fIndicacion],
   );
 
   const columns = showArchived
@@ -68,7 +78,12 @@ const Kanban = () => {
     if (!id) return;
     const mat = materials.find((m) => m.id === id);
     if (!mat || mat.status === status) return;
+    if (pideChecklist(status)) return setPendiente({ mat, status });
+    await mover(mat, status);
+  };
 
+  const mover = async (mat: Material, status: MaterialStatus) => {
+    const id = mat.id;
     const prev = mat.status;
     // Optimista: mueve la tarjeta al instante.
     setOptimistic((o) => ({ ...o, [id]: status }));
@@ -82,7 +97,7 @@ const Kanban = () => {
         return n;
       });
       toast.error(`No se pudo mover: ${res.error}`);
-      return;
+      return res;
     }
     // El refresco de ["operacion"] trae el dato real; limpiar el overlay.
     setOptimistic((o) => {
@@ -93,10 +108,30 @@ const Kanban = () => {
     toast.success(
       `${mat.name} → ${statusLabel(status, clients[mat.client_id] ?? null)}`,
     );
+    return res;
   };
+
+  // Opciones de filtro (con lo que hay en la base).
+  const base = data.materials.filter((m) => !filters.hideDemo || !data.demoIds.has(m.id));
+  const opClientes = [...new Map(base.filter((m) => m.client_id).map((m) => [m.client_id as string, m.client_name ?? clients[m.client_id as string]?.name ?? "—"])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const opProductos = [...new Set(base.filter((m) => !fCliente || m.client_id === fCliente).map((m) => m.product_name).filter(Boolean) as string[])].sort();
+  const opIndicaciones = [...new Set(base.filter((m) => (!fCliente || m.client_id === fCliente) && (!fProducto || m.product_name === fProducto)).map((m) => m.indication_name).filter(Boolean) as string[])].sort();
+  const selCls = (v: string) => cn("h-9 rounded-lg border bg-background px-2.5 text-xs font-semibold", v ? "border-[#E37439] text-foreground" : "text-muted-foreground");
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {pendiente && (
+        <ChecklistEnvio
+          material={pendiente.mat}
+          destino={pendiente.status}
+          destinoNombre={statusLabel(pendiente.status, clients[pendiente.mat.client_id ?? ""] ?? null)}
+          onCerrar={() => setPendiente(null)}
+          onEnviar={async () => {
+            const r = await mover(pendiente.mat, pendiente.status);
+            return { error: r?.error ?? null };
+          }}
+        />
+      )}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -107,7 +142,19 @@ const Kanban = () => {
             permitidas se revierten y muestran el error de la base.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select aria-label="Filtrar por cliente" value={fCliente} onChange={(e) => { setFCliente(e.target.value); setFProducto(""); setFIndicacion(""); }} className={selCls(fCliente)}>
+            <option value="">Todos los clientes</option>
+            {opClientes.map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+          </select>
+          <select aria-label="Filtrar por producto" value={fProducto} onChange={(e) => { setFProducto(e.target.value); setFIndicacion(""); }} className={selCls(fProducto)}>
+            <option value="">Todos los productos</option>
+            {opProductos.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <select aria-label="Filtrar por indicación" value={fIndicacion} onChange={(e) => setFIndicacion(e.target.value)} className={selCls(fIndicacion)}>
+            <option value="">Todas las indicaciones</option>
+            {opIndicaciones.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
           <Button
             variant="outline"
             size="sm"

@@ -1,7 +1,7 @@
 // Conexión con Supabase: sesión, carga inicial, guardado con reintentos y cambios en vivo.
 // La app trabaja en memoria (rápida) y esta capa sube cada cambio en segundo plano.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611251139';
+import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611251540';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'ssam-equipo-auth' },
@@ -72,6 +72,13 @@ export async function subirDocs(filas) {
     const { error } = await sb.from('docs').upsert(filas.slice(i, i + 100), { onConflict: 'coleccion,id' });
     if (error) throw error;
   }
+  // Si cambió alguna actividad compartida, se manda a Notion en unos segundos.
+  if (filas.some((f) => f.coleccion === 'actividades' && !f.visible_para)) empujarNotion();
+}
+let empuje = null;
+function empujarNotion() {
+  clearTimeout(empuje);
+  empuje = setTimeout(() => { sincronizarNotion().catch(() => {}); }, 4000);
 }
 export async function subirAjustes(persona, datos) {
   const { error } = await sb.from('ajustes').upsert({ persona, datos, actualizado: new Date().toISOString() }, { onConflict: 'persona' });

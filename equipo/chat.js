@@ -1,8 +1,8 @@
 // Chat interno del equipo, con facturas adjuntas que avanzan: Enviada → Recibida → Pagada.
 // En la fase de pruebas los mensajes viven en este navegador; con Supabase serán en tiempo real.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { enviarMensaje, marcarLeidoCanal, avanzarFactura, ESTATUS_FACTURA, canalDirecto, esAdmin } from './store.js?v=202611251139';
-import { I, Avatar, haceCuanto } from './ui.js?v=202611251139';
+import { enviarMensaje, marcarLeidoCanal, avanzarFactura, ESTATUS_FACTURA, canalDirecto, esAdmin } from './store.js?v=202611251540';
+import { I, Avatar, haceCuanto } from './ui.js?v=202611251540';
 
 const NOMBRE_EST = { enviada: 'Enviada', recibida: 'Recibida', pagada: 'Pagada' };
 

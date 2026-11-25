@@ -1,22 +1,22 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251139';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251540';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611251139';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251139';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251139';
-import { AltaRapida } from './mecha.js?v=202611251139';
-import { Inicio } from './vistas.js?v=202611251139';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251139';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611251139';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251139';
-import { Chat } from './chat.js?v=202611251139';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251139';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion } from './nube.js?v=202611251139';
-import { Bienvenida, Recorrido } from './tour.js?v=202611251139';
-import { useArrastre } from './arrastre.js?v=202611251139';
-import { Galeria } from './widgets.js?v=202611251139';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611251540';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251540';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251540';
+import { AltaRapida } from './mecha.js?v=202611251540';
+import { Inicio } from './vistas.js?v=202611251540';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251540';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611251540';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251540';
+import { Chat } from './chat.js?v=202611251540';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251540';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion } from './nube.js?v=202611251540';
+import { Bienvenida, Recorrido } from './tour.js?v=202611251540';
+import { useArrastre } from './arrastre.js?v=202611251540';
+import { Galeria } from './widgets.js?v=202611251540';
 
 function useStore() {
   const [, set] = useState(0);

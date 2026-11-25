@@ -13,6 +13,7 @@ import { RevisionCliente } from "@/components/portal/RevisionCliente";
 import { CommentThread } from "@/components/portal/CommentThread";
 import { FechaRequeridaClienteCard } from "@/components/material/FechaRequeridaClienteCard";
 import { useAuth } from "@/lib/auth";
+import { setContextoContacto } from "@/components/portal/ContactoFlotante";
 import { cn } from "@/lib/utils";
 
 const esImagen = (f: StoredFile) => f.category === "image" || /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name);
@@ -23,6 +24,13 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
   const [archivos, setArchivos] = useState<StoredFile[] | null>(null);
   const [verId, setVerId] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
+
+  // El botón de contacto sabe qué material está viendo el cliente.
+  useEffect(() => {
+    if (!material) return;
+    setContextoContacto(`${material.folio != null ? `#${material.folio} ` : ""}${material.name}`);
+    return () => setContextoContacto(null);
+  }, [material?.id]);
 
   useEffect(() => {
     if (!material) return;
@@ -158,7 +166,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
         </section>
 
         {/* Panel lateral */}
-        <aside className="min-h-0 space-y-4 overflow-y-auto border-t border-[#E3E6EA] bg-white p-4 sm:p-5 lg:border-l lg:border-t-0" aria-label="Detalle y acciones">
+        <aside className="min-h-0 space-y-4 overflow-y-auto border-t border-[#E3E6EA] bg-white p-4 pb-24 sm:p-5 sm:pb-24 lg:border-l lg:border-t-0" aria-label="Detalle y acciones">
           {momento(material) === "revisar" && <RevisionCliente material={material} vigente={ver ?? vigente} onDone={() => { setRecarga((n) => n + 1); onCambio(); }} />}
 
           <div>

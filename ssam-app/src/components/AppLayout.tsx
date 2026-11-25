@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { Bell, Search, LogOut } from "lucide-react";
 import { Marca } from "./Marca";
 import { BuscadorGlobal } from "./BuscadorGlobal";
+import { ContactoFlotante } from "./portal/ContactoFlotante";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8"><Suspense fallback={<Cargando />}>{children}</Suspense></main>
+        <ContactoFlotante />
       </div>
     );
   }

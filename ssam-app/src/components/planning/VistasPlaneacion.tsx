@@ -137,7 +137,7 @@ export function CalendarioMes({ items, onSelect }: { items: MaterialForecast[]; 
       <div className="flex items-center gap-2">
         <button type="button" aria-label="Mes anterior" onClick={() => { setMes((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setDiaAbierto(null); }} className="rounded-lg border border-[#E4E7EC] bg-white p-1.5 hover:bg-[#F8F9FA]"><ChevronLeft className="h-4 w-4" /></button>
         <button type="button" aria-label="Mes siguiente" onClick={() => { setMes((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setDiaAbierto(null); }} className="rounded-lg border border-[#E4E7EC] bg-white p-1.5 hover:bg-[#F8F9FA]"><ChevronRight className="h-4 w-4" /></button>
-        <h2 className="text-base font-bold capitalize text-[#0F1B2D]">{mes.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}</h2>
+        <h2 className="text-base font-bold text-[#0F1B2D] first-letter:uppercase">{mes.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}</h2>
         <span className="text-xs text-[#9AA4B2]">· {enMes} entrega{enMes === 1 ? "" : "s"}</span>
         <button type="button" onClick={() => { setMes(new Date(hoy.getFullYear(), hoy.getMonth(), 1)); setDiaAbierto(null); }} className="ml-auto rounded-lg border border-[#E4E7EC] bg-white px-3 py-1.5 text-xs font-semibold text-[#4E5964] hover:bg-[#F8F9FA]">Hoy</button>
       </div>

@@ -7,7 +7,8 @@ const DemoBanner = () => {
   if (!DEMO || !rolDemo()) return null;
   const rol = rolDemo() === "client" ? "cliente" : "administrador";
   return (
-    <div className="fixed bottom-10 left-4 z-[60] flex items-center gap-3 rounded-full border border-[#DBDBDB] bg-white/95 py-1.5 pl-4 pr-1.5 text-xs shadow-card backdrop-blur">
+    // z-40: queda debajo de paneles y diálogos (z-50) para no tapar sus botones.
+    <div className="fixed bottom-10 left-4 z-40 flex items-center gap-3 rounded-full border border-[#DBDBDB] bg-white/95 py-1.5 pl-4 pr-1.5 text-xs shadow-card backdrop-blur">
       <span className="text-[#4E5964]">
         Demo como <b className="text-[#0E1E2A]">{rol}</b> · datos ficticios
       </span>

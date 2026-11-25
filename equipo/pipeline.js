@@ -2,11 +2,11 @@
 // Filtra por persona (yo, todos, alguien) y por cliente. Se ve en columnas por estatus o en lista por fecha.
 // Arriba van las minutas que llegan del correo: son de todos.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS } from './datos.js?v=202611251031';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, acuerdoATarea } from './store.js?v=202611251031';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251031';
-import { arrastrarActividad, teclasActividad } from './mecha.js?v=202611251031';
-import { useArrastre } from './arrastre.js?v=202611251031';
+import { hoyISO, sumarDias, ESTATUS } from './datos.js?v=202611251108';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, acuerdoATarea } from './store.js?v=202611251108';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251108';
+import { arrastrarActividad, teclasActividad } from './mecha.js?v=202611251108';
+import { useArrastre } from './arrastre.js?v=202611251108';
 
 const finDeSemana = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, 6 - ((d.getDay() + 6) % 7)); };
 
@@ -172,11 +172,11 @@ export function HojaMinuta({ id, ctx, cerrar }) {
         const p = ctx.db.personas.find((x) => x.id === k.responsable);
         return html`<li key=${k.id}>
           <${Avatar} p=${p} />
-          <div class="hm-k"><span>${k.texto}</span><small>${p?.corto} · ${fechaRelativa(k.fecha)}</small></div>
+          <div class="hm-k"><span>${k.texto}</span>${k.detalle && html`<em class="hm-det">${k.detalle}</em>`}<small>${p?.corto} · ${fechaRelativa(k.fecha)}</small></div>
           ${k.tarea ? html`<button class="hm-ok" onClick=${() => { cerrar(); ctx.abrir(k.tarea); }} title="Ver tarea">${I('check')}Tarea</button>`
             : html`<button class="btn chico prim" onClick=${() => { crearUna(k); ctx.toast(`Tarea creada para ${p?.corto}`); }}>Crear tarea</button>`}
         </li>`;
       })}</ul>
-      <p class="hm-origen">${I('correo')}Se armó sola con la transcripción que llegó al correo. <span class="demo-tag">demo</span></p>
+      <p class="hm-origen">${I('correo')}${m.origen ? html`Se armó sola con las notas que llegaron a tu correo. <a href=${m.origen} target="_blank" rel="noopener">Abrir correo</a>` : html`Se armó sola con la transcripción que llegó al correo. <span class="demo-tag">demo</span>`}</p>
     </div>`;
 }

@@ -1,21 +1,23 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251031';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251108';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-} from './store.js?v=202611251031';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251031';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251031';
-import { AltaRapida } from './mecha.js?v=202611251031';
-import { Inicio } from './vistas.js?v=202611251031';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251031';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611251031';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251031';
-import { Chat } from './chat.js?v=202611251031';
-import { Login } from './login.js?v=202611251031';
-import { Bienvenida, Recorrido } from './tour.js?v=202611251031';
-import { useArrastre } from './arrastre.js?v=202611251031';
-import { Galeria } from './widgets.js?v=202611251031';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas,
+} from './store.js?v=202611251108';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251108';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251108';
+import { AltaRapida } from './mecha.js?v=202611251108';
+import { Inicio } from './vistas.js?v=202611251108';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251108';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611251108';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251108';
+import { Chat } from './chat.js?v=202611251108';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251108';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo } from './nube.js?v=202611251108';
+import { Bienvenida, Recorrido } from './tour.js?v=202611251108';
+import { useArrastre } from './arrastre.js?v=202611251108';
+import { Galeria } from './widgets.js?v=202611251108';
 
 function useStore() {
   const [, set] = useState(0);
@@ -50,7 +52,14 @@ function App() {
   const [ultimoCliente, setUltimoCliente] = useState('interno');
   const [galeria, setGaleria] = useState(null);
   const [chat, setChat] = useState(null);
-  const [sesion, setSesion] = useState(() => leerLocal('ssam-equipo-sesion', ''));
+  // fase: cargando · login · demo · nube · pendiente · clave · error
+  const [fase, setFase] = useState('cargando');
+  const [fallo, setFallo] = useState('');
+  const [correoPend, setCorreoPend] = useState('');
+  const [estNube, setEstNube] = useState({ ...nube });
+  const iniciando = useRef(false);
+  const faseRef = useRef('cargando');
+  faseRef.current = fase;
   const [tour, setTour] = useState(null);
   const [asis, setAsis] = useState(null);
   const [menuCrear, setMenuCrear] = useState(false);
@@ -59,6 +68,32 @@ function App() {
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
   useEffect(() => { setChat(null); setCajon(null); setMenuCrear(false); setMinuta(null); }, [ruta]);
+
+  useEffect(() => escucharNube(setEstNube), []);
+  // Arranque: con sesión de Supabase carga tus datos reales; sin sesión, pantalla de entrada (o la demo si la elegiste).
+  const iniciar = async (s) => {
+    if (iniciando.current) return;
+    if (!s) { setFase(leerLocal('ssam-equipo-sesion', '') === 'demo' ? 'demo' : 'login'); return; }
+    iniciando.current = true;
+    try {
+      setFase('cargando');
+      const p = await miPerfil(s.user.id);
+      if (!p || p.permiso === 'pendiente') { setCorreoPend(s.user.email); setFase('pendiente'); return; }
+      await conectarNube(p);
+      setYo(p.id);
+      setFase('nube');
+      if (!leerLocal('ssam-equipo-tour-' + p.id, '')) { escribirLocal('ssam-equipo-tour-' + p.id, '1'); setTimeout(() => setTour('pasos'), 500); }
+    } catch (err) { setFallo(String(err?.message || err)); setFase('error'); }
+    finally { iniciando.current = false; }
+  };
+  useEffect(() => {
+    sesionActual().then(iniciar).catch(() => setFase('login'));
+    return alCambiarSesion((ev, s) => {
+      if (ev === 'PASSWORD_RECOVERY') setFase('clave');
+      else if (ev === 'SIGNED_IN' && faseRef.current !== 'nube' && faseRef.current !== 'clave') iniciar(s);
+      else if (ev === 'SIGNED_OUT') { store.modoDemo(); setFase('login'); }
+    });
+  }, []);
 
   const toast = useCallback((texto, accion) => {
     const id = Math.random();
@@ -83,6 +118,7 @@ function App() {
     nueva: (extra = {}) => setAsis({ tipo: 'tarea', inicial: extra }),
     crear: (tipo, inicial = {}) => { setMenuCrear(false); setAsis({ tipo, inicial }); },
     abrirMinuta: (id) => setMinuta(id),
+    enNube: fase === 'nube',
     avanzar: (a) => {
       const de = a.estatus;
       const r = cambiarEstatus(a.id, siguienteEstatus(a.estatus), yo);
@@ -118,11 +154,14 @@ function App() {
     return () => removeEventListener('keydown', f);
   });
 
-  // Login de demostración: con cualquier dato entra y arranca el recorrido.
-  if (!sesion) return html`<${Login} personas=${db.personas} entrar=${(id) => {
-    setYo(id); escribirLocal('ssam-equipo-sesion', '1'); setSesion('1'); location.hash = '#/'; setTimeout(() => setTour('pasos'), 450);
+  if (fase === 'cargando' || fase === 'error') return html`<${Cargando} error=${fase === 'error' ? fallo : ''} reintentar=${() => sesionActual().then(iniciar)} salir=${() => salirNube()} />`;
+  if (fase === 'pendiente') return html`<${Pendiente} correo=${correoPend} />`;
+  if (fase === 'clave') return html`<${NuevaClave} listo=${() => sesionActual().then(iniciar)} />`;
+  if (fase === 'login') return html`<${Login} entrarDemo=${() => {
+    escribirLocal('ssam-equipo-sesion', 'demo'); setYo('adan'); setFase('demo'); location.hash = '#/'; setTimeout(() => setTour('pasos'), 450);
   }} />`;
-  const salir = () => { try { localStorage.removeItem('ssam-equipo-sesion'); } catch (_) { /* sin almacenamiento */ } setPerfil(false); setTour(null); setSesion(''); };
+  const enNube = fase === 'nube';
+  const salir = () => { try { localStorage.removeItem('ssam-equipo-sesion'); } catch (_) { /* sin almacenamiento */ } setPerfil(false); setTour(null); if (enNube) salirNube(); else setFase('login'); };
 
   const yoP = db.personas.find((p) => p.id === yo);
   const misAvisos = db.avisos.filter((n) => n.para === yo);
@@ -137,6 +176,7 @@ function App() {
         <button class="yo-btn" onClick=${() => setPerfil(true)} aria-label="Tu perfil"><${Avatar} p=${yoP} grande /></button>
         ${vista === 'dia' && vistaCal === 'dia' ? html`<${Dias} fecha=${fecha} setFecha=${setFecha} db=${db} persona=${persona} yo=${yo} />` : html`<div class="dias titulo-top">${{ equipo: 'Equipo', papelera: 'Papelera', historial: 'Historial' }[vista] || ''}</div>`}
         <div class="top-der">
+          ${enNube && estNube.estado !== 'listo' && html`<button class=${'sync ' + estNube.estado} onClick=${reintentarSubida} title=${estNube.ultimoError || ''}>${estNube.estado === 'error' ? html`${I('alerta')}<span>Sin guardar · reintentar</span>` : html`<i></i><span>Guardando</span>`}</button>`}
           <button class="icon-btn" onClick=${() => setChat({})} aria-label=${`Chat${chatSinLeer ? `, ${chatSinLeer} sin leer` : ''}`} data-tour="chat">${I('chat')}${chatSinLeer ? html`<em class="top-badge num">${chatSinLeer}</em>` : null}</button>
           <button class="icon-btn" onClick=${() => setPaleta(true)} aria-label="Buscar" data-tour="buscar">${I('buscar')}</button>
           <a class="icon-btn" href="#/historial" aria-label="Historial" title="Historial">${I('historial')}</a>
@@ -152,7 +192,7 @@ function App() {
           ${vista === 'clientes' && html`<${Archivero} ctx=${ctx} />`}
           ${vista === 'cliente' && html`<${DetalleCliente} id=${clienteRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
-          ${vista === 'equipo' && html`<${Equipo} db=${db} yo=${yo} />`}
+          ${vista === 'equipo' && html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`}
           ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
         <//>
       </main>
@@ -174,7 +214,7 @@ function App() {
         pedirMotivo=${(f) => setMotivo({ ok: f })} />`}
       ${motivo && html`<${HojaMotivo} cancelar=${() => setMotivo(null)} elegir=${(m) => { const f = motivo.ok; setMotivo(null); f(m); }} />`}
       ${menu && html`<${MenuEstatus} menu=${menu} cerrar=${() => setMenu(null)} ctx=${ctx} />`}
-      ${perfil && html`<${Perfil} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
+      ${perfil && html`<${Perfil} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
@@ -216,7 +256,8 @@ function Dias({ fecha, setFecha, db, persona, yo }) {
 }
 
 // ---------- Equipo ----------
-function Equipo({ db, yo }) {
+function Equipo({ db, yo, enNube, toast }) {
+  const admin = esAdmin(yo);
   const hoy = hoyISO();
   const d = new Date(hoy + 'T12:00:00');
   const dom = sumarDias(sumarDias(hoy, -((d.getDay() + 6) % 7)), 6);
@@ -235,7 +276,36 @@ function Equipo({ db, yo }) {
             <span class="barra-c" title=${`${h} de ${CAPACIDAD_SEMANA} h esta semana`}><i class=${h / CAPACIDAD_SEMANA > 0.85 ? 'alta' : ''} style=${`width:${Math.min(100, (h / CAPACIDAD_SEMANA) * 100)}%`}></i></span>
           </a>`;
       })}
-    </div>`;
+    </div>
+    ${enNube && admin && html`<${Accesos} db=${db} toast=${toast} />`}`;
+}
+
+// ---------- Accesos (solo admin): aprobar a quien se registró y dar de alta correos ----------
+function Accesos({ db, toast }) {
+  const [correo, setCorreo] = useState('');
+  const [nombre, setNombre] = useState('');
+  const recargar = async () => { const { perfiles } = await cargarTodo(); refrescarPersonas(perfiles); };
+  const aprobar = async (p) => { try { await aprobarPersona(p.id); await recargar(); toast(`${p.nombre} ya puede entrar`); } catch (e) { toast('No se pudo aprobar: ' + e.message); } };
+  const invitar = async () => {
+    const e = correo.trim().toLowerCase();
+    if (!/^[^@\s]+@spark225\.com$/.test(e) || !nombre.trim()) return toast('Nombre y correo @spark225.com');
+    const id = e.split('@')[0].replace(/[^a-z0-9]+/g, '-');
+    try {
+      await invitarPersona({ id, email: e, nombre: nombre.trim(), corto: nombre.trim().split(' ')[0], permiso: 'colaborador', color: '#5C7CFA' });
+      await recargar(); setCorreo(''); setNombre(''); toast('Listo: al registrarse con ese correo entra directo');
+    } catch (err) { toast('No se pudo dar de alta: ' + err.message); }
+  };
+  const pend = db.pendientes || [];
+  return html`<section class="accesos">
+    <h3>${I('candado')}Accesos</h3>
+    ${pend.length > 0 && html`<ul class="acc-pend">${pend.map((p) => html`<li key=${p.id}><span class="acc-n"><b>${p.nombre}</b><small>${p.email}</small></span>
+      <button class="btn prim chico" onClick=${() => aprobar(p)}>Aprobar</button></li>`)}</ul>`}
+    <form class="acc-alta" onSubmit=${(e) => { e.preventDefault(); invitar(); }}>
+      <input placeholder="Nombre" value=${nombre} onInput=${(e) => setNombre(e.target.value)} aria-label="Nombre" />
+      <input placeholder="correo@spark225.com" value=${correo} onInput=${(e) => setCorreo(e.target.value)} aria-label="Correo" type="email" />
+      <button class="btn" type="submit">${I('mas')}Dar de alta</button>
+    </form>
+  </section>`;
 }
 
 // ---------- Papelera ----------
@@ -333,7 +403,7 @@ function Protegido({ children }) {
   return children;
 }
 
-function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir }) {
+function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
@@ -346,12 +416,12 @@ function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir 
         <a class="op" href="#/papelera" onClick=${cerrar}>${I('papelera')}<span>Papelera</span></a>
         <a class="op" href="#/historial" onClick=${cerrar}>${I('historial')}<span>Historial</span></a>
         <button class="op" onClick=${descargarRespaldo}>${I('archivar')}<span>Descargar respaldo</span></button>
-        <label class="op">${I('reset')}<span>Restaurar respaldo</span><input type="file" accept="application/json,.json" hidden onChange=${(e) => restaurarRespaldo(e, toast, cerrar)} /></label>
-        <button class="op" onClick=${() => { if (confirm('¿Volver a los datos de ejemplo? Se pierde lo que hayas cambiado.')) { store.restablecer(); toast('Datos de prueba restablecidos'); cerrar(); } }}>${I('reset')}<span>Reiniciar demo</span></button>
+        ${!enNube && html`<label class="op">${I('reset')}<span>Restaurar respaldo</span><input type="file" accept="application/json,.json" hidden onChange=${(e) => restaurarRespaldo(e, toast, cerrar)} /></label>`}
+        ${!enNube && html`<button class="op" onClick=${() => { if (confirm('¿Volver a los datos de ejemplo? Se pierde lo que hayas cambiado.')) { store.restablecer(); toast('Datos de prueba restablecidos'); cerrar(); } }}>${I('reset')}<span>Reiniciar demo</span></button>`}
         <button class="op" onClick=${salir}>${I('salir')}<span>Cerrar sesión</span></button>
       </div>
-      <div class="hoja-t chico">Ver como</div>
-      <div class="ver-como">${db.personas.map((x) => html`<button key=${x.id} aria-pressed=${x.id === yo} onClick=${() => { setYo(x.id); cerrar(); }}><${Avatar} p=${x} grande /><span>${x.corto}</span></button>`)}</div>
+      ${!enNube && html`<div class="hoja-t chico">Ver como</div>
+      <div class="ver-como">${db.personas.map((x) => html`<button key=${x.id} aria-pressed=${x.id === yo} onClick=${() => { setYo(x.id); cerrar(); }}><${Avatar} p=${x} grande /><span>${x.corto}</span></button>`)}</div>`}
     </div>`;
 }
 

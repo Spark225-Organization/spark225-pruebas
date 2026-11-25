@@ -1,10 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611251031';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion } from './store.js?v=202611251031';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611251031';
-import { hoyISO } from './datos.js?v=202611251031';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611251031';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611251108';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia } from './store.js?v=202611251108';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611251108';
+import { hoyISO } from './datos.js?v=202611251108';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611251108';
+import { correosRecientes, leerTranscripcion, agendaDeHoy } from './google.js?v=202611251108';
+import { tokenGoogle, entrarConGoogle } from './nube.js?v=202611251108';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -63,7 +65,8 @@ function Widget(props) {
   if (t === 'jornada') return html`<${WJornada} ...${props} />`;
   if (t === 'cumplimiento') return html`<${WCumplimiento} ...${props} />`;
   if (t === 'facturas') return html`<${WFacturas} ...${props} />`;
-  if (t === 'correo') return html`<${WCorreo} ...${props} />`;
+  if (t === 'correo') return props.ctx.enNube ? html`<${WCorreoReal} ...${props} />` : html`<${WCorreo} ...${props} />`;
+  if (t === 'agenda') return html`<${WAgenda} ...${props} />`;
   if (t === 'minutas') return html`<${WMinutas} ...${props} />`;
   if (t === 'chat') return html`<${WChat} ...${props} />`;
   if (t === 'clientes') return html`<${WClientes} ...${props} />`;
@@ -363,4 +366,78 @@ export function Galeria({ db, agregar, cerrar }) {
       : html`<div class="galeria">${db.clientes.filter((c) => !c.privado).map((c) => html`
         <button key=${c.id} class="g-op g-cli" style=${`--c:${c.color}`} onClick=${() => { agregar({ tipo: 'cliente', cliente: c.id }); cerrar(); }}><span class="g-ico"></span><span>${c.nombre}</span></button>`)}</div>`}
     </div>`;
+}
+
+// ---------- Google real ----------
+function ConectarGoogle({ texto }) {
+  return html`<div class="w-google"><p>${texto}</p><button class="btn chico" onClick=${() => entrarConGoogle()}>Conectar Google</button></div>`;
+}
+
+// Tu Gmail: últimos correos. Las transcripciones de juntas se vuelven minuta solas, para todo el equipo.
+function WCorreoReal({ ctx }) {
+  const [estado, setEstado] = useState(tokenGoogle() ? 'cargando' : 'sin');
+  const procesando = useRef(new Set());
+  const cargar = async () => {
+    if (!tokenGoogle()) return setEstado('sin');
+    setEstado('cargando');
+    try {
+      const l = await correosRecientes(ctx.db.clientes);
+      ponerCorreos(l);
+      setEstado('ok');
+      for (const c of l.filter((x) => x.tipo === 'transcripcion' && !ctx.db.minutas.some((m) => m.correo === x.id))) {
+        if (procesando.current.has(c.id)) continue;
+        procesando.current.add(c.id);
+        try {
+          const datos = await leerTranscripcion(c, ctx.db.personas, ctx.yo);
+          const m = minutaDeCorreo(c, datos, ctx.yo);
+          ctx.toast(`Nueva minuta: ${m.titulo}`, { texto: 'Ver', f: () => ctx.abrirMinuta(m.id) });
+        } catch (_) { /* se reintenta en la siguiente carga */ }
+      }
+    } catch (e) { setEstado(e.sinPermiso ? 'sin' : 'error'); }
+  };
+  useEffect(() => { cargar(); const t = setInterval(cargar, 5 * 60000); return () => clearInterval(t); }, []);
+  const l = ctx.db.correos || [];
+  const nuevos = l.filter((m) => !m.leido).length;
+  return html`<div class="w">
+    ${cab('correo', 'Correo', nuevos || null)}
+    ${estado === 'sin' ? html`<${ConectarGoogle} texto="Conecta tu Google para ver tu correo y volver minutas las juntas." />`
+      : estado === 'error' ? html`<p class="w-vacio">No pude leer tu correo. <button class="enlace" onClick=${cargar}>Reintentar</button></p>`
+      : estado === 'cargando' && !l.length ? html`<p class="w-vacio">Cargando…</p>`
+      : html`<ul class="correos">${l.slice(0, 5).map((m) => {
+        const c = ctx.db.clientes.find((x) => x.id === m.cliente);
+        return html`<li key=${m.id} class=${m.leido ? '' : 'nuevo'} style=${`--c:${c?.color}`}>
+          <a class="c-cuerpo" href=${m.url} target="_blank" rel="noopener" onClick=${(e) => { if (m.minuta) { e.preventDefault(); ctx.abrirMinuta(m.minuta); } }}>
+            <span class="c-de">${m.de}<em>${haceCuanto(m.cuando)}</em></span><span class="c-as">${m.asunto}</span></a>
+          ${m.minuta ? html`<span class="c-minuta" title="Se volvió minuta">${I('nota')}Minuta</span>`
+            : html`<button class="icon-btn chico" title="Convertir en tarea" aria-label="Convertir en tarea" onClick=${() => {
+              crear(nuevaVacia(ctx.yo, { titulo: m.asunto.slice(0, 110), cliente: m.cliente, proyecto: 'g-' + m.cliente, esfuerzo: 'S', asignadaPor: ctx.yo, enlaces: [{ id: 'gmail', titulo: 'Abrir correo', url: m.url }], notas: 'Desde el correo de ' + m.de }), ctx.yo);
+              ctx.toast('Ahora es tarea');
+            }}>${I('mas')}</button>`}
+        </li>`;
+      })}</ul>`}
+  </div>`;
+}
+
+// Agenda de hoy (Google Calendar, solo lectura).
+function WAgenda({ ctx }) {
+  const [eventos, setEventos] = useState(null);
+  const [estado, setEstado] = useState(tokenGoogle() ? 'cargando' : 'sin');
+  useEffect(() => {
+    if (!ctx.enNube || !tokenGoogle()) { setEstado('sin'); return; }
+    agendaDeHoy().then((l) => { setEventos(l); setEstado('ok'); }).catch((e) => setEstado(e.sinPermiso ? 'sin' : 'error'));
+  }, []);
+  const hora = (iso) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const ahora = Date.now();
+  return html`<div class="w">
+    ${cab('semana', 'Agenda de hoy', eventos?.length || null)}
+    ${!ctx.enNube ? html`<p class="w-vacio">Con tu cuenta real aquí salen tus juntas de Google Calendar.</p>`
+      : estado === 'sin' ? html`<${ConectarGoogle} texto="Conecta tu Google para ver tus juntas de hoy." />`
+      : estado === 'error' ? html`<p class="w-vacio">No pude leer tu calendario.</p>`
+      : !eventos ? html`<p class="w-vacio">Cargando…</p>`
+      : eventos.length === 0 ? html`<p class="w-vacio">Sin juntas hoy.</p>`
+      : html`<ul class="agenda">${eventos.map((e) => html`<li key=${e.id} class=${e.fin && new Date(e.fin) < ahora ? 'pasado' : ''}>
+          <span class="ag-h num">${e.todoElDia ? 'Todo el día' : hora(e.inicio)}</span>
+          <a href=${e.meet || e.url} target="_blank" rel="noopener">${e.titulo}</a>
+        </li>`)}</ul>`}
+  </div>`;
 }

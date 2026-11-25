@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251031';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251108';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -60,13 +60,14 @@ function purgar(e) {
   return e;
 }
 function guardar() {
-  try { localStorage.setItem(CLAVE, JSON.stringify(estado)); errorGuardado = false; } catch (_) { errorGuardado = true; }
+  if (nube.activa) programarSubida();
+  else { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); errorGuardado = false; } catch (_) { errorGuardado = true; } }
   oyentes.forEach((f) => f(estado));
 }
 // Si la app está abierta en dos pestañas, ambas ven lo mismo y no se pisan.
 try {
   addEventListener('storage', (ev) => {
-    if (ev.key !== CLAVE || !ev.newValue) return;
+    if (nube.activa || ev.key !== CLAVE || !ev.newValue) return;
     try { estado = purgar(reparar(migrar(JSON.parse(ev.newValue)))); oyentes.forEach((f) => f(estado)); } catch (_) { /* se ignora un valor roto */ }
   });
 } catch (_) { /* sin ventana */ }
@@ -74,7 +75,9 @@ try {
 export const store = {
   get: () => estado,
   suscribir(f) { oyentes.add(f); return () => oyentes.delete(f); },
-  restablecer() { estado = semilla(); guardar(); },
+  restablecer() { if (nube.activa) return; estado = semilla(); guardar(); },
+  // Vuelve a los datos de demostración (al cerrar sesión).
+  modoDemo() { detenerNube(); estado = cargar(); oyentes.forEach((f) => f(estado)); },
   // Respaldo: descarga todo en un archivo y lo restaura validándolo antes.
   exportar() { return JSON.stringify(estado, null, 1); },
   importar(texto) {
@@ -382,9 +385,175 @@ export function simularTranscripcion(uId) {
 export function acuerdoATarea(mid, kid, uId) {
   const m = estado.minutas.find((x) => x.id === mid); const k = m?.acuerdos.find((x) => x.id === kid);
   if (!k || k.tarea) return null;
-  const a = crear(nuevaVacia(k.responsable, { titulo: k.texto, cliente: m.cliente, proyecto: 'g-' + m.cliente, fecha: k.fecha, esfuerzo: 'S', asignadaPor: uId, notas: `De la minuta «${m.titulo}»` }), uId);
+  const a = crear(nuevaVacia(k.responsable, { titulo: k.texto, cliente: m.cliente, proyecto: 'g-' + m.cliente, fecha: k.fecha, esfuerzo: 'S', asignadaPor: uId, notas: [k.detalle, `De la minuta «${m.titulo}»`].filter(Boolean).join('\n') }), uId);
   k.tarea = a.id;
   estado.minutas = [...estado.minutas];
   guardar();
   return a;
 }
+
+// =====================================================================
+// Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
+// =====================================================================
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611251108';
+
+const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos'];
+const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube
+export const nube = { activa: false, yo: null, estado: 'listo', pendientes: 0, ultimoError: '' };
+const oyentesNube = new Set();
+export const escucharNube = (f) => { oyentesNube.add(f); return () => oyentesNube.delete(f); };
+const avisarNube = () => oyentesNube.forEach((f) => f({ ...nube }));
+let foto = new Map();
+let fotoAjustes = '';
+let temporizador = null;
+let reintento = 0;
+let dejarDeEscuchar = null;
+
+// Quién puede ver cada documento (las reglas de Supabase lo hacen cumplir).
+function visibleParaDoc(col, d) {
+  if (col === 'avisos') return [...new Set([d.para, nube.yo])]; // quien lo crea también debe poder leerlo (regla de Supabase al guardar)
+  if (col === 'actividades' && estado.clientes.find((c) => c.id === d.cliente)?.privado) return [d.responsable];
+  if (col === 'mensajes') return estado.chat.canales.find((c) => c.id === d.canal)?.miembros || null;
+  if (col === 'canales') return d.id === 'general' ? null : d.miembros;
+  return null;
+}
+function documentos() {
+  const l = [];
+  COLECCIONES.forEach((col) => (estado[col] || []).forEach((d) => l.push([col, d])));
+  (estado.chat?.canales || []).forEach((d) => l.push(['canales', d]));
+  (estado.chat?.mensajes || []).forEach((d) => l.push(['mensajes', d]));
+  return l;
+}
+function ajustesPropios() {
+  const y = nube.yo;
+  return { layout: estado.layouts[y] || null, personal: estado.personal[y] || null, prefs: estado.prefs[y] || null, leidos: estado.chat?.leidos?.[y] || null };
+}
+function tomarFoto() {
+  foto = new Map(documentos().map(([col, d]) => [col + ':' + d.id, JSON.stringify(d)]));
+  fotoAjustes = JSON.stringify(ajustesPropios());
+}
+
+export async function conectarNube(perfil) {
+  const { perfiles, docs, ajustes } = await cargarTodo();
+  const por = (col) => docs.filter((d) => d.coleccion === col).map((d) => d.datos);
+  const y = perfil.id;
+  const e = {
+    version: 5, creado: hoyISO(), papeleraDias: 30, nube: true,
+    personas: perfiles.filter((p) => p.permiso !== 'pendiente').map(({ id, nombre, corto, puesto, permiso, color, email }) => ({ id, nombre, corto, puesto, permiso, color, email })),
+    pendientes: perfiles.filter((p) => p.permiso === 'pendiente'),
+    clientes: por('clientes'), proyectos: por('proyectos'), actividades: por('actividades'), minutas: por('minutas').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
+    avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
+    correos: [],
+    chat: { canales: por('canales'), mensajes: por('mensajes').sort((a, b) => a.cuando.localeCompare(b.cuando)), leidos: ajustes.leidos ? { [y]: ajustes.leidos } : {} },
+    layouts: ajustes.layout ? { [y]: ajustes.layout } : {},
+    personal: ajustes.personal ? { [y]: ajustes.personal } : {},
+    prefs: ajustes.prefs ? { [y]: ajustes.prefs } : {},
+  };
+  estado = purgar(reparar(e));
+  nube.activa = true; nube.yo = y; nube.estado = 'listo'; nube.ultimoError = '';
+  tomarFoto();
+  detenerEscucha();
+  dejarDeEscuchar = escucharCambios(aplicarRemoto);
+  addEventListener('online', subirAhora);
+  oyentes.forEach((f) => f(estado));
+  avisarNube();
+  return estado;
+}
+function detenerEscucha() { if (dejarDeEscuchar) { dejarDeEscuchar(); dejarDeEscuchar = null; } }
+function detenerNube() {
+  detenerEscucha(); clearTimeout(temporizador); removeEventListener('online', subirAhora);
+  nube.activa = false; nube.yo = null; foto = new Map();
+}
+export function refrescarPersonas(perfiles) {
+  estado.personas = perfiles.filter((p) => p.permiso !== 'pendiente').map(({ id, nombre, corto, puesto, permiso, color, email }) => ({ id, nombre, corto, puesto, permiso, color, email }));
+  estado.pendientes = perfiles.filter((p) => p.permiso === 'pendiente');
+  oyentes.forEach((f) => f(estado));
+}
+
+function programarSubida() {
+  clearTimeout(temporizador);
+  temporizador = setTimeout(subirAhora, 350);
+}
+async function subirAhora() {
+  if (!nube.activa) return;
+  const filas = [];
+  const vistos = new Set();
+  for (const [col, d] of documentos()) {
+    const k = col + ':' + d.id; vistos.add(k);
+    const s = JSON.stringify(d);
+    if (foto.get(k) !== s) filas.push({ coleccion: col, id: d.id, datos: d, visible_para: visibleParaDoc(col, d), borrado: false, _k: k, _s: s });
+  }
+  for (const [k, s] of foto) {
+    const [col, ...r] = k.split(':');
+    if (!vistos.has(k) && !SIN_BORRADO.has(col)) { const d = JSON.parse(s); filas.push({ coleccion: col, id: r.join(':'), datos: d, visible_para: visibleParaDoc(col, d), borrado: true, _k: k, _s: null }); }
+  }
+  const aj = JSON.stringify(ajustesPropios());
+  nube.pendientes = filas.length + (aj !== fotoAjustes ? 1 : 0);
+  if (!nube.pendientes) { nube.estado = 'listo'; avisarNube(); return; }
+  nube.estado = 'guardando'; avisarNube();
+  try {
+    if (filas.length) await subirDocs(filas.map(({ _k, _s, ...f }) => f));
+    if (aj !== fotoAjustes) await subirAjustes(nube.yo, JSON.parse(aj));
+    filas.forEach((f) => (f._s === null ? foto.delete(f._k) : foto.set(f._k, f._s)));
+    fotoAjustes = aj;
+    reintento = 0; nube.estado = 'listo'; nube.pendientes = 0; nube.ultimoError = ''; errorGuardado = false;
+  } catch (err) {
+    // Sin internet o error del servidor: se reintenta solo, sin perder nada de lo que está en pantalla.
+    reintento = Math.min(reintento + 1, 6);
+    nube.estado = 'error'; nube.ultimoError = String(err?.message || err); errorGuardado = true;
+    clearTimeout(temporizador);
+    temporizador = setTimeout(subirAhora, 2000 * 2 ** reintento);
+  }
+  avisarNube();
+  oyentes.forEach((f) => f(estado));
+}
+export const reintentarSubida = () => { reintento = 0; subirAhora(); };
+
+// Un cambio de otra persona: se aplica si no tengo una edición propia sin subir del mismo documento.
+function aplicarRemoto(fila) {
+  if (!fila || !nube.activa) return;
+  const { coleccion: col, id, datos, borrado } = fila;
+  const k = col + ':' + id;
+  const actual = documentos().find(([c, d]) => c === col && d.id === id)?.[1];
+  if (actual && JSON.stringify(actual) !== foto.get(k)) return; // tengo cambios propios pendientes: ganan los míos al subir
+  const lista = col === 'canales' ? estado.chat.canales : col === 'mensajes' ? estado.chat.mensajes : estado[col];
+  if (!lista) return;
+  const i = lista.findIndex((d) => d.id === id);
+  let nueva = [...lista];
+  if (borrado) { if (i >= 0) nueva.splice(i, 1); foto.delete(k); }
+  else { if (i >= 0) nueva[i] = datos; else nueva = col === 'avisos' || col === 'eventos' || col === 'minutas' ? [datos, ...nueva] : [...nueva, datos]; foto.set(k, JSON.stringify(datos)); }
+  if (col === 'canales') estado.chat = { ...estado.chat, canales: nueva };
+  else if (col === 'mensajes') estado.chat = { ...estado.chat, mensajes: nueva };
+  else estado[col] = nueva;
+  oyentes.forEach((f) => f(estado));
+}
+
+// ---------- Correo real (Gmail): se muestra, no se guarda en la nube ----------
+export function ponerCorreos(lista) {
+  const conMinuta = new Set(estado.minutas.map((m) => m.correo));
+  estado.correos = lista.map((c) => ({ ...c, minuta: conMinuta.has(c.id) ? estado.minutas.find((m) => m.correo === c.id).id : c.minuta || null }));
+  oyentes.forEach((f) => f(estado));
+}
+// Una transcripción real se vuelve minuta (una sola vez por correo) y la ve todo el equipo.
+export function minutaDeCorreo(correo, { resumen, acuerdos }, uId) {
+  const ya = estado.minutas.find((m) => m.correo === correo.id);
+  if (ya) return ya;
+  const H = hoyISO();
+  const m = {
+    id: 'mi-' + correo.gmail, cliente: correo.cliente, titulo: limpiarTitulo(correo.asunto),
+    fecha: correo.cuando, correo: correo.id, asistentes: [uId], resumen, origen: correo.url,
+    acuerdos: acuerdos.map((k) => ({ id: uid('k'), texto: k.texto, detalle: k.detalle || '', responsable: k.responsable, fecha: sumarDiasHabiles(H, 2), tarea: null })),
+  };
+  estado.minutas = [m, ...estado.minutas];
+  estado.correos = estado.correos.map((c) => (c.id === correo.id ? { ...c, minuta: m.id } : c));
+  evento(uId, `agregó la minuta «${m.titulo}»`, { cliente: m.cliente });
+  estado.personas.filter((p) => p.id !== uId).forEach((p) => avisar(p.id, `Nueva minuta: ${m.titulo}.`, null, 'minuta'));
+  guardar();
+  return m;
+}
+
+// «Notas: “Daily Standup Meeting”, 25 nov 2026» → «Daily Standup Meeting»
+function limpiarTitulo(asunto) {
+  return asunto.replace(/^(notas|transcripci[oó]n|notes|meeting notes)\s*[:·-]\s*/i, '').replace(/[“”"«»]/g, '').replace(/,\s*\d{1,2}\s+\w{3,10}\.?\s+\d{4}\s*$/, '').trim().slice(0, 90) || asunto;
+}
+export function quitarMinuta(id) { estado.minutas = estado.minutas.filter((m) => m.id !== id); guardar(); }

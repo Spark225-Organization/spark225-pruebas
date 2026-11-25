@@ -39,6 +39,7 @@ export const WIDGETS = [
   { tipo: 'facturas', nombre: 'Facturas', tam: 's', icono: 'factura' },
   { tipo: 'correo', nombre: 'Correo', tam: 'm', icono: 'correo' },
   { tipo: 'minutas', nombre: 'Minutas', tam: 'm', icono: 'nota' },
+  { tipo: 'agenda', nombre: 'Agenda de hoy', tam: 'm', icono: 'semana' },
   { tipo: 'chat', nombre: 'Chat', tam: 'm', icono: 'chat' },
   { tipo: 'clientes', nombre: 'Todos los clientes', tam: 'm', icono: 'clientes' },
   { tipo: 'minimes', nombre: 'Mes', tam: 'm', icono: 'semana' },
@@ -76,6 +77,7 @@ export function sumarDiasHabiles(iso, n) {
 
 export const LAYOUT_INICIAL = [
   { id: 'w1', tipo: 'foco' },
+  { id: 'w12', tipo: 'agenda' },
   { id: 'w10', tipo: 'correo' },
   { id: 'w11', tipo: 'minutas' },
   { id: 'w5', tipo: 'esperando' },

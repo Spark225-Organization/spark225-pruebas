@@ -325,7 +325,7 @@ export const ManagementDashboard = () => {
             tone={esperandoCliente > 0 ? "amber" : "slate"}
           />
           <CompactChip
-            label="% CRC a la primera"
+            label="Aprobación interna a la primera"
             value={crcPrimeraPct == null ? "—" : `${crcPrimeraPct}%`}
             tone={
               crcPrimeraPct == null

@@ -23,6 +23,7 @@ import {
 } from "@/lib/statusModel";
 import { cn } from "@/lib/utils";
 import { ChecklistEnvio, pideChecklist } from "@/components/material/ChecklistEnvio";
+import { VistaMateriales } from "@/components/material/VistaMateriales";
 
 type ClientMap = Record<string, Client>;
 
@@ -143,6 +144,7 @@ const Kanban = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <VistaMateriales />
           <select aria-label="Filtrar por cliente" value={fCliente} onChange={(e) => { setFCliente(e.target.value); setFProducto(""); setFIndicacion(""); }} className={selCls(fCliente)}>
             <option value="">Todos los clientes</option>
             {opClientes.map(([id, n]) => <option key={id} value={id}>{n}</option>)}

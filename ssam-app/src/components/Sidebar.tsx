@@ -33,70 +33,37 @@ interface NavItem {
   icon: React.ElementType;
   href: string;
   permission: keyof RolePermissions;
+  /** Otras rutas que cuentan como esta sección (p. ej. Kanban dentro de Materiales). */
+  tambien?: string[];
 }
 
-const NAV_ITEMS: NavItem[] = [
+// Menú corto: cinco secciones de trabajo diario y dos grupos que se abren
+// solo cuando hacen falta (catálogos y equipo).
+const PRINCIPAL: NavItem[] = [
+  { label: "Inicio", icon: LayoutDashboard, href: "/", permission: "dashboard" },
+  { label: "Planeación", icon: CalendarRange, href: "/planeacion", permission: "planeacion" },
+  { label: "Materiales", icon: Files, href: "/materials", permission: "materials", tambien: ["/kanban"] },
+  { label: "En riesgo", icon: AlertTriangle, href: "/riesgo", permission: "risk" },
+  { label: "Reportes", icon: BarChart3, href: "/reports", permission: "reports", tambien: ["/calidad"] },
+  { label: "Mis Materiales", icon: Columns3, href: "/portal", permission: "clientPortal" },
+];
+const GRUPOS: { titulo: string; icon: React.ElementType; items: NavItem[] }[] = [
   {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/",
-    permission: "dashboard",
+    titulo: "Catálogos",
+    icon: Tag,
+    items: [
+      { label: "Clientes", icon: Briefcase, href: "/clients", permission: "clients" },
+      { label: "Productos", icon: Tag, href: "/products", permission: "products" },
+      { label: "Indicaciones", icon: Microscope, href: "/indications", permission: "indications" },
+    ],
   },
   {
-    label: "Planeación",
-    icon: CalendarRange,
-    href: "/planeacion",
-    permission: "planeacion",
-  },
-  {
-    label: "Materiales",
-    icon: Files,
-    href: "/materials",
-    permission: "materials",
-  },
-  {
-    label: "Kanban",
-    icon: KanbanSquare,
-    href: "/kanban",
-    permission: "advanceStage",
-  },
-  {
-    label: "En Riesgo",
-    icon: AlertTriangle,
-    href: "/riesgo",
-    permission: "risk",
-  },
-  {
-    label: "Mis Materiales",
-    icon: Columns3,
-    href: "/portal",
-    permission: "clientPortal",
-  },
-  {
-    label: "Clientes",
-    icon: Briefcase,
-    href: "/clients",
-    permission: "clients",
-  },
-  { label: "Productos", icon: Tag, href: "/products", permission: "products" },
-  {
-    label: "Indicaciones",
-    icon: Microscope,
-    href: "/indications",
-    permission: "indications",
-  },
-  { label: "Equipo", icon: Users, href: "/team", permission: "team" },
-  {
-    label: "Reportes",
-    icon: BarChart3,
-    href: "/reports",
-    permission: "reports",
-  },
-  {
-    label: "Roles y Accesos",
-    icon: Shield,
-    href: "/roles",
-    permission: "roles",
+    titulo: "Equipo",
+    icon: Users,
+    items: [
+      { label: "Personas", icon: Users, href: "/team", permission: "team" },
+      { label: "Roles y accesos", icon: Shield, href: "/roles", permission: "roles" },
+    ],
   },
 ];
 
@@ -105,7 +72,13 @@ export const Sidebar = () => {
   const navigate = useNavigate();
   const { user, signOut, can } = useAuth();
 
-  const visibleItems = NAV_ITEMS.filter((item) => can(item.permission));
+  const visibleItems = PRINCIPAL.filter((item) => can(item.permission));
+  const activo = (item: NavItem) =>
+    [item.href, ...(item.tambien ?? [])].some(
+      (h) => location.pathname === h || (h !== "/" && location.pathname.startsWith(h)),
+    );
+  const grupos = GRUPOS.map((g) => ({ ...g, items: g.items.filter((i) => can(i.permission)) })).filter((g) => g.items.length);
+  const [abiertos, setAbiertos] = React.useState<Record<string, boolean>>({});
 
   const handleLogout = async () => {
     await signOut();
@@ -131,9 +104,7 @@ export const Sidebar = () => {
       <ScrollArea className="flex-1 py-5 px-3">
         <nav className="space-y-1">
           {visibleItems.map((item) => {
-            const isActive =
-              location.pathname === item.href ||
-              (item.href !== "/" && location.pathname.startsWith(item.href));
+            const isActive = activo(item);
             return (
               <Link
                 key={item.href}
@@ -165,6 +136,43 @@ export const Sidebar = () => {
                   <ChevronRight className="h-3.5 w-3.5 text-[#E37439]/80 shrink-0" />
                 )}
               </Link>
+            );
+          })}
+          {grupos.map((g) => {
+            const dentro = g.items.some(activo);
+            const abierto = abiertos[g.titulo] ?? dentro;
+            return (
+              <div key={g.titulo} className="pt-3">
+                <button
+                  type="button"
+                  onClick={() => setAbiertos((a) => ({ ...a, [g.titulo]: !abierto }))}
+                  aria-expanded={abierto}
+                  className="flex w-full items-center gap-3 rounded-[8px] px-3.5 py-2 text-xs font-semibold text-[#8894A0] hover:text-white"
+                >
+                  <g.icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 text-left">{g.titulo}</span>
+                  <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", abierto && "rotate-90")} />
+                </button>
+                {abierto && (
+                  <div className="ssam-subir mt-0.5 space-y-0.5 border-l border-[#1B2D3C] ml-5 pl-2">
+                    {g.items.map((item) => {
+                      const on = activo(item);
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          className={cn(
+                            "block rounded-[8px] px-3 py-1.5 text-[13px] transition-colors",
+                            on ? "bg-[#162A3B] font-semibold text-white" : "text-[#B4BAC2] hover:bg-[#142433] hover:text-white",
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

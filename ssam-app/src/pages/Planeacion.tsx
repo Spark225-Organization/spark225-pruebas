@@ -34,7 +34,7 @@ import {
   internalLabel,
 } from "@/components/MgmtDetailPanel";
 import { estadoColor } from "@/components/report/MgmtCharts";
-import { AgendaRow, AGENDA_HEADERS } from "@/components/planning/AgendaRow";
+import { AgendaLimpia, CalendarioMes } from "@/components/planning/VistasPlaneacion";
 import { cn } from "@/lib/utils";
 import {
   rangeWeeks,
@@ -361,162 +361,9 @@ export default function Planeacion() {
             </p>
           </div>
         ) : view === "agenda" ? (
-          <div className="space-y-5">
-            {buckets.vencidos.length > 0 && (
-              <section>
-                <div className="mb-2 flex items-center gap-2">
-                  <AlertTriangle className="h-3.5 w-3.5 text-[#D64545]" />
-                  <h2 className="text-[13px] font-semibold text-[#D64545]">
-                    Vencidos
-                  </h2>
-                  <span className="text-[11px] text-[#9AA4B2]">
-                    · {buckets.vencidos.length} entrega
-                    {buckets.vencidos.length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="overflow-x-auto rounded-[10px] border border-[#D64545]/30 bg-white">
-                  <table className="w-full min-w-[1024px] text-sm">
-                    <thead className="bg-[#D64545]/8 text-[11px] text-[#D64545]">
-                      <tr>
-                        {AGENDA_HEADERS.map((h) => (
-                          <th
-                            key={h}
-                            className="px-3 py-2 text-left font-semibold"
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E4E7EC]">
-                      {buckets.vencidos.map((f) => (
-                        <AgendaRow
-                          key={f.material_id}
-                          f={f}
-                          onSelect={setDrawerId}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            )}
-
-            {buckets.weeks.map((w, i) => {
-              const tarde = w.items.filter(
-                (f) => f.estado_pronostico === "tarde",
-              ).length;
-              return (
-                <section key={i}>
-                  <div className="mb-2 flex items-center gap-2">
-                    <h2
-                      className={cn(
-                        "text-[13px] font-semibold",
-                        isThisWeek(w.start)
-                          ? "text-[#E37439]"
-                          : "text-[#0F1B2D]",
-                      )}
-                    >
-                      {weekLabel(w.start)}
-                    </h2>
-                    {isThisWeek(w.start) && (
-                      <span className="rounded-full bg-[#E37439]/12 px-2 py-0.5 text-[10px] font-bold text-[#E37439]">
-                        Esta semana
-                      </span>
-                    )}
-                    <span className="text-[11px] text-[#9AA4B2]">
-                      · {w.items.length} entrega
-                      {w.items.length === 1 ? "" : "s"}
-                      {tarde > 0 ? ` · ${tarde} tarde` : ""}
-                    </span>
-                  </div>
-                  <div className="overflow-x-auto rounded-[10px] border border-[#E4E7EC] bg-white">
-                    <table className="w-full min-w-[1024px] text-sm">
-                      <thead className="bg-[#F8F9FA] text-[11px] text-[#4E5964]">
-                        <tr>
-                          {AGENDA_HEADERS.map((h) => (
-                            <th
-                              key={h}
-                              className="px-3 py-2 text-left font-semibold"
-                            >
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E4E7EC]">
-                        {w.items.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={AGENDA_HEADERS.length}
-                              className="px-3 py-4 text-center text-[11px] text-[#9AA4B2]"
-                            >
-                              Sin entregas esta semana
-                            </td>
-                          </tr>
-                        ) : (
-                          w.items.map((f) => (
-                            <AgendaRow
-                              key={f.material_id}
-                              f={f}
-                              onSelect={setDrawerId}
-                            />
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              );
-            })}
-          </div>
+          <AgendaLimpia vencidos={buckets.vencidos} semanas={buckets.weeks} onSelect={setDrawerId} />
         ) : (
-          <div className="overflow-x-auto pb-2">
-            <div className="flex gap-3">
-              {buckets.weeks.map((w, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex w-[240px] shrink-0 flex-col rounded-[14px] border bg-white p-3",
-                    isThisWeek(w.start)
-                      ? "border-[#E37439]"
-                      : "border-[#E4E7EC]",
-                  )}
-                >
-                  <p className="mb-2 text-[11px] font-semibold text-[#4E5964]">
-                    {weekLabel(w.start)}
-                  </p>
-                  <div className="space-y-2">
-                    {w.items.length === 0 ? (
-                      <p className="text-[11px] text-[#9AA4B2]">—</p>
-                    ) : (
-                      w.items.map((f) => (
-                        <button
-                          key={f.material_id}
-                          onClick={() => setDrawerId(f.material_id)}
-                          className="block w-full rounded-lg bg-[#F8F9FA] p-2 text-left transition-colors hover:bg-[#F0F1F4]"
-                          style={{
-                            borderLeft: `3px solid ${estadoColor(f.estado_pronostico)}`,
-                          }}
-                        >
-                          <p className="text-[11px] font-semibold leading-snug text-[#0F1B2D]">
-                            {folioLabel(f.folio)} · {f.titulo ?? f.material_id}
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-[#9AA4B2]">
-                            {dayLabel(f.entrega_estimada)} ·{" "}
-                            {internalLabel(f.status, 0)}
-                          </p>
-                          <p className="text-[10px] text-[#9AA4B2]">
-                            {f.cliente ?? "—"} · {f.indicacion ?? "—"}
-                          </p>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <CalendarioMes items={filtered} onSelect={setDrawerId} />
         )}
 
         {/* Pie: resumen + exportar */}

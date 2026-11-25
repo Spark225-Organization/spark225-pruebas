@@ -1,7 +1,8 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Sidebar } from "./Sidebar";
 import { Bell, Search, LogOut } from "lucide-react";
 import { Marca } from "./Marca";
+import { BuscadorGlobal } from "./BuscadorGlobal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,13 @@ import { ThemeToggle } from "./ThemeToggle";
 import { CalidadDatosBanner } from "./CalidadDatosBanner";
 import { RealtimeIndicator } from "./RealtimeIndicator";
 import { startRealtime } from "@/data/operacion";
+
+// Mientras se descarga una sección, el menú y la barra se quedan en su lugar.
+const Cargando = () => (
+  <div className="flex min-h-[40vh] items-center justify-center">
+    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E37439] border-t-transparent" />
+  </div>
+);
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -44,7 +52,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8"><Suspense fallback={<Cargando />}>{children}</Suspense></main>
       </div>
     );
   }
@@ -56,13 +64,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {/* Top Header: Clean white background, 1px border #DBDBDB */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#DBDBDB] bg-white px-6 gap-4">
           <div className="flex w-full max-w-md items-center gap-3">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4E5964]" />
-              <Input
-                placeholder="Buscar materiales, clientes o productos..."
-                className="w-full h-9 border-[#DBDBDB] bg-[#F8F9FA] pl-9 text-xs text-[#1F2124] rounded-[8px] focus-visible:ring-[#E37439]"
-              />
-            </div>
+            <BuscadorGlobal />
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -79,17 +81,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </div>
 
             <ThemeToggle />
-
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative h-9 w-9 rounded-full text-[#4E5964] hover:bg-[#F8F9FA] hover:text-[#0E1E2A]"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#E37439] ring-2 ring-white" />
-              </Button>
-            </div>
 
             <div className="h-6 w-px bg-[#DBDBDB]" />
 
@@ -119,7 +110,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {/* Content Area: #F8F9FA, ample white space */}
         <main className="flex-1 overflow-y-auto bg-[#F8F9FA] p-6 lg:p-8">
           <CalidadDatosBanner />
-          {children}
+          <Suspense fallback={<Cargando />}>{children}</Suspense>
         </main>
       </div>
     </div>

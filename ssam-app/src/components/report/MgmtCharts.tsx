@@ -252,7 +252,7 @@ export function DesempenoClienteUnidad({
                 Quién retiene
               </th>
               <th className="px-3 py-2 text-center font-semibold">
-                Err. Spark/mat.
+                Errores Spark por material
               </th>
               <th className="px-3 py-2 text-center font-semibold">En riesgo</th>
             </tr>

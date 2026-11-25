@@ -20,7 +20,7 @@ const INTERNAL_STATUS_LABELS: Record<string, string> = {
   validacion_medica_final: "Validación médica final",
   aprobacion_cliente_grafico: "Aprobación cliente · gráfico",
   sometimiento_final: "Sometimiento final",
-  crc: "CRC",
+  crc: "Aprobación interna",
   aprobado: "Entrega",
 };
 

@@ -36,8 +36,8 @@ function notify() {
 function scheduleRefresh() {
   if (rtTimer) clearTimeout(rtTimer);
   rtTimer = setTimeout(() => {
+    // Cada pestaña recibe su propio aviso en vivo; no hace falta reenviarlo.
     invalidateOperacion();
-    bc?.postMessage("refresh");
   }, 300);
 }
 

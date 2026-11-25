@@ -7,7 +7,7 @@
 // Realtime + BroadcastChannel (realtime.ts) mantienen la copia viva entre
 // pestañas con debounce de 300 ms.
 
-import { useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import {
   QueryClient,
   useQuery,
@@ -67,8 +67,20 @@ export const queryClient = new QueryClient({
 });
 
 /** Invalida la única copia de datos: refresca todas las pantallas a la vez. */
+// Varias invalidaciones seguidas (mutación + recarga manual + aviso en vivo)
+// se juntan en una sola recarga.
+let recargaPendiente: Promise<void> | null = null;
 export function invalidateOperacion() {
-  return queryClient.invalidateQueries({ queryKey: operacionQueryKey });
+  if (!recargaPendiente) {
+    recargaPendiente = new Promise<void>((listo) =>
+      setTimeout(async () => {
+        recargaPendiente = null;
+        await queryClient.invalidateQueries({ queryKey: operacionQueryKey });
+        listo();
+      }, 200),
+    );
+  }
+  return recargaPendiente;
 }
 
 export interface CalidadItem {
@@ -365,17 +377,18 @@ export function useOperacion(): OperacionData & { reload: () => void } {
     queryKey: operacionQueryKey,
     queryFn: loadOperacion,
   });
-  const reload = useCallback(
-    () => qc.invalidateQueries({ queryKey: operacionQueryKey }),
-    [qc],
-  );
+  void qc;
+  const reload = useCallback(() => {
+    void invalidateOperacion();
+  }, []);
+  // El mismo objeto mientras no cambien los datos: las pantallas no recalculan de más.
   const base = query.data ?? EMPTY;
-  return {
-    ...base,
-    loading: !query.data && query.isLoading,
-    error: query.error?.message ?? base.error,
-    reload,
-  };
+  const loading = !query.data && query.isLoading;
+  const err = query.error?.message ?? base.error;
+  return useMemo(
+    () => ({ ...base, loading, error: err, reload }),
+    [base, loading, err, reload],
+  );
 }
 
 // ─── Selectores únicos (fuente de verdad para todas las pantallas) ──────────

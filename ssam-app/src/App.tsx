@@ -5,28 +5,31 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { queryClient } from "@/data/operacion";
-import Index from "./pages/Index";
-import Materials from "./pages/Materials";
-import MaterialDetail from "./pages/MaterialDetail";
-import Clients from "./pages/Clients";
-import Products from "./pages/Products";
-import Indications from "./pages/Indications";
-import Team from "./pages/Team";
-import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import SelectorDemo from "./pages/SelectorDemo";
 import DemoBanner from "./components/DemoBanner";
 import { DEMO } from "./lib/demo/demoState";
 import ResetPassword from "./pages/ResetPassword";
-import RoleManagement from "./pages/RoleManagement";
 import NotFound from "./pages/NotFound";
-import Kanban from "./pages/Kanban";
-import Riesgo from "./pages/Riesgo";
-import Planeacion from "./pages/Planeacion";
-import ClientPortal from "./pages/ClientPortal";
-import Calidad from "./pages/Calidad";
 import { AppLayout } from "./components/AppLayout";
 import { AuthProvider, useAuth, type RolePermissions } from "./lib/auth";
+import { lazy, Suspense } from "react";
+
+// Cada sección se descarga al abrirla: el cliente no baja los tableros internos.
+const Index = lazy(() => import("./pages/Index"));
+const Materials = lazy(() => import("./pages/Materials"));
+const MaterialDetail = lazy(() => import("./pages/MaterialDetail"));
+const Clients = lazy(() => import("./pages/Clients"));
+const Products = lazy(() => import("./pages/Products"));
+const Indications = lazy(() => import("./pages/Indications"));
+const Team = lazy(() => import("./pages/Team"));
+const Reports = lazy(() => import("./pages/Reports"));
+const RoleManagement = lazy(() => import("./pages/RoleManagement"));
+const Kanban = lazy(() => import("./pages/Kanban"));
+const Riesgo = lazy(() => import("./pages/Riesgo"));
+const Planeacion = lazy(() => import("./pages/Planeacion"));
+const ClientPortal = lazy(() => import("./pages/ClientPortal"));
+const Calidad = lazy(() => import("./pages/Calidad"));
 
 const PendingActivation = () => (
   <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F8F9FA] p-6 text-center">
@@ -219,7 +222,15 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <AppRoutes />
+            <Suspense
+              fallback={
+                <div className="flex min-h-screen items-center justify-center bg-[#F8F9FA]">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E37439] border-t-transparent" />
+                </div>
+              }
+            >
+              <AppRoutes />
+            </Suspense>
             <DemoBanner />
           </BrowserRouter>
         </TooltipProvider>

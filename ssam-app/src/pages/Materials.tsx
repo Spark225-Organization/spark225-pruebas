@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Archivero } from "@/components/material/Archivero";
+import { VistaMateriales } from "@/components/material/VistaMateriales";
 import { useOperacion } from "@/data/operacion";
 import { useFilters } from "@/lib/useFilters";
 import {
@@ -95,7 +96,7 @@ const Materials = () => {
             </span>
           </p>
         </div>
-        {/* «Crear Material» se ocultó: aún no tiene función (fase 3 lo conecta). */}
+        <VistaMateriales />
       </div>
 
       <Card className="border-none shadow-sm">

@@ -1,23 +1,23 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251720';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611252010';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611251720';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251720';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251720';
-import { AltaRapida } from './mecha.js?v=202611251720';
-import { Inicio } from './vistas.js?v=202611251720';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251720';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611251720';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251720';
-import { Chat } from './chat.js?v=202611251720';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251720';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611251720';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611251720';
-import { Bienvenida, Recorrido } from './tour.js?v=202611251720';
-import { useArrastre } from './arrastre.js?v=202611251720';
-import { Galeria } from './widgets.js?v=202611251720';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611252010';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252010';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611252010';
+import { AltaRapida } from './mecha.js?v=202611252010';
+import { Inicio } from './vistas.js?v=202611252010';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611252010';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611252010';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611252010';
+import { Chat } from './chat.js?v=202611252010';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611252010';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611252010';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611252010';
+import { Bienvenida, Recorrido } from './tour.js?v=202611252010';
+import { useArrastre } from './arrastre.js?v=202611252010';
+import { Galeria } from './widgets.js?v=202611252010';
 
 function useStore() {
   const [, set] = useState(0);
@@ -88,8 +88,11 @@ function App() {
     mios.filter((n) => !vistos.current.has(n.id)).forEach((n) => {
       vistos.current.add(n.id);
       if (n.leido) return;
-      toast(n.texto, n.actividad ? { texto: 'Ver', f: () => setCajon({ id: n.actividad }) } : null);
-      try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Portal de colaboradores', { body: n.texto, icon: './icons/icon-192.png', tag: n.id }); } catch (_) { /* sin notificaciones */ }
+      const accion = n.actividad ? { texto: 'Ver', f: () => setCajon({ id: n.actividad }) }
+        : n.minuta ? { texto: 'Ver minuta', f: () => setMinuta(n.minuta) }
+        : n.url ? { texto: 'Abrir', f: () => window.open(n.url, '_blank', 'noopener') } : null;
+      toast(n.texto, accion);
+      try { if ((document.hidden || n.tipo === 'importante') && 'Notification' in window && Notification.permission === 'granted') new Notification('Portal de colaboradores', { body: n.texto, icon: './icons/icon-192.png', tag: n.id }); } catch (_) { /* sin notificaciones */ }
     });
   }, [db.avisos, fase, yo]);
   // Arranque: con sesión de Supabase carga tus datos reales; sin sesión, pantalla de entrada (o la demo si la elegiste).
@@ -247,7 +250,7 @@ function App() {
       }} />`}
       ${perfil && html`<${Perfil} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
-      ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} cerrar=${() => setAvisos(false)} toast=${toast} />`}
+      ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} abrirMinuta=${ctx.abrirMinuta} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
       ${tour === 'bienvenida' && html`<${Bienvenida} nombre=${yoP?.corto} empezar=${() => { location.hash = '#/'; setTour('pasos'); }} saltar=${cerrarTour} />`}
       ${tour === 'pasos' && html`<${Recorrido} terminar=${cerrarTour} />`}
@@ -457,7 +460,7 @@ function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido
     </div>`;
 }
 
-function Avisos({ avisos, yo, db, abrir, cerrar, toast }) {
+function Avisos({ avisos, yo, db, abrir, cerrar, toast, abrirMinuta }) {
   const ref = useRef();
   cerrarAlTocarFuera(ref, cerrar);
   useEffect(() => () => marcarAvisosLeidos(yo), []);
@@ -466,7 +469,11 @@ function Avisos({ avisos, yo, db, abrir, cerrar, toast }) {
       ${'Notification' in window && Notification.permission === 'default' && html`<button class="aviso-permiso" onClick=${() => Notification.requestPermission().then((r) => toast(r === 'granted' ? 'Listo: te avisaré aunque estés en otra pestaña' : 'Notificaciones desactivadas'))}>${I('campana')}Avisarme aunque esté en otra pestaña</button>`}
       ${avisos.length === 0 ? html`<div class="paleta-vacia">${I('check')}</div>` : avisos.slice(0, 12).map((n) => {
         const a = db.actividades.find((x) => x.id === n.actividad);
-        return html`<button class=${'aviso-it' + (n.leido ? '' : ' nuevo')} key=${n.id} onClick=${() => { if (a && !a.archivada) { abrir(a.id); cerrar(); } }}>
+        return html`<button class=${'aviso-it' + (n.leido ? '' : ' nuevo') + (n.tipo === 'importante' ? ' importante' : '')} key=${n.id} onClick=${() => {
+          if (a && !a.archivada) { abrir(a.id); cerrar(); }
+          else if (n.minuta) { abrirMinuta(n.minuta); cerrar(); }
+          else if (n.url) { window.open(n.url, '_blank', 'noopener'); cerrar(); }
+        }}>
           <span class="cuerpo">${n.texto}<span class="cuando">${haceCuanto(n.cuando)}</span></span></button>`;
       })}
     </div>`;

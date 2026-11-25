@@ -1,12 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611251720';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio } from './store.js?v=202611251720';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611251720';
-import { hoyISO } from './datos.js?v=202611251720';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611251720';
-import { correosRecientes, leerTranscripcion, agendaDeHoy } from './google.js?v=202611251720';
-import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611251720';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611252010';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611252010';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611252010';
+import { hoyISO } from './datos.js?v=202611252010';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611252010';
+import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611252010';
+import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611252010';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -373,37 +373,88 @@ function ConectarGoogle({ texto }) {
   return html`<div class="w-google"><p>${texto}</p><button class="btn chico" onClick=${() => entrarConGoogle()}>Conectar Google</button></div>`;
 }
 
+// Lo importante del correo: juntas que te mandó alguien de Spark225 y aún no aceptas,
+// y notas de Gemini de juntas recientes. Avisa una sola vez por cada una.
+const CLAVE_AVISADOS = 'ssam-importantes-avisados';
+const CLAVE_VISTAS = 'ssam-notas-vistas';
+const leerSet = (k) => { try { return new Set(JSON.parse(localStorage.getItem(k) || '[]')); } catch (_) { return new Set(); } };
+const guardarSet = (k, s) => { try { localStorage.setItem(k, JSON.stringify([...s].slice(-200))); } catch (_) { /* nada */ } };
+const fechaJunta = (j) => {
+  const d = new Date(j.inicio);
+  const dia = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+  return j.todoElDia ? dia : `${dia}, ${d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}`;
+};
+const RECIENTE = 3 * 864e5; // notas de Gemini de los últimos 3 días
+
 // Tu Gmail: últimos correos. Las transcripciones de juntas se vuelven minuta solas, para todo el equipo.
 function WCorreoReal({ ctx }) {
   const [estado, setEstado] = useState(tokenGoogle() ? 'cargando' : 'sin');
+  const [juntas, setJuntas] = useState([]);
+  const [vistas, setVistas] = useState(() => leerSet(CLAVE_VISTAS));
   const procesando = useRef(new Set());
+  const avisar = (clave, texto, extra) => {
+    const avisados = leerSet(CLAVE_AVISADOS);
+    if (avisados.has(clave)) return;
+    avisados.add(clave); guardarSet(CLAVE_AVISADOS, avisados);
+    avisoImportante(ctx.yo, clave, texto, extra);
+  };
   const cargar = async () => {
     if (!tokenGoogle()) return setEstado('sin');
     setEstado('cargando');
     try {
-      const l = await correosRecientes(ctx.db.clientes);
+      const [l, inv] = await Promise.all([correosRecientes(ctx.db.clientes), juntasPorAceptar(ctx.db.personas).catch(() => [])]);
       ponerCorreos(l);
+      setJuntas(inv);
       setEstado('ok');
+      inv.forEach((j) => avisar(j.id, `${j.de} te invitó a «${j.titulo}» (${fechaJunta(j)}). Acéptala para que se refleje en tu calendario.`, { url: j.url }));
       for (const c of l.filter((x) => x.tipo === 'transcripcion' && !ctx.db.minutas.some((m) => m.correo === x.id))) {
         if (procesando.current.has(c.id)) continue;
         procesando.current.add(c.id);
         try {
           const datos = await leerTranscripcion(c, ctx.db.personas, ctx.yo);
-          const m = minutaDeCorreo(c, datos, ctx.yo);
-          ctx.toast(`Nueva minuta: ${m.titulo}`, { texto: 'Ver', f: () => ctx.abrirMinuta(m.id) });
+          minutaDeCorreo(c, datos, ctx.yo);
         } catch (_) { /* se reintenta en la siguiente carga */ }
       }
     } catch (e) { setEstado(e.sinPermiso ? 'sin' : 'error'); }
   };
   useEffect(() => { cargar(); const t = setInterval(cargar, 5 * 60000); return () => clearInterval(t); }, []);
   const l = ctx.db.correos || [];
-  const nuevos = l.filter((m) => !m.leido).length;
+  const minutaDe = (c) => c.minuta || ctx.db.minutas.find((m) => m.correo === c.id)?.id || null;
+  const notas = l.filter((c) => c.tipo === 'transcripcion' && Date.now() - new Date(c.cuando) < RECIENTE && !vistas.has(c.id));
+  // Aviso de notas de Gemini: cuando ya existe su minuta (la haya creado quien sea del equipo).
+  useEffect(() => {
+    notas.forEach((c) => { const m = minutaDe(c); if (m) avisar('tr-' + c.gmail, `Llegaron las notas de Gemini: «${c.asunto}».`, { minuta: m }); });
+  }, [l, ctx.db.minutas]);
+  const verNota = (c) => {
+    const s = new Set(vistas); s.add(c.id); setVistas(s); guardarSet(CLAVE_VISTAS, s);
+    const m = minutaDe(c);
+    if (m) ctx.abrirMinuta(m); else window.open(c.url, '_blank', 'noopener');
+  };
+  const resto = l.filter((c) => !notas.includes(c));
+  const nuevos = resto.filter((m) => !m.leido).length;
+  const importantes = juntas.length + notas.length;
   return html`<div class="w">
     ${cab('correo', 'Correo', nuevos || null)}
     ${estado === 'sin' ? html`<${ConectarGoogle} texto="Conecta tu Google para ver tu correo y volver minutas las juntas." />`
       : estado === 'error' ? html`<p class="w-vacio">No pude leer tu correo. <button class="enlace" onClick=${cargar}>Reintentar</button></p>`
       : estado === 'cargando' && !l.length ? html`<p class="w-vacio">Cargando…</p>`
-      : html`<ul class="correos">${l.slice(0, 5).map((m) => {
+      : html`
+        ${importantes > 0 && html`<section class="importantes" aria-label="Importante">
+          <p class="imp-t">${I('campana')}Importante<b>${importantes}</b></p>
+          <ul>
+            ${juntas.map((j) => html`<li key=${j.id} class="imp">
+              <span class="imp-ico">${I('semana')}</span>
+              <span class="imp-cuerpo"><b>${j.de} te invitó a «${j.titulo}»</b><small>${fechaJunta(j)} · Acéptala para que se refleje en tu calendario.</small></span>
+              <a class="btn prim chico" href=${j.url} target="_blank" rel="noopener">Aceptar en Calendar</a>
+            </li>`)}
+            ${notas.map((c) => html`<li key=${c.id} class="imp">
+              <span class="imp-ico">${I('nota')}</span>
+              <span class="imp-cuerpo"><b>Notas de Gemini de la junta</b><small>${c.asunto} · ${haceCuanto(c.cuando)}</small></span>
+              <button class="btn prim chico" onClick=${() => verNota(c)}>${minutaDe(c) ? 'Ver minuta' : 'Abrir correo'}</button>
+            </li>`)}
+          </ul>
+        </section>`}
+        <ul class="correos">${resto.slice(0, 5).map((m) => {
         const c = ctx.db.clientes.find((x) => x.id === m.cliente);
         return html`<li key=${m.id} class=${m.leido ? '' : 'nuevo'} style=${`--c:${c?.color}`}>
           <a class="c-cuerpo" href=${m.url} target="_blank" rel="noopener" onClick=${(e) => { if (m.minuta) { e.preventDefault(); ctx.abrirMinuta(m.minuta); } }}>

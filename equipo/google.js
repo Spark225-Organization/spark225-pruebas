@@ -1,6 +1,6 @@
 // Google: correo (solo lectura) y agenda de hoy, con el permiso que da Google al entrar.
 // Las transcripciones de juntas (notas de Gemini, Plaud, etc.) se vuelven minuta para todo el equipo.
-import { obtenerTokenGoogle } from './nube.js?v=202611251720';
+import { obtenerTokenGoogle } from './nube.js?v=202611252010';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const ES_TRANSCRIPCION = /(notas?\b.*(reuni|junta|meeting)|transcrip|minuta|meeting notes|notes by gemini|resumen de la reuni)/i;
@@ -86,6 +86,27 @@ export async function leerTranscripcion(correo, personas, yo) {
     }
   }
   return { resumen: resumen || correo.asunto, acuerdos };
+}
+
+// Juntas por aceptar: invitaciones de alguien de Spark225 (próximos 14 días) que aún no respondes.
+// Se pregunta al calendario, no al asunto del correo: al aceptarla, desaparece sola.
+export async function juntasPorAceptar(personas = []) {
+  const ini = new Date();
+  const fin = new Date(ini); fin.setDate(fin.getDate() + 14);
+  const r = await pedir(`https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin=${ini.toISOString()}&timeMax=${fin.toISOString()}&maxResults=60`);
+  return (r.items || []).filter((e) => {
+    if (e.status === 'cancelled' || e.organizer?.self) return false;
+    const yo = (e.attendees || []).find((a) => a.self);
+    const quien = (e.organizer?.email || e.creator?.email || '').toLowerCase();
+    return yo?.responseStatus === 'needsAction' && quien.endsWith('@spark225.com');
+  }).map((e) => {
+    const correo = (e.organizer?.email || e.creator?.email || '').toLowerCase();
+    const p = personas.find((x) => (x.email || '').toLowerCase() === correo);
+    return {
+      id: 'inv-' + e.id, titulo: e.summary || '(sin título)', de: p?.corto || e.organizer?.displayName || correo.split('@')[0],
+      inicio: e.start?.dateTime || e.start?.date, todoElDia: !e.start?.dateTime, url: e.htmlLink,
+    };
+  });
 }
 
 // Agenda de hoy del calendario principal.

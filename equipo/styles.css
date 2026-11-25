@@ -1206,3 +1206,22 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
 .bienv-cuenta-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .bienv-cuenta-t small { color: var(--tinta-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 @media (prefers-reduced-motion: reduce) { .bienv, .bienv-cuerpo { animation: none; } .bienv-cuenta:hover { transform: none; } }
+
+/* ---------- Correo: franja «Importante» (juntas por aceptar y notas de Gemini) ---------- */
+.importantes { margin: 10px 0 4px; padding: 10px; border-radius: var(--r-fila); background: color-mix(in srgb, var(--mecha) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mecha) 38%, transparent); animation: imp-llega .5s var(--ease); }
+.importantes .imp-t { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; color: color-mix(in srgb, var(--mecha) 55%, var(--tinta)); }
+.importantes .imp-t .i { width: 14px; height: 14px; }
+.importantes .imp-t b { margin-left: auto; min-width: 18px; padding: 1px 6px; border-radius: 9px; background: var(--mecha); color: #2A2105; font-size: 11px; text-align: center; }
+.importantes ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.importantes .imp { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: var(--carbon); box-shadow: var(--anillo); }
+.importantes .imp-ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: color-mix(in srgb, var(--mecha) 22%, transparent); color: color-mix(in srgb, var(--mecha) 60%, var(--tinta)); }
+.importantes .imp-ico .i { width: 16px; height: 16px; }
+.importantes .imp-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.importantes .imp-cuerpo b { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.importantes .imp-cuerpo small { font-size: 11.5px; color: var(--tinta-2); line-height: 1.35; }
+.importantes .btn { flex: none; white-space: nowrap; text-decoration: none; }
+@keyframes imp-llega { from { box-shadow: inset 0 0 0 1px var(--mecha), 0 0 0 6px color-mix(in srgb, var(--mecha) 25%, transparent); } }
+@media (max-width: 520px) { .importantes .imp { flex-wrap: wrap; } .importantes .btn { width: 100%; justify-content: center; } }
+@media (prefers-reduced-motion: reduce) { .importantes { animation: none; } }
+.aviso-it.importante { box-shadow: inset 3px 0 0 var(--mecha); }
+.aviso-it.importante.nuevo { background: color-mix(in srgb, var(--mecha) 12%, transparent); }

@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251720';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611252010';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -250,6 +250,13 @@ export function borrarDefinitivo(id, uId) {
   return { ok: true };
 }
 
+// Aviso de algo importante que llegó a tu correo (junta por aceptar, notas de Gemini). Una sola vez por «clave».
+export function avisoImportante(uId, clave, texto, extra = {}) {
+  if (!uId || estado.avisos.some((n) => n.clave === clave && n.para === uId)) return false;
+  estado.avisos = [{ id: uid('n'), para: uId, cuando: ahora(), leido: false, tipo: 'importante', clave, texto, ...extra }, ...estado.avisos].slice(0, 60);
+  guardar();
+  return true;
+}
 export function marcarAvisosLeidos(uId) { estado.avisos.forEach((n) => { if (n.para === uId) n.leido = true; }); guardar(); }
 
 export function horasEstimadas(a) { return ({ S: 1, M: 3, L: 6 })[a.esfuerzo] || 0; }
@@ -413,7 +420,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611251720';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611252010';
 
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube

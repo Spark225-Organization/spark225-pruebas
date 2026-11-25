@@ -27,7 +27,9 @@ jobs:
         working-directory: ssam-app
         env:
           SSAM_BASE: /ssam/
-          # Login real con Supabase Auth (el bypass de admin se quitó el 25-nov-2026).
+          # Modo demo: datos ficticios y entrada eligiendo rol (sin login). Solo pruebas;
+          # materiales.spark225.com compila sin esta variable y usa el login y la base reales.
+          VITE_SSAM_DEMO: "1"
         run: |
           bun install --frozen-lockfile
           bun run build

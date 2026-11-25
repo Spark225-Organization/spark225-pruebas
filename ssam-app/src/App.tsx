@@ -14,6 +14,9 @@ import Indications from "./pages/Indications";
 import Team from "./pages/Team";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
+import SelectorDemo from "./pages/SelectorDemo";
+import DemoBanner from "./components/DemoBanner";
+import { DEMO } from "./lib/demo/demoState";
 import ResetPassword from "./pages/ResetPassword";
 import RoleManagement from "./pages/RoleManagement";
 import NotFound from "./pages/NotFound";
@@ -88,7 +91,7 @@ const AppRoutes = () => {
     <Routes>
       <Route
         path="/login"
-        element={user ? <Navigate to={homePath} replace /> : <Login />}
+        element={user ? <Navigate to={homePath} replace /> : DEMO ? <SelectorDemo /> : <Login />}
       />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route
@@ -217,6 +220,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <AppRoutes />
+            <DemoBanner />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

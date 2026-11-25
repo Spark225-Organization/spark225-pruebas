@@ -1,19 +1,21 @@
-import { html, render, useState, useEffect, useRef, useCallback } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611241457';
+import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251031';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
-  borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal,
-} from './store.js?v=202611241457';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611241457';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611241457';
-import { AltaRapida } from './mecha.js?v=202611241457';
-import { Inicio } from './vistas.js?v=202611241457';
-import { Mapa } from './mapa.js?v=202611241457';
-import { Chat } from './chat.js?v=202611241457';
-import { Login } from './login.js?v=202611241457';
-import { Bienvenida, Recorrido } from './tour.js?v=202611241457';
-import { useArrastre } from './arrastre.js?v=202611241457';
-import { Galeria } from './widgets.js?v=202611241457';
+  borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
+} from './store.js?v=202611251031';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251031';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251031';
+import { AltaRapida } from './mecha.js?v=202611251031';
+import { Inicio } from './vistas.js?v=202611251031';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251031';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611251031';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251031';
+import { Chat } from './chat.js?v=202611251031';
+import { Login } from './login.js?v=202611251031';
+import { Bienvenida, Recorrido } from './tour.js?v=202611251031';
+import { useArrastre } from './arrastre.js?v=202611251031';
+import { Galeria } from './widgets.js?v=202611251031';
 
 function useStore() {
   const [, set] = useState(0);
@@ -50,10 +52,13 @@ function App() {
   const [chat, setChat] = useState(null);
   const [sesion, setSesion] = useState(() => leerLocal('ssam-equipo-sesion', ''));
   const [tour, setTour] = useState(null);
+  const [asis, setAsis] = useState(null);
+  const [menuCrear, setMenuCrear] = useState(false);
+  const [minuta, setMinuta] = useState(null);
 
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
-  useEffect(() => { setChat(null); setCajon(null); }, [ruta]);
+  useEffect(() => { setChat(null); setCajon(null); setMenuCrear(false); setMinuta(null); }, [ruta]);
 
   const toast = useCallback((texto, accion) => {
     const id = Math.random();
@@ -61,8 +66,9 @@ function App() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
 
-  const persona = ruta.startsWith('/persona/') ? ruta.split('/')[2] : yo;
-  const vista = { '/equipo': 'equipo', '/papelera': 'papelera', '/mapa': 'mapa', '/historial': 'historial' }[ruta] || 'dia';
+  const persona = ruta.startsWith('/persona/') && db.personas.some((p) => p.id === ruta.split('/')[2]) ? ruta.split('/')[2] : yo;
+  const clienteRuta = ruta.startsWith('/cliente/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
+  const vista = clienteRuta ? 'cliente' : { '/equipo': 'equipo', '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes' }[ruta] || 'dia';
   const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
@@ -73,7 +79,10 @@ function App() {
     abrirGaleria: (agregar) => setGaleria({ agregar }),
     abrir: (id) => setCajon({ id }),
     abrirBorrador: (b) => setCajon({ nuevo: b }),
-    nueva: (extra = {}) => setCajon({ nuevo: { responsable: persona, fecha, ...extra } }),
+    // Crear siempre con el asistente pregunta por pregunta.
+    nueva: (extra = {}) => setAsis({ tipo: 'tarea', inicial: extra }),
+    crear: (tipo, inicial = {}) => { setMenuCrear(false); setAsis({ tipo, inicial }); },
+    abrirMinuta: (id) => setMinuta(id),
     avanzar: (a) => {
       const de = a.estatus;
       const r = cambiarEstatus(a.id, siguienteEstatus(a.estatus), yo);
@@ -98,8 +107,8 @@ function App() {
   useEffect(() => {
     const f = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaleta((v) => !v); return; }
-      if (e.key === 'Escape') { setMenu(null); setPerfil(false); setPaleta(false); setAvisos(false); setRapida(null); if (!document.querySelector('.hoja')) setChat(null); return; }
-      if (escribiendo(document.activeElement) || e.metaKey || e.ctrlKey || e.altKey || cajon || paleta || menu || chat || tour) return;
+      if (e.key === 'Escape') { setMenu(null); setPerfil(false); setPaleta(false); setAvisos(false); setRapida(null); setMenuCrear(false); setMinuta(null); if (!document.querySelector('.hoja')) setChat(null); return; }
+      if (escribiendo(document.activeElement) || e.metaKey || e.ctrlKey || e.altKey || cajon || paleta || menu || chat || tour || asis || minuta) return;
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); ctx.nueva(); }
       if (e.key === 'ArrowRight' && vista === 'dia' && vistaCal === 'dia') setFecha((f) => sumarDias(f, 1));
       if (e.key === 'ArrowLeft' && vista === 'dia' && vistaCal === 'dia') setFecha((f) => sumarDias(f, -1));
@@ -126,8 +135,9 @@ function App() {
     <div class="app">
       <header class="top">
         <button class="yo-btn" onClick=${() => setPerfil(true)} aria-label="Tu perfil"><${Avatar} p=${yoP} grande /></button>
-        ${vista === 'dia' && vistaCal === 'dia' ? html`<${Dias} fecha=${fecha} setFecha=${setFecha} db=${db} persona=${persona} yo=${yo} />` : html`<div class="dias titulo-top">${{ mapa: 'Mapa', equipo: 'Equipo', papelera: 'Papelera', historial: 'Historial' }[vista] || ''}</div>`}
+        ${vista === 'dia' && vistaCal === 'dia' ? html`<${Dias} fecha=${fecha} setFecha=${setFecha} db=${db} persona=${persona} yo=${yo} />` : html`<div class="dias titulo-top">${{ equipo: 'Equipo', papelera: 'Papelera', historial: 'Historial' }[vista] || ''}</div>`}
         <div class="top-der">
+          <button class="icon-btn" onClick=${() => setChat({})} aria-label=${`Chat${chatSinLeer ? `, ${chatSinLeer} sin leer` : ''}`} data-tour="chat">${I('chat')}${chatSinLeer ? html`<em class="top-badge num">${chatSinLeer}</em>` : null}</button>
           <button class="icon-btn" onClick=${() => setPaleta(true)} aria-label="Buscar" data-tour="buscar">${I('buscar')}</button>
           <a class="icon-btn" href="#/historial" aria-label="Historial" title="Historial">${I('historial')}</a>
           <button class="icon-btn" onClick=${() => setAvisos((v) => !v)} aria-label=${`Avisos${sinLeer ? `, ${sinLeer} nuevos` : ''}`}>${I('campana')}${sinLeer ? html`<span class="punto"></span>` : null}</button>
@@ -135,11 +145,16 @@ function App() {
       </header>
 
       <main class="principal">
-        ${vista === 'dia' && html`<${Inicio} ...${ctx} />`}
-        ${vista === 'mapa' && html`<${Mapa} db=${db} yo=${yo} abrir=${ctx.abrir} toast=${toast} />`}
-        ${vista === 'historial' && html`<${Historial} db=${db} />`}
-        ${vista === 'equipo' && html`<${Equipo} db=${db} yo=${yo} />`}
-        ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
+        ${errorGuardado && html`<div class="aviso-guardado" role="alert">${I('alerta')}No se pudo guardar en este navegador. Descarga un respaldo desde tu perfil.</div>`}
+        <${Protegido} key=${vista + (clienteRuta || '')}>
+          ${vista === 'dia' && html`<${Inicio} ...${ctx} />`}
+          ${vista === 'pipeline' && html`<${Pipeline} ctx=${ctx} />`}
+          ${vista === 'clientes' && html`<${Archivero} ctx=${ctx} />`}
+          ${vista === 'cliente' && html`<${DetalleCliente} id=${clienteRuta} ctx=${ctx} />`}
+          ${vista === 'historial' && html`<${Historial} db=${db} />`}
+          ${vista === 'equipo' && html`<${Equipo} db=${db} yo=${yo} />`}
+          ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
+        <//>
       </main>
 
       <nav class=${'dock' + (arrastrandoAlgo ? ' modo-soltar' : '')} aria-label="Principal">
@@ -147,9 +162,10 @@ function App() {
           ? html`<div class=${'zona-papelera' + (arr?.destino?.tipo === 'papelera' ? ' sobre' : '')} data-drop="papelera">${I('papelera')}<span>Eliminar</span></div>`
           : html`
             <a href="#/" class="dock-it" aria-current=${vista === 'dia' && persona === yo ? 'page' : null} onClick=${() => setFecha(hoyISO())}>${I('inicio')}<span>Inicio</span></a>
-            <a href="#/mapa" class="dock-it" aria-current=${vista === 'mapa' ? 'page' : null} data-tour="mapa">${I('mapa')}<span>Mapa</span></a>
-            <button class="dock-mas" onClick=${() => ctx.nueva()} aria-label="Nueva actividad (N)" data-tour="mas">${I('mas')}</button>
-            <button class="dock-it" onClick=${() => setChat({})} data-tour="chat">${I('chat')}<span>Chat</span>${chatSinLeer ? html`<em class="dock-badge num">${chatSinLeer}</em>` : null}</button>
+            <a href="#/pipeline" class="dock-it" aria-current=${vista === 'pipeline' ? 'page' : null} data-tour="pipeline">${I('columnas')}<span>Pipeline</span></a>
+            <span class="rel"><button class="dock-mas" onClick=${() => setMenuCrear((v) => !v)} aria-label="Crear" aria-expanded=${menuCrear} data-tour="mas">${I('mas')}</button>
+              ${menuCrear && html`<${MenuCrear} elegir=${(t) => ctx.crear(t, t === 'tarea' ? {} : clienteRuta && db.clientes.some((c) => c.id === clienteRuta) ? { cliente: clienteRuta } : {})} cerrar=${() => setMenuCrear(false)} />`}</span>
+            <a href="#/clientes" class="dock-it" aria-current=${vista === 'clientes' || vista === 'cliente' ? 'page' : null} data-tour="clientes">${I('carpeta')}<span>Clientes</span></a>
             <a href="#/equipo" class="dock-it" aria-current=${vista === 'equipo' || persona !== yo ? 'page' : null}>${I('equipo')}<span>Equipo</span></a>`}
       </nav>
 
@@ -165,6 +181,10 @@ function App() {
       ${tour === 'bienvenida' && html`<${Bienvenida} nombre=${yoP?.corto} empezar=${() => { location.hash = '#/'; setTour('pasos'); }} saltar=${cerrarTour} />`}
       ${tour === 'pasos' && html`<${Recorrido} terminar=${cerrarTour} />`}
       ${galeria && html`<${Galeria} db=${db} agregar=${galeria.agregar} cerrar=${() => setGaleria(null)} />`}
+      ${asis?.tipo === 'tarea' && html`<${AsistenteTarea} ctx=${ctx} inicial=${asis.inicial} cerrar=${() => setAsis(null)} />`}
+      ${asis?.tipo === 'cliente' && html`<${AsistenteCliente} ctx=${ctx} cerrar=${() => setAsis(null)} />`}
+      ${asis?.tipo === 'proyecto' && html`<${AsistenteProyecto} ctx=${ctx} inicial=${asis.inicial} cerrar=${() => setAsis(null)} />`}
+      ${minuta && html`<${HojaMinuta} id=${minuta} ctx=${ctx} cerrar=${() => setMinuta(null)} />`}
       ${rapida && html`<${AltaRapida} pos=${rapida} ctx=${ctx} cerrar=${() => setRapida(null)} />`}
       <div class="toasts" role="status" aria-live="polite">
         ${toasts.map((t) => html`<div class="toast" key=${t.id}><span>${t.texto}</span>${t.accion && html`<button onClick=${() => { t.accion.f(); setToasts((x) => x.filter((y) => y.id !== t.id)); }}>${t.accion.texto}</button>`}</div>`)}
@@ -287,6 +307,32 @@ function MenuEstatus({ menu, cerrar, ctx }) {
     </div>`;
 }
 
+// ---------- Respaldo: todo en un archivo .json ----------
+function descargarRespaldo() {
+  const blob = new Blob([store.exportar()], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ssam-respaldo-${hoyISO()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function restaurarRespaldo(e, toast, cerrar) {
+  const f = e.target.files?.[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { const res = store.importar(String(r.result)); toast(res.ok ? `Respaldo restaurado: ${res.n} tareas` : res.motivo); if (res.ok) cerrar(); };
+  r.onerror = () => toast('No se pudo leer el archivo.');
+  r.readAsText(f);
+  e.target.value = '';
+}
+
+// ---------- Si una pantalla falla, se muestra un aviso en lugar de dejar todo en blanco ----------
+function Protegido({ children }) {
+  const [error, reintentar] = useErrorBoundary((err) => { try { console.error('[SSAM]', err); } catch (_) { /* nada */ } });
+  if (error) return html`<div class="vacio falla" role="alert">${I('alerta')}<p>Esta pantalla tuvo un problema. Tus datos están a salvo.</p>
+    <div class="falla-acc"><button class="btn prim" onClick=${reintentar}>Reintentar</button><a class="btn" href="#/" onClick=${reintentar}>Ir al inicio</a><button class="btn fantasma" onClick=${descargarRespaldo}>Descargar respaldo</button></div></div>`;
+  return children;
+}
+
 function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
@@ -299,7 +345,9 @@ function Perfil({ db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir 
         <button class="op" onClick=${recorrido}>${I('brujula')}<span>Recorrido</span></button>
         <a class="op" href="#/papelera" onClick=${cerrar}>${I('papelera')}<span>Papelera</span></a>
         <a class="op" href="#/historial" onClick=${cerrar}>${I('historial')}<span>Historial</span></a>
-        <button class="op" onClick=${() => { store.restablecer(); toast('Datos de prueba restablecidos'); cerrar(); }}>${I('reset')}<span>Reiniciar demo</span></button>
+        <button class="op" onClick=${descargarRespaldo}>${I('archivar')}<span>Descargar respaldo</span></button>
+        <label class="op">${I('reset')}<span>Restaurar respaldo</span><input type="file" accept="application/json,.json" hidden onChange=${(e) => restaurarRespaldo(e, toast, cerrar)} /></label>
+        <button class="op" onClick=${() => { if (confirm('¿Volver a los datos de ejemplo? Se pierde lo que hayas cambiado.')) { store.restablecer(); toast('Datos de prueba restablecidos'); cerrar(); } }}>${I('reset')}<span>Reiniciar demo</span></button>
         <button class="op" onClick=${salir}>${I('salir')}<span>Cerrar sesión</span></button>
       </div>
       <div class="hoja-t chico">Ver como</div>
@@ -327,8 +375,11 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
   const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const t = norm(q.trim());
   const acciones = [
-    { t: 'Nueva actividad', ico: 'mas', f: () => ctx.nueva() },
-    { t: 'Mapa', ico: 'mapa', f: () => { location.hash = '#/mapa'; } },
+    { t: 'Nueva tarea', ico: 'mas', f: () => ctx.crear('tarea') },
+    { t: 'Nuevo cliente', ico: 'carpeta', f: () => ctx.crear('cliente') },
+    { t: 'Nuevo proyecto', ico: 'proyectos', f: () => ctx.crear('proyecto') },
+    { t: 'Pipeline', ico: 'columnas', f: () => { location.hash = '#/pipeline'; } },
+    { t: 'Clientes', ico: 'carpeta', f: () => { location.hash = '#/clientes'; } },
     { t: 'Chat', ico: 'chat', f: () => ctx.abrirChat() },
     { t: 'Historial', ico: 'historial', f: () => { location.hash = '#/historial'; } },
     { t: 'Equipo', ico: 'equipo', f: () => { location.hash = '#/equipo'; } },
@@ -338,9 +389,11 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
   const acts = vigentes().filter((a) => visiblePara(a, yo) && (!t || norm(a.titulo + ' ' + (db.clientes.find((c) => c.id === a.cliente)?.nombre || '')).includes(t)))
     .sort((a, b) => (participa(b, yo) - participa(a, yo)) || a.fecha.localeCompare(b.fecha)).slice(0, t ? 8 : 5)
     .map((a) => ({ t: a.titulo, m: fechaRelativa(a.fecha), c: db.clientes.find((x) => x.id === a.cliente)?.color, f: () => ctx.abrir(a.id) }));
+  const clis = db.clientes.filter((c) => !c.privado && t && norm(c.nombre).includes(t))
+    .map((c) => ({ t: c.nombre, c: c.color, m: 'Cliente', f: () => { location.hash = '#/cliente/' + c.id; } }));
   const pers = db.personas.filter((p) => t && norm(p.nombre + ' ' + p.puesto).includes(t))
     .map((p) => ({ t: p.nombre, p, f: () => { location.hash = p.id === yo ? '#/' : '#/persona/' + p.id; } }));
-  const res = [...acts, ...pers, ...acciones];
+  const res = [...clis, ...acts, ...pers, ...acciones];
   useEffect(() => setSel(0), [q]);
   const ejecutar = (r) => { cerrar(); r.f(); };
   return html`

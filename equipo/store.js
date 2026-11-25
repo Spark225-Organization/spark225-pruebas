@@ -1,22 +1,58 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL } from './datos.js?v=202611241457';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251031';
 
-const CLAVE = 'ssam-equipo-v4';
+const CLAVE = 'ssam-equipo-datos';
+const CLAVE_V4 = 'ssam-equipo-v4';
 const DIA_MS = 86400000;
 let estado = cargar();
 const oyentes = new Set();
+export let errorGuardado = false;
 
+// Carga a prueba de fallos: lee, migra versiones viejas y repara lo que venga roto.
+// Si nada sirve, arranca con los datos de ejemplo. Nunca deja la app en blanco.
 function cargar() {
   try {
-    const crudo = localStorage.getItem(CLAVE);
+    const crudo = localStorage.getItem(CLAVE) || localStorage.getItem(CLAVE_V4);
     if (crudo) {
       const e = JSON.parse(crudo);
-      if (e && e.version === 4) return purgar(e);
+      if (e && (e.version === 4 || e.version === VERSION_DATOS)) return purgar(reparar(migrar(e)));
     }
-  } catch (_) { /* almacenamiento no disponible: se usa la semilla en memoria */ }
+  } catch (_) { /* datos ilegibles o sin almacenamiento: se usa la semilla */ }
   return semilla();
+}
+// v4 → v5: clientes con estado y satisfacción, proyectos con responsable, minutas; adiós a los flujos.
+function migrar(e) {
+  if (e.version === 4) {
+    e.clientes = (e.clientes || []).map((c) => ({ ...fichaCliente(c.id), ...c }));
+    e.proyectos = (e.proyectos || []).map((p) => ({ responsable: 'adan', entrega: null, ...p }));
+    const H = hoyISO();
+    e.minutas = minutasEjemplo(H, (d) => new Date(Date.now() - d * DIA_MS).toISOString());
+    delete e.flujos;
+    e.version = VERSION_DATOS;
+  }
+  return e;
+}
+// Repara datos incompletos: listas que falten, actividades sin título o con cliente inexistente.
+function reparar(e) {
+  const base = semilla();
+  ['personas', 'clientes', 'proyectos', 'actividades', 'avisos', 'correos', 'minutas', 'eventos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = base[k]; });
+  ['personal', 'layouts', 'prefs'].forEach((k) => { if (!e[k] || typeof e[k] !== 'object') e[k] = {}; });
+  if (!e.chat || !Array.isArray(e.chat.mensajes)) e.chat = base.chat;
+  if (!e.personas.length) e.personas = base.personas;
+  if (!e.papeleraDias) e.papeleraDias = 30;
+  const clientes = new Set(e.clientes.map((c) => c.id));
+  const personas = new Set(e.personas.map((p) => p.id));
+  e.actividades = e.actividades.filter((a) => a && a.id && typeof a.titulo === 'string').map((a) => ({
+    colaboradores: [], checklist: [], enlaces: [], notas: '', historial: [], repeticion: { tipo: 'no', cada: 7 }, esfuerzo: 'S', estatus: 'pendiente', ...a,
+    cliente: clientes.has(a.cliente) ? a.cliente : 'interno',
+    responsable: personas.has(a.responsable) ? a.responsable : e.personas[0].id,
+    fecha: /^\d{4}-\d{2}-\d{2}$/.test(a.fecha || '') ? a.fecha : hoyISO(),
+  }));
+  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; });
+  e.minutas.forEach((m) => { if (!Array.isArray(m.acuerdos)) m.acuerdos = []; });
+  return e;
 }
 function purgar(e) {
   const limite = Date.now() - e.papeleraDias * DIA_MS;
@@ -24,14 +60,30 @@ function purgar(e) {
   return e;
 }
 function guardar() {
-  try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (_) { /* sin almacenamiento */ }
+  try { localStorage.setItem(CLAVE, JSON.stringify(estado)); errorGuardado = false; } catch (_) { errorGuardado = true; }
   oyentes.forEach((f) => f(estado));
 }
+// Si la app está abierta en dos pestañas, ambas ven lo mismo y no se pisan.
+try {
+  addEventListener('storage', (ev) => {
+    if (ev.key !== CLAVE || !ev.newValue) return;
+    try { estado = purgar(reparar(migrar(JSON.parse(ev.newValue)))); oyentes.forEach((f) => f(estado)); } catch (_) { /* se ignora un valor roto */ }
+  });
+} catch (_) { /* sin ventana */ }
 
 export const store = {
   get: () => estado,
   suscribir(f) { oyentes.add(f); return () => oyentes.delete(f); },
   restablecer() { estado = semilla(); guardar(); },
+  // Respaldo: descarga todo en un archivo y lo restaura validándolo antes.
+  exportar() { return JSON.stringify(estado, null, 1); },
+  importar(texto) {
+    let e;
+    try { e = JSON.parse(texto); } catch (_) { return { ok: false, motivo: 'El archivo no es un respaldo válido.' }; }
+    if (!e || !(e.version === 4 || e.version === VERSION_DATOS) || !Array.isArray(e.actividades)) return { ok: false, motivo: 'El archivo no es un respaldo del SSAM.' };
+    estado = purgar(reparar(migrar(e))); guardar();
+    return { ok: true, n: estado.actividades.length };
+  },
 };
 
 const uid = (p) => p + Math.random().toString(36).slice(2, 9);
@@ -257,76 +309,82 @@ export function avanzarFactura(msjId, uId) {
   return { ok: true };
 }
 
-// ---------- Flujos (mapas) ----------
-export const flujoDe = (fid) => estado.flujos.find((f) => f.id === fid);
-export function crearFlujo(nombre, uId, base = {}) {
-  const f = { id: uid('f'), nombre: nombre || 'Nuevo flujo', creador: uId, creado: ahora(), nodos: base.nodos || [], aristas: base.aristas || [] };
-  estado.flujos = [...estado.flujos, f];
-  evento(uId, `creó el flujo «${f.nombre}»`);
-  guardar(); return f.id;
+// ---------- Clientes ----------
+export const clienteDe = (id) => estado.clientes.find((c) => c.id === id);
+export function crearCliente(d, uId) {
+  const base = d.nombre.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente';
+  let id = base, k = 2;
+  while (clienteDe(id)) id = base + '-' + k++;
+  const c = { id, nombre: d.nombre.trim(), color: d.color, responsable: d.responsable, salud: d.salud || 'bien',
+    satisfaccion: d.satisfaccion ? [{ fecha: hoyISO(), valor: d.satisfaccion }] : [] };
+  estado.clientes = [...estado.clientes, c];
+  estado.proyectos = [...estado.proyectos, { id: 'g-' + id, nombre: 'General', cliente: id, responsable: d.responsable, entrega: null }];
+  evento(uId, `agregó el cliente ${c.nombre}`, { cliente: id });
+  guardar();
+  return c;
 }
-export function renombrarFlujo(fid, nombre) { const f = flujoDe(fid); if (f && nombre.trim()) { f.nombre = nombre.trim(); estado.flujos = [...estado.flujos]; guardar(); } }
-export function borrarFlujo(fid, uId) { const f = flujoDe(fid); estado.flujos = estado.flujos.filter((x) => x.id !== fid); if (f) evento(uId, `borró el flujo «${f.nombre}»`); guardar(); }
-export function flujosDeActividad(aId) { return estado.flujos.filter((f) => f.nodos.some((n) => n.tipo === 'actividad' && n.ref === aId)); }
-// Avance de un flujo: tareas cerradas sobre el total de tareas vivas que contiene.
-export function avanceFlujo(f) {
-  const acts = f.nodos.filter((n) => n.tipo === 'actividad').map((n) => act(n.ref)).filter((a) => a && !a.archivada);
-  return { hechas: acts.filter((a) => a.estatus === 'hecho').length, total: acts.length, acts };
+export function actualizarCliente(id, cambios, uId) {
+  const c = clienteDe(id); if (!c) return;
+  if (cambios.salud && cambios.salud !== c.salud) evento(uId, `marcó a ${c.nombre} como «${{ bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' }[cambios.salud]}»`, { cliente: id });
+  Object.assign(c, cambios);
+  estado.clientes = [...estado.clientes];
+  guardar();
 }
-// Flujo automático de una tarea que no está en ningún flujo: su cadena de dependencias y responsables.
-export function flujoAuto(aId) {
-  const base = act(aId); if (!base) return null;
-  const cadena = [];
-  let x = base; const vistos = new Set();
-  while (x && x.dependeDe && !vistos.has(x.id)) { vistos.add(x.id); x = act(x.dependeDe); if (x) cadena.unshift(x); }
-  cadena.push(base);
-  let sig = estado.actividades.find((y) => y.dependeDe === base.id && !y.archivada);
-  while (sig && !cadena.includes(sig)) { cadena.push(sig); sig = estado.actividades.find((y) => y.dependeDe === sig.id && !y.archivada); }
-  const nodos = [], aristas = [];
-  cadena.forEach((a, i) => {
-    nodos.push({ id: 'auto-' + a.id, tipo: 'actividad', ref: a.id, x: i * 320, y: 120 });
-    if (i > 0) aristas.push({ id: 'ae-' + i, de: 'auto-' + cadena[i - 1].id, a: 'auto-' + a.id });
-  });
-  const personas = [...new Set(cadena.map((a) => a.responsable))];
-  personas.forEach((pid, k) => {
-    const suyas = cadena.map((a, i) => ({ a, i })).filter(({ a }) => a.responsable === pid);
-    nodos.push({ id: 'auto-p-' + pid, tipo: 'persona', ref: pid, x: cadena.length * 320 + 20, y: 40 + k * 120 + (personas.length === 1 ? 90 : 0) });
-    suyas.forEach(({ a }) => aristas.push({ id: 'ap-' + a.id, de: 'auto-' + a.id, a: 'auto-p-' + pid }));
-  });
-  return { id: 'auto', auto: true, nombre: base.titulo, creador: null, nodos, aristas, enfoque: 'auto-' + aId };
+// Una calificación por día: si ya hay una de hoy, se reemplaza.
+export function calificar(id, valor, uId) {
+  const c = clienteDe(id); if (!c) return;
+  const hoy = hoyISO();
+  c.satisfaccion = [...c.satisfaccion.filter((s) => s.fecha !== hoy), { fecha: hoy, valor }];
+  evento(uId, `calificó la satisfacción de ${c.nombre}`, { cliente: id });
+  estado.clientes = [...estado.clientes];
+  guardar();
 }
 
-export function moverNodo(fid, id, x, y) { const n = flujoDe(fid)?.nodos.find((k) => k.id === id); if (n) { n.x = Math.round(x); n.y = Math.round(y); guardar(); } }
-export function agregarNodo(fid, nodo, uId) {
-  const f = flujoDe(fid); if (!f) return null;
-  const n = { id: uid('n'), ...nodo };
-  f.nodos = [...f.nodos, n];
-  guardar(); return n;
-}
-export function quitarNodo(fid, id) {
-  const f = flujoDe(fid); if (!f) return;
-  f.nodos = f.nodos.filter((n) => n.id !== id);
-  f.aristas = f.aristas.filter((e) => e.de !== id && e.a !== id);
+// ---------- Proyectos ----------
+export function crearProyecto(d, uId) {
+  const p = { id: uid('p'), nombre: d.nombre.trim(), cliente: d.cliente, responsable: d.responsable, entrega: d.entrega || null };
+  estado.proyectos = [...estado.proyectos, p];
+  evento(uId, `creó el proyecto ${p.nombre}`, { cliente: d.cliente });
+  if (d.responsable && d.responsable !== uId) avisar(d.responsable, `${persona(uId)?.corto} te puso a cargo del proyecto «${p.nombre}».`, null, 'asignacion');
   guardar();
+  return p;
 }
-export function editarNota(fid, id, texto) { const n = flujoDe(fid)?.nodos.find((k) => k.id === id); if (n) { n.texto = texto; guardar(); } }
-// Conectar aplica la regla: actividad → persona asigna; actividad → actividad crea la dependencia.
-export function conectar(fid, de, a, uId) {
-  const f = flujoDe(fid); if (!f) return { ok: false };
-  if (de === a || f.aristas.some((e) => e.de === de && e.a === a)) return { ok: false };
-  const nDe = f.nodos.find((n) => n.id === de), nA = f.nodos.find((n) => n.id === a);
-  let efecto = null;
-  if (nDe?.tipo === 'actividad' && nA?.tipo === 'persona') { actualizar(nDe.ref, { responsable: nA.ref }, uId); efecto = `Asignada a ${persona(nA.ref)?.corto}`; }
-  else if (nDe?.tipo === 'persona' && nA?.tipo === 'actividad') { actualizar(nA.ref, { responsable: nDe.ref }, uId); efecto = `Asignada a ${persona(nDe.ref)?.corto}`; }
-  else if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad') { actualizar(nA.ref, { dependeDe: nDe.ref }, uId); log(act(nA.ref), uId, `ahora espera a «${act(nDe.ref)?.titulo}»`); efecto = 'Ahora espera a la anterior'; }
-  f.aristas = [...f.aristas, { id: uid('e'), de, a }];
-  guardar();
-  return { ok: true, efecto };
+export function avanceProyecto(pid) {
+  const l = vigentes().filter((a) => a.proyecto === pid);
+  return { total: l.length, hechas: l.filter((a) => a.estatus === 'hecho').length };
 }
-export function desconectar(fid, id, uId) {
-  const f = flujoDe(fid); const e = f?.aristas.find((x) => x.id === id); if (!e) return;
-  const nDe = f.nodos.find((n) => n.id === e.de), nA = f.nodos.find((n) => n.id === e.a);
-  if (nDe?.tipo === 'actividad' && nA?.tipo === 'actividad' && act(nA.ref)?.dependeDe === nDe.ref) actualizar(nA.ref, { dependeDe: null }, uId);
-  f.aristas = f.aristas.filter((x) => x.id !== id);
+
+// ---------- Minutas desde el correo ----------
+// Cuando llega la transcripción de una junta, se arma la minuta sola y queda visible para todo el equipo.
+// Hoy es simulado: al conectar Gmail + Supabase, un proceso lee el correo y extrae los acuerdos con IA.
+const PLANTILLAS_JUNTA = [
+  { cliente: 'solumed', titulo: 'Seguimiento Solumed', resumen: 'Se revisaron los resultados de la semana y el siguiente reporte.',
+    acuerdos: [['Preparar el reporte de la semana', 'adan', 2], ['Proponer dos piezas nuevas', 'paco', 3]] },
+  { cliente: 'endodx', titulo: 'Junta con Endodx', resumen: 'El cliente confirmó fechas y pidió ver avances el viernes.',
+    acuerdos: [['Enviar avances antes del viernes', 'adan', 2], ['Ajustar la parrilla de contenido', 'paco', 1]] },
+  { cliente: 'novartis', titulo: 'Alcance con Novartis', resumen: 'Se definió el siguiente paso del alcance y quién lo presenta.',
+    acuerdos: [['Enviar el alcance revisado', 'carlos', 3], ['Armar la presentación', 'adan', 2]] },
+];
+export function simularTranscripcion(uId) {
+  const t = PLANTILLAS_JUNTA[(estado.minutas.length) % PLANTILLAS_JUNTA.length];
+  const H = hoyISO();
+  const mid = uid('mi'), cid = uid('m');
+  estado.correos = [{ id: cid, de: 'Notas de reunión', cliente: t.cliente, asunto: 'Transcripción · ' + t.titulo, cuando: ahora(), leido: false, tipo: 'transcripcion', minuta: mid }, ...estado.correos];
+  const m = { id: mid, cliente: t.cliente, titulo: t.titulo, fecha: ahora(), correo: cid, asistentes: estado.personas.map((p) => p.id), resumen: t.resumen,
+    acuerdos: t.acuerdos.map(([texto, responsable, dias]) => ({ id: uid('k'), texto, responsable, fecha: sumarDiasHabiles(H, dias), tarea: null })) };
+  estado.minutas = [m, ...estado.minutas];
+  evento(uId, `recibió la minuta «${m.titulo}»`, { cliente: t.cliente });
+  estado.personas.forEach((p) => avisar(p.id, `Nueva minuta: ${m.titulo}.`, null, 'minuta'));
   guardar();
+  return m;
+}
+// Un acuerdo de la minuta se vuelve tarea con un toque (ya trae responsable, fecha y cliente).
+export function acuerdoATarea(mid, kid, uId) {
+  const m = estado.minutas.find((x) => x.id === mid); const k = m?.acuerdos.find((x) => x.id === kid);
+  if (!k || k.tarea) return null;
+  const a = crear(nuevaVacia(k.responsable, { titulo: k.texto, cliente: m.cliente, proyecto: 'g-' + m.cliente, fecha: k.fecha, esfuerzo: 'S', asignadaPor: uId, notas: `De la minuta «${m.titulo}»` }), uId);
+  k.tarea = a.id;
+  estado.minutas = [...estado.minutas];
+  guardar();
+  return a;
 }

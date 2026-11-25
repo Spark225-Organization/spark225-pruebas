@@ -1,10 +1,10 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611241457';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs } from './store.js?v=202611241457';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611241457';
-import { hoyISO } from './datos.js?v=202611241457';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611241457';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611251031';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion } from './store.js?v=202611251031';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611251031';
+import { hoyISO } from './datos.js?v=202611251031';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611251031';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -64,6 +64,7 @@ function Widget(props) {
   if (t === 'cumplimiento') return html`<${WCumplimiento} ...${props} />`;
   if (t === 'facturas') return html`<${WFacturas} ...${props} />`;
   if (t === 'correo') return html`<${WCorreo} ...${props} />`;
+  if (t === 'minutas') return html`<${WMinutas} ...${props} />`;
   if (t === 'chat') return html`<${WChat} ...${props} />`;
   if (t === 'clientes') return html`<${WClientes} ...${props} />`;
   if (t === 'minimes') return html`<${WMiniMes} ...${props} />`;
@@ -269,22 +270,40 @@ function WFacturas({ ctx, persona }) {
   </button>`;
 }
 
-// Correo: simulado hasta conectar Gmail. Un toque lo vuelve actividad.
+// Correo: simulado hasta conectar Gmail. Las transcripciones de juntas se vuelven minuta solas;
+// cualquier otro correo se vuelve tarea con un toque.
 function WCorreo({ ctx }) {
   const l = ctx.db.correos;
   const nuevos = l.filter((m) => !m.leido).length;
+  const simular = () => { const m = simularTranscripcion(ctx.yo); ctx.toast(`Llegó la transcripción: ${m.titulo}. Ya es minuta.`, { texto: 'Ver', f: () => ctx.abrirMinuta(m.id) }); };
   return html`<div class="w">
     ${cab('correo', 'Correo', nuevos || null)}
     <ul class="correos">${l.slice(0, 4).map((m) => {
       const c = ctx.db.clientes.find((x) => x.id === m.cliente);
+      const esMinuta = m.tipo === 'transcripcion' && m.minuta;
       return html`<li key=${m.id} class=${m.leido ? '' : 'nuevo'} style=${`--c:${c?.color}`}>
-        <button class="c-cuerpo" onClick=${() => marcarCorreo(m.id, !m.leido)}>
+        <button class="c-cuerpo" onClick=${() => { marcarCorreo(m.id, true); if (esMinuta) ctx.abrirMinuta(m.minuta); }}>
           <span class="c-de">${m.de}<em>${haceCuanto(m.cuando)}</em></span><span class="c-as">${m.asunto}</span></button>
-        ${m.actividad ? html`<span class="c-ok" title="Ya es actividad">${I('check')}</span>`
-          : html`<button class="icon-btn chico" title="Convertir en actividad" aria-label="Convertir en actividad" onClick=${() => { correoAActividad(m.id, ctx.yo); ctx.toast('Ahora es actividad'); }}>${I('mas')}</button>`}
+        ${esMinuta ? html`<span class="c-minuta" title="Se volvió minuta">${I('nota')}Minuta</span>`
+          : m.actividad ? html`<span class="c-ok" title="Ya es tarea">${I('check')}</span>`
+          : html`<button class="icon-btn chico" title="Convertir en tarea" aria-label="Convertir en tarea" onClick=${() => { correoAActividad(m.id, ctx.yo); ctx.toast('Ahora es tarea'); }}>${I('mas')}</button>`}
       </li>`;
     })}</ul>
-    <div class="demo-tag">demo</div>
+    <div class="w-pie-acc"><button class="enlace" onClick=${simular}>Simular que llega una junta</button><span class="demo-tag">demo</span></div>
+  </div>`;
+}
+
+// Minutas recientes: son de todo el equipo. Marca cuántos acuerdos aún no tienen tarea.
+function WMinutas({ ctx }) {
+  const l = ctx.db.minutas.slice(0, 3);
+  const pend = ctx.db.minutas.reduce((s, m) => s + m.acuerdos.filter((k) => !k.tarea).length, 0);
+  return html`<div class="w">
+    ${cab('nota', 'Minutas', pend ? `${pend} sin tarea` : null)}
+    ${l.length === 0 ? html`<p class="w-vacio">Aquí aparecen las juntas que llegan al correo.</p>` : html`<ul class="lista-w">${l.map((m) => {
+      const c = ctx.db.clientes.find((x) => x.id === m.cliente);
+      const n = m.acuerdos.filter((k) => !k.tarea).length;
+      return html`<li key=${m.id}><button onClick=${() => ctx.abrirMinuta(m.id)}><span class="bolita" style=${`--c:${c?.color}`}></span><span class="lw-t">${m.titulo}</span>${n ? html`<em class="lw-n num">${n}</em>` : html`<span class="lw-ok">${I('check')}</span>`}</button></li>`;
+    })}</ul>`}
   </div>`;
 }
 

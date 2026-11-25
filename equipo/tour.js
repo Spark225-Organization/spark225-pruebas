@@ -1,18 +1,17 @@
 // Recorrido de inducción: bienvenida y pasos con foco sobre cada parte de la app.
 // Cada paso trae una mini animación que muestra el gesto (arrastrar, tocar, conectar).
 import { html, useState, useEffect, useLayoutEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611241457';
+import { I, Estrella } from './ui.js?v=202611251031';
 
 export const PASOS = [
   { sel: '[data-tour="dias"]', demo: 'dias', t: 'Tus días', d: 'Toca un día para verlo. Para mover una tarea a otro día, arrástrala y suéltala sobre el día que quieras.' },
-  { sel: '[data-tour="calendario"]', demo: 'mecha', t: 'La mecha de hoy', d: 'Tu día como una línea de tiempo. Arrastra una tarea hacia arriba o abajo para cambiarle la hora. Toca un espacio libre para crear una ahí mismo.' },
-  { sel: '[data-tour="vistas"]', demo: 'vistas', t: 'Cómo lo ves', d: 'Cambia entre Día, Semana, Mes o Tarjetas. En todas puedes arrastrar para reorganizar.' },
-  { sel: '[data-tour="acomodo"]', demo: 'acomodo', t: 'Acomoda tu inicio', d: 'Pon los widgets a un lado, arriba, o quédate solo con el calendario. Cada quien guarda el suyo.' },
-  { sel: '[data-tour="widgets"]', demo: 'widgets', t: 'Tus widgets', d: 'Toca el ícono de ajustes: los widgets tiemblan. Arrástralos para moverlos, toca «–» para quitar y «+» para agregar.' },
-  { sel: '[data-tour="mas"]', demo: 'mas', t: 'Nueva tarea', d: 'Crea una tarea en segundos: título y cliente. También con la tecla N.' },
-  { sel: '[data-tour="mapa"]', demo: 'mapa', t: 'Mapa de flujos', d: 'Arma el flujo de un proyecto. Jala la flecha de una tarea hacia una persona para asignarla, o hacia otra tarea para que espere a la anterior.' },
+  { sel: '[data-tour="calendario"]', demo: 'mecha', t: 'La mecha de hoy', d: 'Tu día como línea de tiempo. Arrastra una tarea hacia arriba o abajo para cambiarle la hora.' },
+  { sel: '[data-tour="widgets"]', demo: 'widgets', t: 'Tus widgets', d: 'Agrega, quita y reordena. En Correo, la transcripción de una junta se vuelve minuta sola.' },
+  { sel: '[data-tour="mas"]', demo: 'asis', t: 'Crear', d: 'Tarea, proyecto o cliente. Te pregunta una cosa a la vez y listo. Atajo para tarea: N.' },
+  { sel: '[data-tour="pipeline"]', demo: 'pipe', t: 'Pipeline', d: 'Todo lo pendiente. Filtra por persona y cliente, y arrastra una tarea para cambiar su estatus.' },
+  { sel: '[data-tour="clientes"]', demo: 'folder', t: 'Clientes', d: 'Un archivero: abre la carpeta de un cliente y ves cómo va, su satisfacción y qué le toca a cada quien.' },
   { sel: '[data-tour="chat"]', demo: 'chat', t: 'Chat del equipo', d: 'Escribe al equipo y envía facturas. La factura avanza: Enviada, Recibida, Pagada.' },
-  { sel: '[data-tour="buscar"]', demo: 'buscar', t: 'Buscar', d: 'Encuentra tareas, personas o acciones. Atajo: ⌘K.' },
+  { sel: '[data-tour="buscar"]', demo: 'buscar', t: 'Buscar', d: 'Encuentra tareas, clientes o personas. Atajo: ⌘K.' },
 ];
 
 // Escenas animadas pequeñas, solo CSS.
@@ -28,7 +27,12 @@ function Demo({ tipo }) {
   if (tipo === 'acomodo') return html`<div class="demo d-acomodo"><span class="da-c">Calendario</span><span class="da-w">Widgets</span></div>`;
   if (tipo === 'widgets') return html`<div class="demo d-widgets"><span class="dw a"><em>–</em></span><span class="dw b"></span><span class="dw c"></span><span class="dw mas">+</span></div>`;
   if (tipo === 'mas') return html`<div class="demo d-mas"><span class="dx-btn">+</span><span class="dx-card"><b>Nueva tarea</b><i></i><i></i></span></div>`;
-  if (tipo === 'mapa') return html`<div class="demo d-mapa"><span class="dp-n t">Tarea</span><span class="dp-linea"></span><span class="dp-n p"><i></i>Paco</span><span class="dp-toast">Asignada a Paco</span></div>`;
+  if (tipo === 'asis') return html`<div class="demo d-asis"><span class="da-barra"><i></i></span>
+    <span class="da-q q1">¿Qué hay que hacer?</span><span class="da-q q2">¿Para qué cliente?</span><span class="da-q q3">¿Para cuándo?</span>
+    <span class="da-ops"><i></i><i></i><i></i></span></div>`;
+  if (tipo === 'pipe') return html`<div class="demo d-pipe"><span class="dpp-col c1"></span><span class="dpp-col c2"></span><span class="dpp-col c3"></span>
+    <span class="dpp-card fija f1"></span><span class="dpp-card fija f2"></span><span class="dpp-card mueve"></span><span class="dpp-cursor"></span></div>`;
+  if (tipo === 'folder') return html`<div class="demo d-folder"><span class="dfo"><span class="dfo-tab"></span><span class="dfo-papel"></span><span class="dfo-frente">Carnot</span></span></div>`;
   if (tipo === 'chat') return html`<div class="demo d-chat"><span class="dc-b o">¿Cómo vamos?</span><span class="dc-b m">Ya casi 🚀</span>
     <span class="dc-f"><b>Factura.pdf</b><span><i class="s1">Enviada</i><i class="s2">Recibida</i><i class="s3">Pagada</i></span></span></div>`;
   if (tipo === 'buscar') return html`<div class="demo d-buscar"><span class="db-caja"><span class="db-txt">carnot</span></span><span class="db-r r1"></span><span class="db-r r2"></span></div>`;

@@ -1,7 +1,7 @@
 // Login de DEMOSTRACIÓN: enseña cómo se verá el acceso. Acepta cualquier dato y no guarda contraseñas.
 // El login real (correo @spark225.com + aprobación de un admin) llega con Supabase.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611241457';
+import { I, Estrella } from './ui.js?v=202611251031';
 
 export function Login({ personas, entrar }) {
   const [modo, setModo] = useState('entrar');

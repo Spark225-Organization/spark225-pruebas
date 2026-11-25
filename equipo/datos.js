@@ -38,6 +38,7 @@ export const WIDGETS = [
   { tipo: 'cumplimiento', nombre: 'A tiempo', tam: 's', icono: 'check' },
   { tipo: 'facturas', nombre: 'Facturas', tam: 's', icono: 'factura' },
   { tipo: 'correo', nombre: 'Correo', tam: 'm', icono: 'correo' },
+  { tipo: 'minutas', nombre: 'Minutas', tam: 'm', icono: 'nota' },
   { tipo: 'chat', nombre: 'Chat', tam: 'm', icono: 'chat' },
   { tipo: 'clientes', nombre: 'Todos los clientes', tam: 'm', icono: 'clientes' },
   { tipo: 'minimes', nombre: 'Mes', tam: 'm', icono: 'semana' },
@@ -75,16 +76,40 @@ export function sumarDiasHabiles(iso, n) {
 
 export const LAYOUT_INICIAL = [
   { id: 'w1', tipo: 'foco' },
-  { id: 'w2', tipo: 'cliente', cliente: 'carnot' },
-  { id: 'w3', tipo: 'cliente', cliente: 'solumed' },
-  { id: 'w4', tipo: 'personal' },
-  { id: 'w5', tipo: 'esperando' },
-  { id: 'w6', tipo: 'nota' },
-  { id: 'w7', tipo: 'archivos' },
-  { id: 'w8', tipo: 'carga' },
-  { id: 'w9', tipo: 'proxima' },
   { id: 'w10', tipo: 'correo' },
+  { id: 'w11', tipo: 'minutas' },
+  { id: 'w5', tipo: 'esperando' },
+  { id: 'w2', tipo: 'cliente', cliente: 'carnot' },
+  { id: 'w4', tipo: 'personal' },
+  { id: 'w6', tipo: 'nota' },
 ];
+
+// Estado general de un cliente y su satisfacción (1 a 5). Se eligen con un toque.
+export const SALUD = [
+  { id: 'bien', nombre: 'Va bien' },
+  { id: 'atencion', nombre: 'Atención' },
+  { id: 'riesgo', nombre: 'En riesgo' },
+];
+export const CARITAS = ['😣', '🙁', '😐', '🙂', '😄'];
+export const COLORES_CLIENTE = ['#8B7CF6', '#2BB59A', '#4A9BE8', '#E0628E', '#A3C94A', '#38B2C9', '#C77DDB', '#E8A33D', '#5C7CFA', '#D9644A'];
+export const VERSION_DATOS = 5;
+
+// Ficha base de cada cliente (ejemplo). Sirve también para migrar datos guardados de la versión 4.
+export function fichaCliente(id) {
+  const hace = (m) => { const d = new Date(); d.setMonth(d.getMonth() - m); return hoyISO(d); };
+  const sat = (...v) => v.map((x, i) => ({ fecha: hace(v.length - 1 - i), valor: x }));
+  return ({
+    carnot: { responsable: 'adan', salud: 'atencion', satisfaccion: sat(4, 3, 3, 4) },
+    interno: { responsable: 'carlos', salud: 'bien', satisfaccion: [] },
+    solumed: { responsable: 'adan', salud: 'bien', satisfaccion: sat(3, 4, 4, 5) },
+    endodx: { responsable: 'adan', salud: 'riesgo', satisfaccion: sat(4, 4, 3, 2) },
+    novartis: { responsable: 'carlos', salud: 'bien', satisfaccion: sat(4, 4) },
+    theramex: { responsable: 'adan', salud: 'atencion', satisfaccion: sat(3) },
+    eisai: { responsable: 'paco', salud: 'bien', satisfaccion: sat(5, 4, 5) },
+    leadso: { responsable: 'paco', salud: 'bien', satisfaccion: sat(4, 4, 4) },
+    personal: { responsable: null, salud: 'bien', satisfaccion: [] },
+  })[id] || { responsable: 'adan', salud: 'bien', satisfaccion: [] };
+}
 
 export function semilla() {
   const H = hoyISO();
@@ -108,14 +133,14 @@ export function semilla() {
     { id: 'eisai', nombre: 'Eisai', color: '#38B2C9' },
     { id: 'leadso', nombre: 'Leadso', color: '#C77DDB' },
     { id: 'personal', nombre: 'Personal', color: '#B9A27E', privado: true },
-  ];
+  ].map((c) => ({ ...c, ...fichaCliente(c.id) }));
 
   // Cada cliente tiene un proyecto «General» para que crear sea rápido.
   const proyectos = [
-    ...clientes.map((c) => ({ id: 'g-' + c.id, nombre: 'General', cliente: c.id })),
-    { id: 'p-2027', nombre: 'Plan 2027', cliente: 'interno' },
-    { id: 'p-portal', nombre: 'Portal de clientes', cliente: 'interno' },
-    { id: 'p-meta', nombre: 'Campaña Meta', cliente: 'carnot' },
+    ...clientes.map((c) => ({ id: 'g-' + c.id, nombre: 'General', cliente: c.id, responsable: c.responsable, entrega: null })),
+    { id: 'p-2027', nombre: 'Plan 2027', cliente: 'interno', responsable: 'adan', entrega: d(20) },
+    { id: 'p-portal', nombre: 'Portal de clientes', cliente: 'interno', responsable: 'adan', entrega: d(9) },
+    { id: 'p-meta', nombre: 'Campaña Meta', cliente: 'carnot', responsable: 'adan', entrega: d(12) },
   ];
 
   let n = 0;
@@ -178,7 +203,8 @@ export function semilla() {
   // Correos de ejemplo: así se verá el widget cuando se conecte Gmail. No son correos reales.
   const correos = [
     { id: 'm1', de: 'Equipo Carnot', cliente: 'carnot', asunto: 'Comentarios a las piezas de la campaña', cuando: hace(0.04), leido: false },
-    { id: 'm2', de: 'Carlos Gómez', cliente: 'interno', asunto: 'Resumen de la junta del lunes', cuando: hace(0.2), leido: false, tipo: 'minuta' },
+    { id: 'm2', de: 'Notas de reunión', cliente: 'interno', asunto: 'Transcripción · Daily del equipo', cuando: hace(0.2), leido: false, tipo: 'transcripcion', minuta: 'mi1' },
+    { id: 'm7', de: 'Notas de reunión', cliente: 'carnot', asunto: 'Transcripción · Revisión de campaña Carnot', cuando: hace(1.1), leido: true, tipo: 'transcripcion', minuta: 'mi2' },
     { id: 'm3', de: 'Solumed', cliente: 'solumed', asunto: 'Datos para el reporte mensual', cuando: hace(0.5), leido: false },
     { id: 'm4', de: 'Theramex', cliente: 'theramex', asunto: 'Agenda para revisar la propuesta', cuando: hace(0.9), leido: true },
     { id: 'm5', de: 'Endodx', cliente: 'endodx', asunto: 'Fechas de entrega', cuando: hace(1.3), leido: true },
@@ -202,33 +228,28 @@ export function semilla() {
     leidos: { adan: { general: hace(0.2), 'dm-adan-carlos': hace(0.5), 'dm-adan-paco': hace(1) } },
   };
 
-  // Flujos: cada uno es un mapa con nodos y flechas. Tarea → persona = asignar. Tarea → tarea = «espera a».
-  const flujos = [
-    { id: 'f-carnot', nombre: 'Campaña Carnot', creador: 'adan', creado: hace(2),
-      nodos: [
-        { id: 'n-ini', tipo: 'nota', texto: 'Arranque de campaña', x: 0, y: 190 },
-        { id: 'n-a13', tipo: 'actividad', ref: 'a13', x: 260, y: 90 },
-        { id: 'n-a3', tipo: 'actividad', ref: 'a3', x: 260, y: 290 },
-        { id: 'n-a11', tipo: 'actividad', ref: 'a11', x: 560, y: 290 },
-        { id: 'n-paco', tipo: 'persona', ref: 'paco', x: 580, y: 90 },
-        { id: 'n-adan', tipo: 'persona', ref: 'adan', x: 860, y: 300 },
-      ],
-      aristas: [
-        { id: 'e1', de: 'n-ini', a: 'n-a13' }, { id: 'e2', de: 'n-ini', a: 'n-a3' },
-        { id: 'e3', de: 'n-a13', a: 'n-paco' }, { id: 'e4', de: 'n-a3', a: 'n-a11' }, { id: 'e5', de: 'n-a11', a: 'n-adan' },
+
+  // Minutas: se crean solas cuando llega al correo la transcripción de una junta. Ejemplos ficticios.
+  const minutas = minutasEjemplo(H, hace);
+
+  return { version: VERSION_DATOS, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, prefs: {}, correos, chat, minutas, eventos: [], papeleraDias: 30 };
+}
+
+export function minutasEjemplo(H, hace) {
+  const d = (n) => sumarDias(H, n);
+  return [
+    { id: 'mi1', cliente: 'interno', titulo: 'Daily del equipo', fecha: hace(0.2), correo: 'm2', asistentes: ['adan', 'carlos', 'paco'],
+      resumen: 'Se revisó el avance del deck y del portal. El DNS sigue esperando el acceso al registrador.',
+      acuerdos: [
+        { id: 'k1', texto: 'Compartir el acceso al registrador del dominio', responsable: 'carlos', fecha: H, tarea: 'a5' },
+        { id: 'k2', texto: 'Enviar la primera versión del deck', responsable: 'adan', fecha: d(1), tarea: null },
+        { id: 'k3', texto: 'Subir piezas finales de Carnot al Drive', responsable: 'paco', fecha: d(1), tarea: null },
       ] },
-    { id: 'f-portal', nombre: 'Portal de clientes', creador: 'adan', creado: hace(1),
-      nodos: [
-        { id: 'p-a5', tipo: 'actividad', ref: 'a5', x: 0, y: 140 },
-        { id: 'p-carlos', tipo: 'persona', ref: 'carlos', x: 20, y: 330 },
-        { id: 'p-a6', tipo: 'actividad', ref: 'a6', x: 320, y: 140 },
-        { id: 'p-a17', tipo: 'actividad', ref: 'a17', x: 640, y: 140 },
-        { id: 'p-adan', tipo: 'persona', ref: 'adan', x: 340, y: 330 },
-      ],
-      aristas: [
-        { id: 'q1', de: 'p-a5', a: 'p-carlos' }, { id: 'q2', de: 'p-a5', a: 'p-a6' }, { id: 'q3', de: 'p-a6', a: 'p-adan' }, { id: 'q4', de: 'p-a6', a: 'p-a17' },
+    { id: 'mi2', cliente: 'carnot', titulo: 'Revisión de campaña Carnot', fecha: hace(1.1), correo: 'm7', asistentes: ['adan', 'paco'],
+      resumen: 'El cliente pidió ajustar dos piezas y probar un ángulo nuevo en Meta.',
+      acuerdos: [
+        { id: 'k4', texto: 'Ajustar las dos piezas comentadas', responsable: 'paco', fecha: d(2), tarea: null },
+        { id: 'k5', texto: 'Proponer un ángulo nuevo para Meta', responsable: 'adan', fecha: d(3), tarea: null },
       ] },
   ];
-
-  return { version: 4, creado: H, personas, clientes, proyectos, actividades, avisos, personal, layouts: {}, prefs: {}, correos, chat, flujos, eventos: [], papeleraDias: 30 };
 }

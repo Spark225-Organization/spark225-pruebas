@@ -179,7 +179,7 @@ class Consulta implements PromiseLike<Res> {
     if (this.op === "select") {
       filas = this.filtrar(leer(t));
     } else if (this.op === "insert" || this.op === "upsert") {
-      if (soyCliente() && !["comments", "approvals"].includes(t)) return { data: null, error: { message: "Sin permiso en modo cliente." } };
+      if (soyCliente() && !["comments", "approvals", "files", "file_versions"].includes(t)) return { data: null, error: { message: "Sin permiso en modo cliente." } };
       const lista = (Array.isArray(this.carga) ? this.carga : [this.carga]).map((p: Fila) => ({
         id: p.id ?? nuevoId("n"),
         created_at: iso(new Date()),
@@ -275,7 +275,7 @@ function rpc(nombre: string, p: Fila): Res {
       db.candado_events.push({ id: nuevoId("k"), material_id: m!.id, status_desde: m!.status, status_hacia: p.p_status_destino, status_destino: p.p_status_destino, mensaje: p.p_mensaje, usuario: yo(), created_at: iso(new Date()) });
       break;
     case "client_decision": {
-      db.approvals.push({ id: nuevoId("p"), material_id: m!.id, stage: m!.status, decision: p.p_decision, approver_id: yo(), comentario: p.p_comentario ?? null, version_id: p.p_version_id ?? null, created_at: iso(new Date()) });
+      db.approvals.push({ id: nuevoId("p"), material_id: m!.id, stage: m!.status, decision: p.p_decision, motivo: p.p_motivo ?? null, approver_id: yo(), comentario: p.p_comentario ?? null, version_id: p.p_version_id ?? null, created_at: iso(new Date()) });
       const i = IDX[m!.status];
       if (p.p_decision === "aprobado") moverA(m!, estadosOrden[Math.min(i + 1, estadosOrden.length - 1)]);
       else moverA(m!, m!.status === "aprobacion_cliente_medico" ? "desarrollo_medico" : "desarrollo_grafico");

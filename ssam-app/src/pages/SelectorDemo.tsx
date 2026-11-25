@@ -1,7 +1,7 @@
 // Entrada del modo demo: se elige el rol en lugar de escribir contraseña.
 // Solo existe en el sitio de pruebas (VITE_SSAM_DEMO=1).
 import { Building2, ShieldCheck, RotateCcw } from "lucide-react";
-import { SparkLogo } from "@/components/SparkLogo";
+import { Marca } from "@/components/Marca";
 import { entrarDemo } from "@/lib/demo/demoState";
 import { reiniciarDemo } from "@/lib/demo/fakeSupabase";
 import { toast } from "sonner";
@@ -27,7 +27,7 @@ const SelectorDemo = () => (
     <div className="flex flex-1 items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-2xl">
         <div className="mb-8 flex flex-col items-start gap-4">
-          <SparkLogo variant="full" size="sm" alt="Spark225" />
+          <Marca tono="oscuro" ancho={120} />
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#0E1E2A] sm:text-3xl">
               Sistema de Aprobación de Materiales

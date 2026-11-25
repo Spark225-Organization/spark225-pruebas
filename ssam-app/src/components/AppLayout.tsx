@@ -1,6 +1,7 @@
 import React from "react";
 import { Sidebar } from "./Sidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
+import { Marca } from "./Marca";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +17,37 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   // Arranca la suscripción Realtime única (viva mientras hay sesión).
   React.useEffect(() => {
     startRealtime();
   }, []);
+
+  // El cliente solo tiene una sección: sin barra lateral ni buscador global,
+  // una barra superior limpia y el contenido centrado.
+  if (user?.role === "client") {
+    return (
+      <div className="min-h-screen bg-[#F6F7F8] text-[#1F2124] font-sans antialiased">
+        <header className="sticky top-0 z-30 border-b border-[#E3E6EA] bg-white/90 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+            <Marca tono="oscuro" ancho={104} />
+            <div className="flex items-center gap-3">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold leading-tight text-[#0E1E2A]">{user.name}</p>
+                <p className="text-[11px] text-[#7A8590]">Portal de materiales</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E37439] text-xs font-bold text-white">{user.avatar}</div>
+              <button type="button" onClick={() => signOut()} className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#4E5964] hover:bg-[#F3F4F6]" aria-label="Salir">
+                <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Salir</span>
+              </button>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA] text-[#1F2124] font-sans antialiased">

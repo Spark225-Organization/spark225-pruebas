@@ -192,12 +192,14 @@ export async function mutateClientDecision(
   decision: "aprobado" | "cambios",
   versionId: string | null,
   comentario: string,
+  motivo: string | null = null,
 ) {
   const res = await api.approvals.clientDecision(
     materialId,
     decision,
     versionId,
     comentario,
+    motivo,
   );
   if (res.error && res.error.startsWith("Candado:"))
     await api.registrarBloqueo(materialId, decision, res.error);

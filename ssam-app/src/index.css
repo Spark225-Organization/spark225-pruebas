@@ -381,3 +381,24 @@ html.theme-transition *::after {
     border-color 0.2s ease,
     color 0.2s ease !important;
 }
+
+/* ── Portal del cliente: movimiento heredado del SSAM interno ───────────── */
+@keyframes ssam-subir { from { opacity: 0; transform: translateY(10px); } }
+@keyframes ssam-carpeta { from { transform: perspective(900px) rotateX(-22deg); opacity: .35; } }
+@keyframes ssam-latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(227,116,57,.35); } 50% { box-shadow: 0 0 0 6px rgba(227,116,57,0); } }
+@keyframes ssam-ficha { from { opacity: 0; transform: scale(.985) translateY(12px); } }
+@keyframes ssam-onda { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+.ssam-subir { animation: ssam-subir .45s cubic-bezier(.23,1,.32,1) both; }
+.ssam-carpeta-abre { transform-origin: top center; animation: ssam-carpeta .5s cubic-bezier(.23,1,.32,1) both; }
+.ssam-latido { animation: ssam-latido 2.4s ease-in-out infinite; }
+.ssam-ficha { animation: ssam-ficha .35s cubic-bezier(.23,1,.32,1) both; }
+.ssam-onda span { display: inline-block; width: 3px; border-radius: 2px; background: currentColor; animation: ssam-onda 1s ease-in-out infinite; }
+.ssam-onda span:nth-child(2) { animation-delay: .15s; } .ssam-onda span:nth-child(3) { animation-delay: .3s; } .ssam-onda span:nth-child(4) { animation-delay: .45s; }
+/* Carpeta: pestaña superior como en el archivero interno */
+.ssam-carpeta { position: relative; border-radius: 4px 14px 14px 14px; transition: transform .25s cubic-bezier(.23,1,.32,1), box-shadow .25s; }
+.ssam-carpeta::before { content: ""; position: absolute; left: 0; top: -10px; width: 42%; height: 12px; border-radius: 10px 12px 0 0; background: inherit; border: inherit; border-bottom: 0; }
+.ssam-carpeta:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(14,30,42,.10); }
+@media (prefers-reduced-motion: reduce) {
+  .ssam-subir, .ssam-carpeta-abre, .ssam-latido, .ssam-ficha, .ssam-onda span { animation: none !important; }
+  .ssam-carpeta, .ssam-carpeta:hover { transition: none; transform: none; }
+}

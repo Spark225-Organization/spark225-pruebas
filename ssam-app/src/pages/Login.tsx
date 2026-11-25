@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SparkLogo } from "@/components/SparkLogo";
+import { Marca } from "@/components/Marca";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -153,7 +154,7 @@ const Login = () => {
           <div className="flex flex-col justify-between bg-white p-8 sm:p-10 lg:p-12">
             <div>
               <div className="mb-6 lg:hidden">
-                <SparkLogo variant="full" size="sm" alt="Spark225" />
+                <Marca tono="oscuro" ancho={120} />
               </div>
 
               {mode === "signin" ? (

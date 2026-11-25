@@ -155,6 +155,8 @@ export interface Approval {
   /** Resuelto desde profiles(approver_id).nombre en el frontend. */
   usuario_name?: string | null;
   comentario?: string | null;
+  /** Motivo del cambio (catálogo motivo_devolucion) cuando decision = cambios. */
+  motivo?: string | null;
   version_id?: string | null;
   created_at: string;
 }

@@ -13,7 +13,7 @@ export const approvalsApi = {
     const { data, error } = await supabase
       .from("approvals")
       .select(
-        "id, material_id, stage, decision, approver_id, comentario, version_id, created_at, profiles!approvals_approver_id_fkey(nombre)",
+        "*, profiles!approvals_approver_id_fkey(nombre)",
       )
       .eq("material_id", materialId)
       .order("created_at", { ascending: false });
@@ -27,6 +27,7 @@ export const approvalsApi = {
       approver_id: r.approver_id ?? null,
       usuario_name: r.profiles?.nombre ?? null,
       comentario: r.comentario ?? null,
+      motivo: r.motivo ?? null,
       version_id: r.version_id ?? null,
       created_at: r.created_at,
     }));
@@ -44,12 +45,15 @@ export const approvalsApi = {
     decision: "aprobado" | "cambios",
     versionId: string | null,
     comentario: string,
+    motivo: string | null = null,
   ) {
+    // p_motivo: catálogo motivo_devolucion (solo al pedir cambios).
     const { error } = await supabase.rpc("client_decision", {
       p_material_id: materialId,
       p_decision: decision,
       p_version_id: versionId,
       p_comentario: comentario,
+      p_motivo: decision === "cambios" ? motivo : null,
     });
     return { error: error?.message ?? null };
   },

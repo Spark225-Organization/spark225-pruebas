@@ -26,7 +26,7 @@ import {
   ROLE_COLORS,
   type RolePermissions,
 } from "@/lib/auth";
-import { SparkLogo } from "@/components/SparkLogo";
+import { Marca } from "@/components/Marca";
 
 interface NavItem {
   label: string;
@@ -123,7 +123,7 @@ export const Sidebar = () => {
           to="/"
           className="flex items-center transition-opacity hover:opacity-90"
         >
-          <SparkLogo variant="white" size="md" alt="Spark225" />
+          <Marca tono="claro" ancho={112} />
         </Link>
       </div>
 

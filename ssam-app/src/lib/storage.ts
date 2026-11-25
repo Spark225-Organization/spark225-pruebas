@@ -61,104 +61,162 @@ function detectCategory(mimeType: string, name: string): FileCategory {
 }
 
 // ─── Supabase Driver ─────────────────────────────────────────────────────────
+// Esquema real: `files` (cabecera por archivo) + `file_versions` (una fila por
+// versión, con storage_path en el bucket privado `material-files`). Las reglas
+// (RLS) deciden quién ve qué: el cliente solo ve versiones visibles/finales de
+// sus materiales. Las URLs se firman por 1 hora (el bucket es privado).
+
+const BUCKET = "material-files";
+const FIRMA_SEG = 60 * 60;
+const esLink = (p?: string) => !!p && /^https?:\/\//i.test(p);
+const nombreSeguro = (n: string) =>
+  n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\-]+/g, "_").slice(0, 120);
 
 const supabaseDriver: StorageDriver = {
   async upload(opts) {
+    let fileId: string;
     let version = 1;
     let parentVersionId: string | undefined;
+    const name = opts.file?.name || opts.externalUrl || "archivo";
+    const mimeType =
+      opts.file?.type || (opts.externalUrl ? "text/uri-list" : "application/octet-stream");
 
-    // Get current files to determine version
-    const { data: existingFiles } = await supabase
-      .from("ssam_files")
-      .select("version, id")
-      .eq("materialId", opts.materialId)
-      .order("version", { ascending: false });
-
-    if (opts.newVersionOf && existingFiles) {
-      const parent = existingFiles.find((f) => f.id === opts.newVersionOf);
-      if (parent) {
-        version = parent.version + 1;
-        parentVersionId = parent.id;
-      }
+    if (opts.newVersionOf) {
+      // newVersionOf es el id de una versión: se agrega otra versión al mismo archivo.
+      const { data: prev, error } = await supabase
+        .from("file_versions")
+        .select("id, file_id")
+        .eq("id", opts.newVersionOf)
+        .single();
+      if (error || !prev) throw error || new Error("No se encontró la versión anterior");
+      fileId = prev.file_id;
+      const { data: vs } = await supabase
+        .from("file_versions")
+        .select("id, version_number")
+        .eq("file_id", fileId)
+        .order("version_number", { ascending: false })
+        .limit(1);
+      version = (vs?.[0]?.version_number ?? 0) + 1;
+      parentVersionId = vs?.[0]?.id;
+    } else {
+      const { data: f, error } = await supabase
+        .from("files")
+        .insert({ material_id: opts.materialId, nombre: name, tipo: mimeType, created_by: opts.uploadedBy })
+        .select("id")
+        .single();
+      if (error || !f) throw error || new Error("No se pudo registrar el archivo");
+      fileId = f.id;
     }
 
-    const id = crypto.randomUUID();
-    let cloudUrl: string | undefined;
-    let name = opts.file?.name || opts.externalUrl || "unnamed";
-    let size = opts.file?.size || 0;
-    let mimeType =
-      opts.file?.type ||
-      (opts.externalUrl ? "text/uri-list" : "application/octet-stream");
-    let category = detectCategory(mimeType, name);
-
+    let storagePath = opts.externalUrl || "";
     if (opts.file) {
-      const filePath = `${opts.materialId}/${id}_${name}`;
-      const { data, error } = await supabase.storage
-        .from("ssam_materials")
-        .upload(filePath, opts.file);
-
+      storagePath = `${opts.materialId}/${fileId}/v${version}_${nombreSeguro(name)}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(storagePath, opts.file, { contentType: mimeType });
       if (error) throw error;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("ssam_materials").getPublicUrl(filePath);
-
-      cloudUrl = publicUrl;
     }
 
-    const storedFile: any = {
-      id,
+    // La versión nueva queda como vigente.
+    if (version > 1) {
+      await supabase.from("file_versions").update({ es_final: false }).eq("file_id", fileId);
+    }
+    const { data: v, error: vError } = await supabase
+      .from("file_versions")
+      .insert({
+        file_id: fileId,
+        version_number: version,
+        storage_path: storagePath,
+        tamano_bytes: opts.file?.size ?? null,
+        es_final: true,
+        subido_por: opts.uploadedBy,
+      })
+      .select("id, fecha_carga")
+      .single();
+    if (vError || !v) throw vError || new Error("No se pudo registrar la versión");
+
+    let cloudUrl: string | undefined;
+    if (opts.file) {
+      const { data: firmada } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, FIRMA_SEG);
+      cloudUrl = firmada?.signedUrl;
+    }
+    return {
+      id: v.id,
       materialId: opts.materialId,
       name,
-      category,
-      size,
+      category: detectCategory(mimeType, name),
+      size: opts.file?.size || 0,
       mimeType,
       stage: opts.stage,
       uploadedBy: opts.uploadedBy,
       uploadedByName: opts.uploadedByName,
-      uploadedAt: new Date().toISOString(),
+      uploadedAt: v.fecha_carga || new Date().toISOString(),
       version,
       parentVersionId,
       notes: opts.notes,
       externalUrl: opts.externalUrl,
       cloudUrl,
     };
-
-    const { error: dbError } = await supabase
-      .from("ssam_files")
-      .insert(storedFile);
-
-    if (dbError) throw dbError;
-
-    return storedFile as StoredFile;
   },
 
   async list(materialId) {
     const { data, error } = await supabase
-      .from("ssam_files")
-      .select("*")
-      .eq("materialId", materialId)
-      .order("uploadedAt", { ascending: false });
+      .from("files")
+      .select(
+        "id, material_id, nombre, tipo, created_at, created_by, file_versions(id, version_number, storage_path, tamano_bytes, visibilidad, es_final, subido_por, fecha_carga)",
+      )
+      .eq("material_id", materialId)
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
 
-    if (error) return [];
-    return data as StoredFile[];
+    const filas: StoredFile[] = [];
+    for (const f of data as any[]) {
+      const vs: any[] = [...(f.file_versions || [])].sort((a, b) => a.version_number - b.version_number);
+      vs.forEach((v, i) => {
+        const link = esLink(v.storage_path);
+        filas.push({
+          id: v.id,
+          materialId: f.material_id,
+          name: f.nombre,
+          category: link ? "link" : detectCategory(f.tipo || "", f.nombre || ""),
+          size: v.tamano_bytes || 0,
+          mimeType: f.tipo || "application/octet-stream",
+          stage: "",
+          uploadedBy: v.subido_por || f.created_by || "",
+          uploadedByName: "",
+          uploadedAt: v.fecha_carga || f.created_at,
+          version: v.version_number,
+          parentVersionId: i > 0 ? vs[i - 1].id : undefined,
+          externalUrl: link ? v.storage_path : undefined,
+          cloudUrl: link ? undefined : v.storage_path,
+        });
+      });
+    }
+    // Firma en bloque las rutas del bucket (válidas 1 hora).
+    const rutas = filas.filter((x) => x.cloudUrl).map((x) => x.cloudUrl as string);
+    if (rutas.length) {
+      const { data: firmas } = await supabase.storage.from(BUCKET).createSignedUrls(rutas, FIRMA_SEG);
+      const porRuta = new Map((firmas || []).map((x: any) => [x.path, x.signedUrl]));
+      filas.forEach((x) => { if (x.cloudUrl) x.cloudUrl = porRuta.get(x.cloudUrl) || undefined; });
+    }
+    return filas.sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || ""));
   },
 
   async delete(fileId) {
-    const { data: file } = await supabase
-      .from("ssam_files")
-      .select("*")
+    // fileId es el id de la versión.
+    const { data: v } = await supabase
+      .from("file_versions")
+      .select("id, file_id, storage_path")
       .eq("id", fileId)
       .single();
-
-    if (file?.cloudUrl) {
-      const path = file.cloudUrl.split("ssam_materials/")[1];
-      if (path) {
-        await supabase.storage.from("ssam_materials").remove([path]);
-      }
+    if (!v) return;
+    if (v.storage_path && !esLink(v.storage_path)) {
+      await supabase.storage.from(BUCKET).remove([v.storage_path]);
     }
-
-    await supabase.from("ssam_files").delete().eq("id", fileId);
+    await supabase.from("file_versions").delete().eq("id", fileId);
+    const { count } = await supabase
+      .from("file_versions")
+      .select("id", { count: "exact", head: true })
+      .eq("file_id", v.file_id);
+    if (!count) await supabase.from("files").delete().eq("id", v.file_id);
   },
 
   getUrl(file) {
@@ -218,16 +276,21 @@ export const StorageService = {
 
   /** Global stats for reports dashboard */
   async getGlobalStats() {
-    const { data, error } = await supabase.from("ssam_files").select("*");
+    const { data, error } = await supabase
+      .from("files")
+      .select("material_id, file_versions(tamano_bytes)");
 
     if (error || !data) return { totalFiles: 0, totalBytes: 0, byMaterial: {} };
 
     return {
       totalFiles: data.length,
-      totalBytes: data.reduce((acc, f) => acc + (f.size || 0), 0),
+      totalBytes: data.reduce(
+        (acc: number, f: any) => acc + (f.file_versions || []).reduce((s: number, v: any) => s + (v.tamano_bytes || 0), 0),
+        0,
+      ),
       byMaterial: data.reduce(
-        (acc, f) => {
-          acc[f.materialId] = (acc[f.materialId] || 0) + 1;
+        (acc: Record<string, number>, f: any) => {
+          acc[f.material_id] = (acc[f.material_id] || 0) + 1;
           return acc;
         },
         {} as Record<string, number>,

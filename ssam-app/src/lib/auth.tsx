@@ -284,6 +284,19 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // vuelve a usarse tal cual, cuando conectemos Supabase. NO usar en producción.
 const BYPASS_LOGIN = import.meta.env.VITE_SSAM_BYPASS_LOGIN === "1";
 
+// Si se llega desde un correo de invitación o de recuperación, Supabase abre la
+// sesión con el token del enlace; aquí se recuerda el tipo para mandar a la
+// persona a definir su contraseña. Se lee antes de que Supabase limpie la URL.
+const TIPO_LLEGADA = (() => {
+  try {
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return h.get("type");
+  } catch {
+    return null;
+  }
+})();
+const URL_APP = `${window.location.origin}${import.meta.env.BASE_URL}`;
+
 const BYPASS_ADMIN_USER: User = {
   id: "00000000-0000-0000-0000-000000000000",
   name: "Admin (pruebas)",
@@ -347,6 +360,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!active) return;
       await loadProfile(session);
       setLoading(false);
+      if (session && (TIPO_LLEGADA === "invite" || TIPO_LLEGADA === "recovery") && !window.location.pathname.endsWith("/reset-password")) {
+        window.location.replace(`${URL_APP}reset-password`);
+      }
     })();
 
     const {
@@ -372,14 +388,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithOtp = async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: { shouldCreateUser: false, emailRedirectTo: URL_APP },
     });
     return { error: error?.message ?? null };
   };
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
+      redirectTo: `${URL_APP}reset-password`,
     });
     return { error: error?.message ?? null };
   };

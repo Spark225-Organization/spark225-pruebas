@@ -27,8 +27,7 @@ jobs:
         working-directory: ssam-app
         env:
           SSAM_BASE: /ssam/
-          # Solo pruebas: entra directo como admin. Quitar al conectar Supabase Auth.
-          VITE_SSAM_BYPASS_LOGIN: "1"
+          # Login real con Supabase Auth (el bypass de admin se quitó el 25-nov-2026).
         run: |
           bun install --frozen-lockfile
           bun run build

@@ -1225,3 +1225,21 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
 @media (prefers-reduced-motion: reduce) { .importantes { animation: none; } }
 .aviso-it.importante { box-shadow: inset 3px 0 0 var(--mecha); }
 .aviso-it.importante.nuevo { background: color-mix(in srgb, var(--mecha) 12%, transparent); }
+
+/* ---------- Guía «Instalar en tu teléfono» ---------- */
+.instalar { width: min(520px, calc(100vw - 24px)); }
+.instalar .inst-cerrar { position: absolute; top: 14px; right: 14px; }
+.inst-estado { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 16px; }
+.inst-estado span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; background: var(--grafito); color: var(--tinta-2); font-size: 12px; }
+.inst-estado span.ok { background: color-mix(in srgb, var(--verde) 16%, transparent); color: color-mix(in srgb, var(--verde) 70%, var(--tinta)); }
+.inst-estado .i { width: 14px; height: 14px; }
+.inst-tabs { width: 100%; display: flex; margin-bottom: 14px; }
+.inst-tabs button { flex: 1; }
+.inst-pasos { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.inst-pasos li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.45; }
+.inst-pasos li > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+.inst-pasos small { color: var(--tinta-3); font-size: 12px; line-height: 1.4; }
+.inst-n { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--brasa-fondo); color: var(--chispa); font-size: 12px; font-weight: 700; }
+.inst-nota { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; font-size: 12px; line-height: 1.45; color: var(--tinta-2); }
+.inst-nota.tenue { color: var(--tinta-3); }
+.inst-nota .i { flex: none; width: 14px; height: 14px; margin-top: 1px; }

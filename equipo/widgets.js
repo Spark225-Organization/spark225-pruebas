@@ -1,12 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611252100';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611252100';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611252100';
-import { hoyISO } from './datos.js?v=202611252100';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611252100';
-import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611252100';
-import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611252100';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611252130';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611252130';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611252130';
+import { hoyISO } from './datos.js?v=202611252130';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611252130';
+import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611252130';
+import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611252130';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 

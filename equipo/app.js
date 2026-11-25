@@ -1,23 +1,25 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611252100';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611252130';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611252100';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252100';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611252100';
-import { AltaRapida } from './mecha.js?v=202611252100';
-import { Inicio } from './vistas.js?v=202611252100';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611252100';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611252100';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611252100';
-import { Chat } from './chat.js?v=202611252100';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611252100';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611252100';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611252100';
-import { Bienvenida, Recorrido } from './tour.js?v=202611252100';
-import { useArrastre } from './arrastre.js?v=202611252100';
-import { Galeria } from './widgets.js?v=202611252100';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611252130';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611252130';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611252130';
+import { AltaRapida } from './mecha.js?v=202611252130';
+import { Inicio } from './vistas.js?v=202611252130';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611252130';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611252130';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611252130';
+import { Chat } from './chat.js?v=202611252130';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611252130';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611252130';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611252130';
+import { Instalar } from './instalar.js?v=202611252130';
+import { notificar } from './avisos.js?v=202611252130';
+import { Bienvenida, Recorrido } from './tour.js?v=202611252130';
+import { useArrastre } from './arrastre.js?v=202611252130';
+import { Galeria } from './widgets.js?v=202611252130';
 
 function useStore() {
   const [, set] = useState(0);
@@ -66,6 +68,7 @@ function App() {
   const [minuta, setMinuta] = useState(null);
   // Bienvenida: 'inicio' la primera vez; 'conexiones' desde el perfil.
   const [bienvenida, setBienvenida] = useState(null);
+  const [instalar, setInstalar] = useState(false);
 
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
@@ -92,7 +95,7 @@ function App() {
         : n.minuta ? { texto: 'Ver minuta', f: () => setMinuta(n.minuta) }
         : n.url ? { texto: 'Abrir', f: () => window.open(n.url, '_blank', 'noopener') } : null;
       toast(n.texto, accion);
-      try { if ((document.hidden || n.tipo === 'importante') && 'Notification' in window && Notification.permission === 'granted') new Notification('Portal de colaboradores', { body: n.texto, icon: './icons/icon-192.png', tag: n.id }); } catch (_) { /* sin notificaciones */ }
+      if (document.hidden || n.tipo === 'importante') notificar(n.texto, { tag: n.id, url: n.url });
     });
   }, [db.avisos, fase, yo]);
   // Arranque: con sesión de Supabase carga tus datos reales; sin sesión, pantalla de entrada (o la demo si la elegiste).
@@ -248,7 +251,8 @@ function App() {
         setBienvenida(null);
         if (!leerLocal('ssam-equipo-tour-' + yo, '')) { escribirLocal('ssam-equipo-tour-' + yo, '1'); setTimeout(() => setTour('pasos'), 400); }
       }} />`}
-      ${perfil && html`<${Perfil} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
+      ${instalar && html`<${Instalar} toast=${toast} cerrar=${() => setInstalar(false)} />`}
+      ${perfil && html`<${Perfil} instalar=${() => { setPerfil(false); setInstalar(true); }} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} abrirMinuta=${ctx.abrirMinuta} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
@@ -437,7 +441,7 @@ function Protegido({ children }) {
   return children;
 }
 
-function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir, conexiones }) {
+function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir, conexiones, instalar }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
@@ -448,6 +452,7 @@ function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido
         <button class="op" onClick=${() => setTema(tema === 'dark' ? 'light' : 'dark')}>${I(tema === 'dark' ? 'sol' : 'luna')}<span>${tema === 'dark' ? 'Claro' : 'Oscuro'}</span></button>
         <button class="op" onClick=${recorrido}>${I('brujula')}<span>Recorrido</span></button>
         ${enNube && html`<button class="op" onClick=${conexiones}>${I('enlace')}<span>Conexiones</span></button>`}
+        <button class="op" onClick=${instalar}>${I('celular')}<span>Instalar en tu teléfono</span></button>
         <a class="op" href="#/papelera" onClick=${cerrar}>${I('papelera')}<span>Papelera</span></a>
         <a class="op" href="#/historial" onClick=${cerrar}>${I('historial')}<span>Historial</span></a>
         <button class="op" onClick=${descargarRespaldo}>${I('archivar')}<span>Descargar respaldo</span></button>

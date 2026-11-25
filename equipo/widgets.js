@@ -1,12 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611251108';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia } from './store.js?v=202611251108';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611251108';
-import { hoyISO } from './datos.js?v=202611251108';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611251108';
-import { correosRecientes, leerTranscripcion, agendaDeHoy } from './google.js?v=202611251108';
-import { tokenGoogle, entrarConGoogle } from './nube.js?v=202611251108';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611251139';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio } from './store.js?v=202611251139';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611251139';
+import { hoyISO } from './datos.js?v=202611251139';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611251139';
+import { correosRecientes, leerTranscripcion, agendaDeHoy } from './google.js?v=202611251139';
+import { tokenGoogle, entrarConGoogle } from './nube.js?v=202611251139';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -25,7 +25,7 @@ export function Widgets({ ctx, persona, editable, hoy, ancho }) {
   };
   const agregar = (w) => { guardarLayout(persona, [...layoutDe(persona), { id: 'w' + uid(), ...w }]); ctx.toast('Agregado'); };
 
-  const suyas = vigentes().filter((a) => participa(a, persona) && visiblePara(a, ctx.yo));
+  const suyas = vigentes().filter((a) => participa(a, persona) && visiblePara(a, ctx.yo) && enFiltroInicio(a, ctx.yo));
   const datos = { ctx, persona, hoy, suyas, editable };
 
   return html`

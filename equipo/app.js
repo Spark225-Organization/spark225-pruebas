@@ -1,23 +1,22 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251108';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611251139';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas,
-} from './store.js?v=202611251108';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251108';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251108';
-import { AltaRapida } from './mecha.js?v=202611251108';
-import { Inicio } from './vistas.js?v=202611251108';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251108';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611251108';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251108';
-import { Chat } from './chat.js?v=202611251108';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251108';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo } from './nube.js?v=202611251108';
-import { Bienvenida, Recorrido } from './tour.js?v=202611251108';
-import { useArrastre } from './arrastre.js?v=202611251108';
-import { Galeria } from './widgets.js?v=202611251108';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611251139';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611251139';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611251139';
+import { AltaRapida } from './mecha.js?v=202611251139';
+import { Inicio } from './vistas.js?v=202611251139';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611251139';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611251139';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611251139';
+import { Chat } from './chat.js?v=202611251139';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611251139';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion } from './nube.js?v=202611251139';
+import { Bienvenida, Recorrido } from './tour.js?v=202611251139';
+import { useArrastre } from './arrastre.js?v=202611251139';
+import { Galeria } from './widgets.js?v=202611251139';
 
 function useStore() {
   const [, set] = useState(0);
@@ -70,6 +69,26 @@ function App() {
   useEffect(() => { setChat(null); setCajon(null); setMenuCrear(false); setMinuta(null); }, [ruta]);
 
   useEffect(() => escucharNube(setEstNube), []);
+  // Notion: al entrar y cada 5 minutos se pide traer lo nuevo (lo que cambie llega en vivo).
+  useEffect(() => {
+    if (fase !== 'nube') return;
+    sincronizarNotion();
+    const t = setInterval(sincronizarNotion, 5 * 60000);
+    return () => clearInterval(t);
+  }, [fase]);
+  // Aviso nuevo para mí (de otra persona o de Notion): toast y notificación del sistema si está permitida.
+  const vistos = useRef(null);
+  useEffect(() => {
+    if (fase !== 'nube' && fase !== 'demo') { vistos.current = null; return; }
+    const mios = db.avisos.filter((n) => n.para === yo);
+    if (!vistos.current) { vistos.current = new Set(mios.map((n) => n.id)); return; }
+    mios.filter((n) => !vistos.current.has(n.id)).forEach((n) => {
+      vistos.current.add(n.id);
+      if (n.leido) return;
+      toast(n.texto, n.actividad ? { texto: 'Ver', f: () => setCajon({ id: n.actividad }) } : null);
+      try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('SSAM', { body: n.texto, icon: './icons/icon-192.png', tag: n.id }); } catch (_) { /* sin notificaciones */ }
+    });
+  }, [db.avisos, fase, yo]);
   // Arranque: con sesión de Supabase carga tus datos reales; sin sesión, pantalla de entrada (o la demo si la elegiste).
   const iniciar = async (s) => {
     if (iniciando.current) return;
@@ -238,7 +257,7 @@ function Dias({ fecha, setFecha, db, persona, yo }) {
   const hoy = hoyISO();
   const dias = [-1, 0, 1, 2, 3, 4, 5].map((n) => sumarDias(hoy, n));
   const fmtD = new Intl.DateTimeFormat('es-MX', { weekday: 'short' });
-  const suyas = vigentes().filter((a) => participa(a, persona) && a.estatus !== 'hecho' && visiblePara(a, yo));
+  const suyas = vigentes().filter((a) => participa(a, persona) && a.estatus !== 'hecho' && visiblePara(a, yo) && enFiltroInicio(a, yo));
   return html`
     <div class="dias" role="tablist" aria-label="Días" data-tour="dias">
       ${dias.map((f) => {
@@ -431,6 +450,7 @@ function Avisos({ avisos, yo, db, abrir, cerrar, toast }) {
   useEffect(() => () => marcarAvisosLeidos(yo), []);
   return html`
     <div class="avisos-panel" ref=${ref} role="dialog" aria-label="Avisos">
+      ${'Notification' in window && Notification.permission === 'default' && html`<button class="aviso-permiso" onClick=${() => Notification.requestPermission().then((r) => toast(r === 'granted' ? 'Listo: te avisaré aunque estés en otra pestaña' : 'Notificaciones desactivadas'))}>${I('campana')}Avisarme aunque esté en otra pestaña</button>`}
       ${avisos.length === 0 ? html`<div class="paleta-vacia">${I('check')}</div>` : avisos.slice(0, 12).map((n) => {
         const a = db.actividades.find((x) => x.id === n.actividad);
         return html`<button class=${'aviso-it' + (n.leido ? '' : ' nuevo')} key=${n.id} onClick=${() => { if (a && !a.archivada) { abrir(a.id); cerrar(); } }}>

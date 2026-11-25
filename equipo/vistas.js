@@ -1,11 +1,11 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS } from './datos.js?v=202611251108';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs } from './store.js?v=202611251108';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611251108';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611251108';
-import { Widgets } from './widgets.js?v=202611251108';
-import { useArrastre } from './arrastre.js?v=202611251108';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS } from './datos.js?v=202611251139';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio } from './store.js?v=202611251139';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611251139';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611251139';
+import { Widgets } from './widgets.js?v=202611251139';
+import { useArrastre } from './arrastre.js?v=202611251139';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -64,10 +64,24 @@ export function Inicio(ctx) {
         </div>
       </div>
     </header>
+    <${FiltroClientes} ctx=${ctx} />
     <div class=${'inicio a-' + acomodo}>
       ${acomodo !== 'widgets' && html`<section class="col-cal" data-tour="calendario">${cal}</section>`}
       ${acomodo !== 'calendario' && widgets}
     </div>`;
+}
+
+// Filtro por cliente del Inicio: afecta calendario, tarjetas y widgets.
+function FiltroClientes({ ctx }) {
+  const { db, yo, persona } = ctx;
+  const sel = prefsDe(yo).inicioCliente || null;
+  const abiertas = vigentes().filter((a) => participa(a, persona) && visiblePara(a, yo) && a.estatus !== 'hecho');
+  const clientes = db.clientes.filter((c) => abiertas.some((a) => a.cliente === c.id) || c.id === sel);
+  if (clientes.length < 2 && !sel) return null;
+  return html`<div class="pf-grupo pf-clientes filtro-inicio" role="group" aria-label="Filtrar por cliente">
+    <button class="chip-op" aria-pressed=${!sel} onClick=${() => guardarPrefs(yo, { inicioCliente: null })}>Todos</button>
+    ${clientes.map((c) => { const n = abiertas.filter((a) => a.cliente === c.id).length; return html`<button key=${c.id} class="cli-op" style=${`--c:${c.color}`} aria-pressed=${sel === c.id} onClick=${() => guardarPrefs(yo, { inicioCliente: sel === c.id ? null : c.id })}><i></i>${c.nombre}${n ? html`<em class="num">${n}</em>` : null}</button>`; })}
+  </div>`;
 }
 
 function MenuAcomodo({ actual, elegir, cerrar }) {
@@ -83,7 +97,7 @@ function MenuAcomodo({ actual, elegir, cerrar }) {
   </div>`;
 }
 
-function misActs(ctx) { return vigentes().filter((a) => participa(a, ctx.persona) && visiblePara(a, ctx.yo)); }
+function misActs(ctx) { return vigentes().filter((a) => participa(a, ctx.persona) && visiblePara(a, ctx.yo) && enFiltroInicio(a, ctx.yo)); }
 const colorDe = (ctx, a) => ctx.db.clientes.find((c) => c.id === a.cliente)?.color;
 
 // Tarjeta compacta reutilizable (Semana y Mes).

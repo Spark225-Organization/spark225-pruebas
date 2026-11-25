@@ -1,8 +1,8 @@
 // Panel de una actividad: lo esencial arriba, el resto en «Más».
 import { html, useState, useEffect, useRef, useMemo } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, hoyISO, sumarDias } from './datos.js?v=202611251108';
-import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611251108';
-import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611251108';
+import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, hoyISO, sumarDias } from './datos.js?v=202611251139';
+import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611251139';
+import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611251139';
 
 const copia = (x) => JSON.parse(JSON.stringify(x));
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -160,7 +160,7 @@ export function CajonActividad({ cajon, yo, db, toast, cerrar, pedirMotivo }) {
             <div><ul class="enlaces">${b.enlaces.map((l) => html`<li key=${l.id}>${I('enlace')}<a href=${l.url} target="_blank" rel="noopener">${l.titulo}</a><button class="quitar" style="opacity:1" onClick=${() => set('enlaces', b.enlaces.filter((x) => x.id !== l.id))} aria-label="Quitar">${I('x')}</button></li>`)}</ul>
             <input class="control sutil" placeholder="+ Pega un enlace de Drive" value=${nuevoEnlace} onInput=${(e) => setNuevoEnlace(e.target.value)}
               onKeyDown=${(e) => { if (e.key !== 'Enter') return; e.preventDefault(); const u = nuevoEnlace.trim(); if (!/^https?:\/\//i.test(u)) return toast('Pega un enlace https://'); set('enlaces', [...b.enlaces, { id: uid(), titulo: u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40), url: u }]); setNuevoEnlace(''); }} /></div></div>
-          <label class="campo"><span>Notas</span><textarea class="control" rows="3" value=${b.notas} onInput=${(e) => set('notas', e.target.value)}></textarea></label>
+          <label class="campo"><span>Notas</span><textarea class="control" rows="3" placeholder="Escribe @nombre para avisarle" value=${b.notas} onInput=${(e) => set('notas', e.target.value)}></textarea></label>
           ${!esNueva && html`<div class="campo"><span>Historial</span><ul class="historial">${[...(original.historial || [])].reverse().map((h, i) => {
             const p = db.personas.find((x) => x.id === h.quien);
             return html`<li key=${i}><b>${p?.corto || '—'}</b> ${h.que}${h.motivo && html`<span class="motivo">${h.motivo}</span>`}<span class="cuando">${haceCuanto(h.cuando)}</span></li>`;

@@ -1,7 +1,7 @@
 // Conexión con Supabase: sesión, carga inicial, guardado con reintentos y cambios en vivo.
 // La app trabaja en memoria (rápida) y esta capa sube cada cambio en segundo plano.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_KEY } from './nube-config.js?v=202611251108';
+import { SUPABASE_URL, SUPABASE_KEY, SUPABASE_ANON } from './nube-config.js?v=202611251139';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'ssam-equipo-auth' },
@@ -91,4 +91,17 @@ export function escucharCambios(f) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'docs' }, (m) => f(m.new && m.new.id ? m.new : null))
     .subscribe();
   return () => sb.removeChannel(canal);
+}
+
+// ---------- Notion ----------
+// Pide a la función del servidor que traiga lo nuevo de Notion (también corre sola cada 5 minutos).
+export async function sincronizarNotion() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/notion-sync`, { method: 'POST', headers: { Authorization: 'Bearer ' + SUPABASE_ANON, apikey: SUPABASE_ANON, 'Content-Type': 'application/json' }, body: '{}' });
+    return await r.json();
+  } catch (e) { return { ok: false, error: String(e) }; }
+}
+export async function estadoNotion() {
+  const { data } = await sb.from('sync_estado').select('ultimo,error').eq('clave', 'notion').maybeSingle();
+  return data;
 }

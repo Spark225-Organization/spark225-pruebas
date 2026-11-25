@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251108';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611251139';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -100,6 +100,20 @@ function avisar(para, texto, actividad, tipo) {
   estado.avisos = [{ id: uid('n'), para, cuando: ahora(), leido: false, tipo, texto, actividad }, ...estado.avisos].slice(0, 60);
 }
 
+// ---------- Etiquetas: colaboradores nuevos y menciones con @ ----------
+function mencionados(texto) {
+  const t = (texto || '').toLowerCase();
+  return estado.personas.filter((p) => t.includes('@' + p.corto.toLowerCase()) || t.includes('@' + p.nombre.split(' ')[0].toLowerCase())).map((p) => p.id);
+}
+function avisarEtiquetas(a, antes, uId) {
+  const quien = persona(uId)?.corto || 'Alguien';
+  (a.colaboradores || []).filter((id) => id !== uId && !(antes?.colaboradores || []).includes(id))
+    .forEach((id) => avisar(id, `${quien} te agregó a «${a.titulo}».`, a.id, 'colaboracion'));
+  const previas = new Set(mencionados(antes?.notas));
+  mencionados(a.notas).filter((id) => id !== uId && !previas.has(id))
+    .forEach((id) => avisar(id, `${quien} te mencionó en «${a.titulo}».`, a.id, 'mencion'));
+}
+
 // ---------- Consultas ----------
 export function esAdmin(uId) { const p = persona(uId); return p && (p.permiso === 'admin' || p.permiso === 'dueno'); }
 export function participa(a, uId) { return a.responsable === uId || a.colaboradores.includes(uId); }
@@ -142,6 +156,7 @@ export function crear(borrador, uId) {
   const a = { ...borrador, id: uid('a'), creada: ahora(), archivada: null, cerrada: null, fechaOriginal: borrador.fecha, historial: [] };
   log(a, uId, 'creó la actividad');
   if (a.responsable !== uId) avisar(a.responsable, `${persona(uId)?.corto} te asignó «${a.titulo}».`, a.id, 'asignacion');
+  avisarEtiquetas(a, null, uId);
   estado.actividades = [...estado.actividades, a];
   guardar();
   return a;
@@ -161,6 +176,7 @@ export function actualizar(id, cambios, uId, motivoFecha) {
     if (cambios.responsable !== uId) avisar(cambios.responsable, `${persona(uId)?.corto} te asignó «${a.titulo}».`, a.id, 'asignacion');
   }
   if (cambios.titulo && cambios.titulo !== antes.titulo) log(a, uId, 'cambió el título');
+  if (cambios.colaboradores || cambios.notas !== undefined) avisarEtiquetas(a, antes, uId);
   if (cambios.estatus && cambios.estatus !== antes.estatus) aplicarEstatus(a, antes.estatus, cambios.estatus, uId);
   estado.actividades = [...estado.actividades];
   guardar();
@@ -253,6 +269,8 @@ export function mover(id, { fecha, bloque }, uId, motivo) {
   if (Object.keys(cambios).length) actualizar(id, cambios, uId, motivo);
 }
 export function visiblePara(a, uId) { return a.cliente !== 'personal' || a.responsable === uId; }
+// Filtro por cliente del Inicio (cada persona guarda el suyo).
+export function enFiltroInicio(a, uId) { const c = prefsDe(uId).inicioCliente; return !c || a.cliente === c; }
 
 // ---------- Preferencias de vista por persona ----------
 export function prefsDe(uId) { return { vista: 'dia', acomodo: 'derecha', ...(estado.prefs[uId] || {}) }; }
@@ -395,7 +413,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611251108';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611251139';
 
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube

@@ -2,10 +2,10 @@
 // de Tareas, Hitos y entregables, Riesgos y decisiones y Minutas, con filtros simples.
 // Mismo orden que Notion: Clientes → Proyectos → Hitos → Tareas → Riesgos → Minutas.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270300';
-import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270300';
-import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270300';
-import { Lista } from './vistas.js?v=202611270300';
+import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270330';
+import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270330';
+import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270330';
+import { Lista } from './vistas.js?v=202611270330';
 
 const fmt = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso.slice(0, 10) + 'T12:00:00')).replace('.', '') : '—');
 

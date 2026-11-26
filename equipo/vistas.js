@@ -1,13 +1,13 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270300';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270300';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270300';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270300';
-import { Widgets } from './widgets.js?v=202611270300';
-import { HighlightsSpark } from './tablero.js?v=202611270300';
-import { BasesSpark } from './bases.js?v=202611270300';
-import { useArrastre } from './arrastre.js?v=202611270300';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270330';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270330';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270330';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270330';
+import { Widgets } from './widgets.js?v=202611270330';
+import { HighlightsSpark } from './tablero.js?v=202611270330';
+import { BasesSpark } from './bases.js?v=202611270330';
+import { useArrastre } from './arrastre.js?v=202611270330';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };

@@ -484,7 +484,10 @@ button.chip:hover{transform:scale(1.12)}
   };
 
   /* ---------- usuario: la sesión del Portal ---------- */
-  const userById = id => USERS.find(u => u.id === id);
+  // Los reportes que vienen del archivo original guardan quién capturó con el id de la intranet (el nombre en minúsculas):
+  // si no es un id del Portal, se busca a la persona por su nombre corto.
+  const sinAcentos = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const userById = id => USERS.find(u => u.id === id) || USERS.find(u => sinAcentos(u.name).split(/\s+/)[0] === sinAcentos(id));
   const user = {
     async id(){ await ready.catch(() => {}); return ME ? ME.id : null; },
     async can(cap){ await ready.catch(() => {}); return cap === "data.write" ? !!ME : true; },

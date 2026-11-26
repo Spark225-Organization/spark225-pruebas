@@ -2,8 +2,8 @@
 // los menos clics posibles y explica en una línea qué pasa en cada paso.
 // Se abre sola la primera vez; después, desde Perfil › Conexiones.
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I } from './ui.js?v=202611270300';
-import { googleConectado, entrarConGoogle, buscarNotion, confirmarNotion, terminarBienvenida } from './nube.js?v=202611270300';
+import { I } from './ui.js?v=202611270330';
+import { googleConectado, entrarConGoogle, buscarNotion, confirmarNotion, terminarBienvenida } from './nube.js?v=202611270330';
 
 const CLAVE_PASO = 'ssam-bienvenida-paso';
 

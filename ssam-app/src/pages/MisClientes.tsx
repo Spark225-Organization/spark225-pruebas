@@ -179,9 +179,9 @@ export default function MisClientes() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] font-semibold text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-2.5">Material</th>
-                  <th className="px-4 py-2.5">Etapa interna</th>
-                  <th className="px-4 py-2.5">El cliente lo ve como</th>
+                  <th className="min-w-[280px] px-4 py-2.5">Material</th>
+                  <th className="whitespace-nowrap px-4 py-2.5">Etapa interna</th>
+                  <th className="whitespace-nowrap px-4 py-2.5">El cliente lo ve como</th>
                   <th className="whitespace-nowrap px-4 py-2.5">Fecha comprometida</th>
                   <th className="px-4 py-2.5">Cliente</th>
                   <th className="px-4 py-2.5" />
@@ -207,7 +207,7 @@ export default function MisClientes() {
                         {corregir && <span className="ml-1.5 rounded-full bg-[#D64545] px-1.5 py-0.5 text-[10px] font-semibold text-white">corregir</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
                           <span className="h-2 w-2 rounded-full" style={{ background: mom.color }} /> {mom.nombre}
                         </span>
                       </td>
@@ -221,7 +221,7 @@ export default function MisClientes() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-muted-foreground group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
+                        <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-muted-foreground group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
                       </td>
                     </tr>
                   );

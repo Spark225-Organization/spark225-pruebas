@@ -1,30 +1,31 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611270430';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611270530';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611270430';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270430';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611270430';
-import { AltaRapida } from './mecha.js?v=202611270430';
-import { Inicio } from './vistas.js?v=202611270430';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611270430';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611270430';
-import { Tablero } from './tablero.js?v=202611270430';
-import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611270430';
-import { MaestroTareas, MaestroHitos, MaestroRiesgos, MaestroMinutas } from './bases.js?v=202611270430';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611270430';
-import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611270430';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611270430';
-import { Chat } from './chat.js?v=202611270430';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611270430';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611270430';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611270430';
-import { Instalar } from './instalar.js?v=202611270430';
-import { notificar, activarPush } from './avisos.js?v=202611270430';
-import { Bienvenida, Recorrido } from './tour.js?v=202611270430';
-import { useArrastre } from './arrastre.js?v=202611270430';
-import { Galeria } from './widgets.js?v=202611270430';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611270530';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270530';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611270530';
+import { AltaRapida } from './mecha.js?v=202611270530';
+import { Inicio } from './vistas.js?v=202611270530';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611270530';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611270530';
+import { Tablero } from './tablero.js?v=202611270530';
+import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611270530';
+import { MaestroTareas, MaestroHitos, MaestroRiesgos, MaestroMinutas } from './bases.js?v=202611270530';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611270530';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611270530';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611270530';
+import { Chat } from './chat.js?v=202611270530';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611270530';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611270530';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611270530';
+import { Instalar } from './instalar.js?v=202611270530';
+import { notificar, activarPush } from './avisos.js?v=202611270530';
+import { Bienvenida, Recorrido } from './tour.js?v=202611270530';
+import { useArrastre } from './arrastre.js?v=202611270530';
+import { Galeria } from './widgets.js?v=202611270530';
+import { ListaReportes, EditorReporte } from './reportes.js?v=202611270530';
 
 function useStore() {
   const [, set] = useState(0);
@@ -175,8 +176,9 @@ function App() {
   const persona = ruta.startsWith('/persona/') && db.personas.some((p) => p.id === ruta.split('/')[2]) ? ruta.split('/')[2] : yo;
   const clienteRuta = ruta.startsWith('/cliente/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
   const proyectoRuta = ruta.startsWith('/proyecto/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
+  const reporteRuta = ruta.startsWith('/reporte/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
   const rhRuta = ruta === '/equipo' ? 'personas' : ruta.startsWith('/rh') ? (['documentos', 'personas'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'spark') : null;
-  const vista = clienteRuta ? 'cliente' : proyectoRuta ? 'proyecto' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/proyectos': 'proyectos', '/tareas': 'tareas', '/hitos': 'hitos', '/riesgos': 'riesgos', '/minutas': 'minutas' }[ruta] || 'dia';
+  const vista = clienteRuta ? 'cliente' : proyectoRuta ? 'proyecto' : reporteRuta ? 'reporte' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/proyectos': 'proyectos', '/tareas': 'tareas', '/hitos': 'hitos', '/riesgos': 'riesgos', '/minutas': 'minutas', '/reportes': 'reportes' }[ruta] || 'dia';
   const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
@@ -273,6 +275,8 @@ function App() {
           ${vista === 'riesgos' && html`<${MaestroRiesgos} ctx=${ctx} />`}
           ${vista === 'minutas' && html`<${MaestroMinutas} ctx=${ctx} />`}
           ${vista === 'proyecto' && html`<${DetalleProyecto} id=${proyectoRuta} ctx=${ctx} />`}
+          ${vista === 'reportes' && html`<${ListaReportes} ctx=${ctx} />`}
+          ${vista === 'reporte' && html`<${EditorReporte} id=${reporteRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
           ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} pestana=${['entregas', 'orden'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'enfoque'} />`}
           ${vista === 'rh' && html`<${RecursosHumanos} ctx=${ctx} pestana=${rhRuta} Personas=${html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`} />`}
@@ -287,6 +291,7 @@ function App() {
             <a href="#/" class="dock-it" aria-current=${vista === 'dia' && persona === yo ? 'page' : null} onClick=${() => setFecha(hoyISO())}>${I('inicio')}<span>Inicio</span></a>
             <a href="#/pipeline" class="dock-it" aria-current=${vista === 'pipeline' ? 'page' : null} data-tour="pipeline">${I('columnas')}<span>Pipeline</span></a>
             <a href="#/tablero" class="dock-it" aria-current=${vista === 'tablero' ? 'page' : null}>${I('grafica')}<span>Tablero</span></a>
+            <a href="#/reportes" class="dock-it" aria-current=${vista === 'reportes' || vista === 'reporte' ? 'page' : null}>${I('documento')}<span>Reportes</span></a>
             <span class="rel"><button class="dock-mas" onClick=${() => setMenuCrear((v) => !v)} aria-label="Crear" aria-expanded=${menuCrear} data-tour="mas">${I('mas')}</button>
               ${menuCrear && html`<${MenuCrear} elegir=${(t) => ctx.crear(t, t === 'tarea' ? {} : clienteRuta && db.clientes.some((c) => c.id === clienteRuta) ? { cliente: clienteRuta } : {})} cerrar=${() => setMenuCrear(false)} />`}</span>
             <a href="#/clientes" class="dock-it" aria-current=${['clientes', 'cliente', 'proyectos', 'proyecto'].includes(vista) ? 'page' : null} data-tour="clientes">${I('clientes')}<span>Clientes</span></a>
@@ -578,6 +583,7 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
     { t: 'Master Milestones (hitos y entregables)', ico: 'mapa', f: () => { location.hash = '#/hitos'; } },
     { t: 'Master Riesgos y Decisiones', ico: 'alerta', f: () => { location.hash = '#/riesgos'; } },
     { t: 'Master Minutas (minutas)', ico: 'nota', f: () => { location.hash = '#/minutas'; } },
+    { t: 'Reportes por área (PDF, PowerPoint y Excel)', ico: 'documento', f: () => { location.hash = '#/reportes'; } },
     { t: 'Focus Map (prioridades del trimestre)', ico: 'foco', f: () => { location.hash = '#/tablero/enfoque'; } },
     { t: 'Entregas a tiempo (tablero)', ico: 'grafica', f: () => { location.hash = '#/tablero/entregas'; } },
     { t: 'Organigrama de Spark225', ico: 'organigrama', f: () => { location.hash = '#/rh/spark'; } },

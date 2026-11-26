@@ -1,10 +1,10 @@
 // Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
 // Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611270430';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611270430';
-import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto } from './ui.js?v=202611270430';
-import { NavClientes } from './proyectos.js?v=202611270430';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611270530';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611270530';
+import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto } from './ui.js?v=202611270530';
+import { NavClientes } from './proyectos.js?v=202611270530';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
 export const NOMBRE_SALUD = { bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' };

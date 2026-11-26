@@ -2,11 +2,11 @@
 // Filtra por persona (yo, todos, alguien) y por cliente. Se ve en columnas por estatus o en lista por fecha.
 // Arriba van las minutas que llegan del correo: son de todos.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS } from './datos.js?v=202611270430';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, acuerdoATarea } from './store.js?v=202611270430';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270430';
-import { arrastrarActividad, teclasActividad } from './mecha.js?v=202611270430';
-import { useArrastre } from './arrastre.js?v=202611270430';
+import { hoyISO, sumarDias, ESTATUS } from './datos.js?v=202611270530';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, acuerdoATarea } from './store.js?v=202611270530';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270530';
+import { arrastrarActividad, teclasActividad } from './mecha.js?v=202611270530';
+import { useArrastre } from './arrastre.js?v=202611270530';
 
 const finDeSemana = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, 6 - ((d.getDay() + 6) % 7)); };
 

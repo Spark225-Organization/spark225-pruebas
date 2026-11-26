@@ -1,8 +1,8 @@
 // Guía para instalar el Portal como app (iPhone, Android o computadora) y activar los avisos.
 // Elige sola la pestaña según el dispositivo; se abre desde Perfil › Instalar en tu teléfono.
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I } from './ui.js?v=202611270430';
-import { pedirAvisos, activarPush, pushDisponible } from './avisos.js?v=202611270430';
+import { I } from './ui.js?v=202611270530';
+import { pedirAvisos, activarPush, pushDisponible } from './avisos.js?v=202611270530';
 
 const ua = navigator.userAgent;
 const esIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -55,7 +55,7 @@ export function Instalar({ cerrar, toast, persona }) {
     const r = await pedirAvisos();
     setPermiso(r);
     if (r === 'granted' && await activarPush(persona)) {
-      const { avisoDePrueba } = await import('./nube.js?v=202611270430');
+      const { avisoDePrueba } = await import('./nube.js?v=202611270530');
       const p = await avisoDePrueba().catch(() => ({}));
       return toast(p.ok ? 'Listo: te mandamos un aviso de prueba' : 'Avisos activados');
     }
@@ -63,7 +63,7 @@ export function Instalar({ cerrar, toast, persona }) {
   };
   const probar = async () => {
     if (!(await activarPush(persona))) return toast('No pude dar de alta este dispositivo');
-    const { avisoDePrueba } = await import('./nube.js?v=202611270430');
+    const { avisoDePrueba } = await import('./nube.js?v=202611270530');
     const p = await avisoDePrueba().catch(() => ({}));
     toast(p.ok ? 'Enviado: debe llegarte en unos segundos' : 'No pude mandar el aviso de prueba');
   };

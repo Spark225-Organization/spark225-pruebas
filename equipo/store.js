@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270430';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270530';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -38,7 +38,7 @@ function migrar(e) {
 function reparar(e) {
   const base = semilla();
   ['personas', 'clientes', 'proyectos', 'actividades', 'avisos', 'correos', 'minutas', 'eventos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = base[k]; });
-  ['hitos', 'riesgos', 'areas', 'documentos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
+  ['hitos', 'riesgos', 'areas', 'documentos', 'reportes'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
   ['personal', 'layouts', 'prefs'].forEach((k) => { if (!e[k] || typeof e[k] !== 'object') e[k] = {}; });
   if (!e.chat || !Array.isArray(e.chat.mensajes)) e.chat = base.chat;
   if (!e.personas.length) e.personas = base.personas;
@@ -426,10 +426,11 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270430';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270530';
 
-const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos']);
-const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos'];
+// Colecciones que la base acepta solo después de su SQL; si aún no, se quedan en este navegador sin frenar lo demás.
+const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos', 'reportes']);
+const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos', 'reportes'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube
 export const nube = { activa: false, yo: null, estado: 'listo', pendientes: 0, ultimoError: '' };
 const oyentesNube = new Set();
@@ -476,7 +477,9 @@ export async function conectarNube(perfil) {
     pendientes: perfiles.filter((p) => p.permiso === 'pendiente'),
     clientes: por('clientes'), proyectos: por('proyectos'), actividades: por('actividades'), minutas: por('minutas').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
     avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
-    correos: [], areas: por('areas'), documentos: por('documentos'), hitos: por('hitos'), riesgos: por('riesgos'),
+    correos: [], areas: por('areas'), documentos: por('documentos'), hitos: por('hitos'), riesgos: por('riesgos'), reportes: por('reportes'),
+    // Focus Map: solo lectura, para los reportes (se edita en su propia app).
+    focusmap: { trimestres: por('fm_trimestres'), prioridades: por('fm_prioridades'), reportes: por('fm_reportes'), ajustes: por('fm_ajustes')[0] || null },
     chat: { canales: por('canales'), mensajes: por('mensajes').sort((a, b) => a.cuando.localeCompare(b.cuando)), leidos: ajustes.leidos ? { [y]: ajustes.leidos } : {} },
     layouts: ajustes.layout ? { [y]: ajustes.layout } : {},
     personal: ajustes.personal ? { [y]: ajustes.personal } : {},
@@ -687,6 +690,28 @@ export async function cambiarMiPerfil(uId, cambios) {
 }
 
 // El Focus Map vive en focusmap/index.html (la app original) y lee sus propias colecciones directo de la base.
+// Aquí solo se lee (para los reportes); al cargar desde la nube llega en estado.focusmap.
+export function datosFocusMap() { return estado.focusmap || { trimestres: [], prioridades: [], reportes: [], ajustes: null }; }
+
+// ---------- Reportes por área (los arma el Portal con los datos; cada quien edita textos y gráficas) ----------
+export function reportesGuardados() { return [...(estado.reportes || [])].sort((a, b) => (b.editado || '').localeCompare(a.editado || '')); }
+export function crearReporte(d, uId) {
+  const r = { ...d, id: uid('r'), autor: uId, creado: ahora(), editado: ahora() };
+  estado.reportes = [...(estado.reportes || []), r];
+  evento(uId, `creó el reporte «${r.titulo}»`);
+  guardar();
+  return r;
+}
+export function actualizarReporte(id, cambios, uId) {
+  estado.reportes = (estado.reportes || []).map((r) => (r.id === id ? { ...r, ...cambios, editado: ahora(), editadoPor: uId } : r));
+  guardar();
+}
+export function quitarReporte(id, uId) {
+  const r = (estado.reportes || []).find((x) => x.id === id); if (!r) return;
+  estado.reportes = estado.reportes.filter((x) => x.id !== id);
+  evento(uId, `quitó el reporte «${r.titulo}»`);
+  guardar();
+}
 
 // ---------- Proyectos: salud con la regla de Notion y reasignación ----------
 // Rojo: 6+ tareas vencidas o más de 35 días sin actualización ejecutiva (sin fecha = sin señal).

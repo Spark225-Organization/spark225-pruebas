@@ -3,12 +3,12 @@
 // los valores (estatus, salud, fases) van en español.
 // Mismo orden que Spark225 Home: Clients → Master Proyectos → Master Task Database → Master Minutas → Master Milestones → Master Riesgos y Decisiones.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270430';
-import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270430';
-import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270430';
-import { Lista } from './vistas.js?v=202611270430';
-import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270430';
-import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270430';
+import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270530';
+import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270530';
+import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270530';
+import { Lista } from './vistas.js?v=202611270530';
+import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270530';
+import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270530';
 
 const fmt = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso.slice(0, 10) + 'T12:00:00')).replace('.', '') : '—');
 const sinAcento = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -36,6 +36,7 @@ export function BasesSpark({ ctx }) {
     ['#/hitos', 'mapa', 'Master Milestones', `${hitos.length} por cumplir`, hitosProx ? `${hitosProx} en 2 semanas` : 'ninguno próximo'],
     ['#/riesgos', 'alerta', 'Master Riesgos y Decisiones', `${riesgos.length} abiertos`, escalar ? `${escalar} para Carlos` : 'nada por escalar'],
     ['#/tablero/enfoque', 'grafica', 'Focus Map', 'Prioridades del trimestre', 'captura el lunes'],
+    ['#/reportes', 'documento', 'Reportes', 'Por área y periodo', 'PDF, PowerPoint y Excel'],
     ['#/rh/documentos', 'documento', 'Compañía', 'Organigrama y documentos', 'políticas, misión'],
   ];
   return html`<section class="bases" aria-label="Spark225 Home">

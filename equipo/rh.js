@@ -1,8 +1,8 @@
 // Recursos Humanos: cómo está organizado Spark (organigrama por área, con «Tú estás aquí»),
 // los documentos de la compañía y la lista del equipo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { areasVigentes, guardarAreas, guardarDocumento, quitarDocumento, esAdmin, nube } from './store.js?v=202611270230';
-import { I, Avatar, haceCuanto } from './ui.js?v=202611270230';
+import { areasVigentes, guardarAreas, guardarDocumento, quitarDocumento, esAdmin, nube } from './store.js?v=202611270300';
+import { I, Avatar, haceCuanto } from './ui.js?v=202611270300';
 
 export const CATEGORIAS_DOCS = [
   { id: 'cultura', nombre: 'Misión, visión y valores', ayuda: 'Quiénes somos y cómo trabajamos.' },

@@ -1974,3 +1974,10 @@ button.fmx-chip[data-tip]:hover::after, button.fmx-chip[data-tip]:focus-visible:
   .fmx-band { flex-wrap: wrap; align-items: flex-start; }
   .fmx-der { margin-left: 0; }
 }
+
+/* Focus Map: la app original dentro del Tablero */
+.tb-fm .cab-inicio { margin-bottom: 10px; }
+.fm-marco { display: block; width: 100%; height: calc(100dvh - 230px); min-height: 560px; border: 0; border-radius: 6px; background: var(--carbon); box-shadow: var(--anillo); }
+.fm-abrir { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 110px; font-size: 13px; color: var(--tinta-2); }
+.fm-abrir .i { width: 15px; height: 15px; }
+@media (max-width: 640px) { .fm-marco { height: calc(100dvh - 200px); } }

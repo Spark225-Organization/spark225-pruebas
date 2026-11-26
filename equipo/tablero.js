@@ -2,21 +2,26 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270230';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270230';
-import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270230';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270300';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270300';
+import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270300';
 const T_ENTREGA = 'Porcentaje de tareas que se cerraron en su fecha compromiso, de las que vencieron en el periodo. Una tarea Alta pesa 3, una Media 2 y una Baja 1. Si la fecha la movió el cliente o algo externo, cuenta la nueva; si la movimos nosotros, cuenta la original. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %.';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270230';
-import { MapaEnfoque } from './enfoque.js?v=202611270230';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270300';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
 
 export function Tablero({ ctx, pestana = 'enfoque' }) {
-  const pestanas = html`<nav class="segmentado tb-pest" aria-label="Tablero">${[['enfoque', 'Mapa de enfoque', 'foco'], ['entregas', 'Entregas a tiempo', 'grafica'], ['orden', 'Orden y limpieza', 'check']].map(([k, t, ico]) => html`<a key=${k} href=${'#/tablero/' + k} role="button" aria-pressed=${pestana === k} class="seg-link">${I(ico)}<span>${t}</span></a>`)}</nav>`;
-  if (pestana === 'enfoque') return html`<div class="tablero">
-    <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Prioridades del trimestre</span></div>${pestanas}</header>
-    <${MapaEnfoque} ctx=${ctx} /></div>`;
+  const pestanas = html`<nav class="segmentado tb-pest" aria-label="Tablero">${[['enfoque', 'Focus Map', 'foco'], ['entregas', 'Entregas a tiempo', 'grafica'], ['orden', 'Orden y limpieza', 'check']].map(([k, t, ico]) => html`<a key=${k} href=${'#/tablero/' + k} role="button" aria-pressed=${pestana === k} class="seg-link">${I(ico)}<span>${t}</span></a>`)}</nav>`;
+  // Focus Map: la app original, tal cual, con los datos en la base del Portal (ver focusmap/index.html).
+  if (pestana === 'enfoque') {
+    const tema = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+    return html`<div class="tablero tb-fm">
+      <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1></div>${pestanas}</header>
+      <iframe class="fm-marco" src=${`./focusmap/?v=202611270300&tema=${tema}${ctx.enNube ? '' : '&demo=1'}`} title="Focus Map"></iframe>
+      <a class="fm-abrir" href=${`./focusmap/?tema=${tema}${ctx.enNube ? '' : '&demo=1'}`} target="_blank" rel="noopener">${I('externo')}Abrir el Focus Map en pantalla completa</a>
+    </div>`;
+  }
   if (pestana === 'orden') return html`<div class="tablero">
     <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Lo que hay que acomodar</span></div>${pestanas}</header>
     <${OrdenLimpieza} ctx=${ctx} /></div>`;

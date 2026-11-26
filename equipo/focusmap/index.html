@@ -1,0 +1,1482 @@
+<!doctype html><html lang="es"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Focus Map Spark225</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bitter:wght@500;600;700&display=swap">
+<style>
+/* Layout: banda de marca arriba, pestañas, contenido en una columna ancha; la cuadrícula semanal es el centro del producto */
+:root{
+  /* Identidad Spark225: misma paleta y tipografía que el Cockpit y el Reporte Financiero */
+  --bg:#F7F4F0; --surface:#FFFFFF; --sunken:#FBF8F5; --ink:#191512; --muted:#5E554C; --faint:#8C8175; --line:#E3DBD1; --line-soft:#F0E9E1; --line-hard:#C9BFB3;
+  --band:#FCEEE0; --band-ink:#191512; --band-muted:#8F4109;
+  --strong:#191512; --strong-ink:#F7F4F0; --strong-muted:#B3A99E; --strong-line:#463C32;
+  --accent:#D2600F; --accent-text:#8F4109; --accent-ink:#FFFFFF; --accent-soft:#FBEBDC;
+  --s:#1F6F52; --g:#4E9A72; --y:#D9A21B; --r:#A83224; --n:#E3DBD1; --n-ink:#8C8175; --g-ink:#FFFFFF; --y-ink:#2B2110;
+  --warn:#8A5A00; --warn-soft:#FAEFD8;
+  --font-display:Bitter, Georgia, serif;
+  --font-body:Archivo, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:Archivo, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius:4px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151310; --surface:#1F1B17; --sunken:#251F1A; --ink:#F2EDE7; --muted:#B3A99E; --faint:#877C71; --line:#332C25; --line-soft:#28221C; --line-hard:#463C32;
+  --band:#2E2118; --band-ink:#F2EDE7; --band-muted:#F0A469;
+  --strong:#2B241E; --strong-ink:#F2EDE7; --strong-muted:#B3A99E; --strong-line:#463C32;
+  --accent:#E4863B; --accent-text:#F0A469; --accent-ink:#151310; --accent-soft:#33241A;
+  --s:#3E9A73; --g:#6FBF92; --y:#D9A94A; --r:#D0604F; --n:#332C25; --n-ink:#877C71; --g-ink:#151310; --y-ink:#151310;
+  --warn:#D9A94A; --warn-soft:#2B2110; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#151310; --surface:#1F1B17; --sunken:#251F1A; --ink:#F2EDE7; --muted:#B3A99E; --faint:#877C71; --line:#332C25; --line-soft:#28221C; --line-hard:#463C32;
+  --band:#2E2118; --band-ink:#F2EDE7; --band-muted:#F0A469;
+  --strong:#2B241E; --strong-ink:#F2EDE7; --strong-muted:#B3A99E; --strong-line:#463C32;
+  --accent:#E4863B; --accent-text:#F0A469; --accent-ink:#151310; --accent-soft:#33241A;
+  --s:#3E9A73; --g:#6FBF92; --y:#D9A94A; --r:#D0604F; --n:#332C25; --n-ink:#877C71; --g-ink:#151310; --y-ink:#151310;
+  --warn:#D9A94A; --warn-soft:#2B2110; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.notebox{grid-column:1/-1;display:grid;gap:8px;background:var(--warn-soft);border:1px solid var(--line);border-left:3px solid var(--y);border-radius:var(--radius);padding:10px 12px}
+.notebox.R{border-left-color:var(--r)}
+.notebox .h{font-size:12px;font-weight:700;color:var(--warn)}
+.notebox .row2{gap:8px}
+.cell{position:relative}
+.cell.has-note::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.9}
+.cell.Y.has-note::after{background:var(--y-ink)}
+.kidnote{font-size:13px;color:var(--muted);margin-top:4px;border-left:2px solid var(--y);padding-left:8px}
+.kidnote.R{border-left-color:var(--r)}
+.kidnote b{color:var(--ink);font-weight:600}
+.align{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--line-soft);padding-top:12px;margin-top:4px;width:100%}
+.align .lab{font-family:var(--font-display);font-size:17px;letter-spacing:0;text-transform:none;font-weight:700;color:var(--accent-text);margin-right:8px}
+.goal{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.goal b{font-weight:700;color:var(--ink)}
+.goal.miss{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.goal.miss b{color:var(--warn)}
+.meet{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.meet{grid-template-columns:1fr}}
+.mcol{display:grid;gap:16px;min-width:0}
+.sec-h{display:flex;align-items:baseline;gap:10px;border-left:4px solid var(--accent);padding-left:10px}
+.sec-h h3{font-size:18px;font-weight:600}
+.sec-h .foot{margin-left:auto}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line-soft)}
+.item:first-of-type{border-top:0}
+.item .t{font-weight:600}
+.item .m{font-size:13px;color:var(--muted)}
+.item .why{font-size:13px;margin-top:6px;display:grid;gap:2px}
+.item .why span{color:var(--muted)}
+.item .why b{color:var(--ink);font-weight:600}
+.trend{font-size:12px;font-weight:700;white-space:nowrap}
+.trend.up{color:var(--s)} .trend.down{color:var(--r)} .trend.eq{color:var(--faint)}
+.overdue{color:var(--r);font-weight:700}
+.statrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.stat{background:var(--surface);padding:12px 14px}
+.stat .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.stat .v{font-family:var(--font-display);font-size:24px;font-weight:700;margin-top:2px}
+.stat .v.bad{color:var(--r)} .stat .v.warn{color:var(--warn)} .stat .v.ok{color:var(--s)}
+.owner-g{padding:8px 0;border-top:1px solid var(--line-soft);font-size:14px}
+.owner-g:first-of-type{border-top:0}
+.owner-g b{display:block}
+.owner-g span{color:var(--muted);font-size:13px}
+.agr{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line-soft)}
+.agr:first-of-type{border-top:0}
+.agr input[type=checkbox]{margin-top:3px;accent-color:var(--accent);width:16px;height:16px}
+.agr.done .tx{text-decoration:line-through;color:var(--faint)}
+.agr .m{font-size:12px;color:var(--muted)}
+.agrform{display:grid;grid-template-columns:minmax(0,1fr) 140px 150px auto;gap:8px;margin-top:10px}
+@media (max-width:640px){.agrform{grid-template-columns:1fr 1fr}.agrform .input:first-child{grid-column:1/-1}}
+.weeknav{display:flex;align-items:center;gap:8px}
+.person{display:grid;gap:4px}
+.person .ph{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;font-weight:700;font-family:var(--font-display);flex:none}
+.person .ph h3{font-size:19px;font-weight:700}
+.person .ph .foot{margin-left:auto}
+.prow2{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line-soft)}
+.prow2:first-of-type{border-top:0}
+.prow2 .t{font-weight:600}
+.prow2 .m{font-size:13px;color:var(--muted)}
+.prow2 .v{font-family:var(--font-display);font-weight:700;font-size:20px;text-align:right;white-space:nowrap}
+.trail{display:flex;gap:3px;margin-top:6px;flex-wrap:wrap}
+.trail i{width:14px;height:14px;border-radius:2px;display:inline-block}
+.trail i.S{background:var(--s)}.trail i.G{background:var(--g)}.trail i.Y{background:var(--y)}.trail i.R{background:var(--r)}.trail i.N{background:var(--n)}
+.trail i.cur{outline:2px solid var(--accent);outline-offset:1px}
+.turnbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--band);border:1px solid var(--line-hard);border-radius:var(--radius);padding:10px 14px}
+.turnbar b{font-family:var(--font-display);font-size:17px}
+.persons{display:grid;gap:16px}
+.person.big .prow2 .t{font-size:17px}
+.person.big .prow2 .v{font-size:26px}
+.goalrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);font-weight:700}
+
+/* Banda superior */
+.band{background:var(--band);color:var(--band-ink);border-bottom:1px solid var(--line-hard)}
+.band .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-block:20px 16px}
+.brand{display:flex;align-items:center;gap:13px}
+.brand img{height:34px;width:auto;display:block;flex:none}
+.brand .sub{font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;color:var(--band-muted);margin:0}
+.brand h1{font-size:21px;font-weight:700;margin:0}
+.qpick{display:flex;flex-direction:column;gap:4px}
+.qpick label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--band-muted);font-weight:700}
+.qpick select{background:var(--surface);color:var(--ink);border:1px solid var(--line-hard);border-radius:2px;padding:5px 9px;min-width:160px;font-weight:500}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-top:8px;overflow-x:auto}
+.tab{background:none;border:0;padding:13px 15px;font-size:14px;letter-spacing:.02em;font-weight:600;color:var(--faint);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--accent-text);border-color:var(--accent)}
+
+main{padding-block:20px 48px;display:grid;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.pad{padding:20px}
+
+.btn{border:1px solid var(--line-hard);background:var(--surface);border-radius:var(--radius);padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--sunken)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.btn.danger{color:var(--r)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.icon-btn{border:0;background:none;color:inherit;opacity:.7;padding:4px 6px;border-radius:6px}
+.own{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-text);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);font-weight:600;font-size:11.5px;letter-spacing:.01em;line-height:1;padding:2px 9px 2px 2px;border-radius:999px;white-space:nowrap;vertical-align:middle}.own i{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-style:normal;font-size:9.5px;font-weight:700}.own.none{background:transparent;border-style:dashed;color:var(--muted);padding-left:9px}.own.none i{display:none}tr.co .own{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--strong-ink);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.fbtn{font-size:11px;font-weight:600;border:1px solid var(--line-hard);border-radius:999px;padding:2px 8px;opacity:1;color:var(--muted);background:var(--surface)}
+.fbtn.ok{border-color:var(--g);color:var(--s)}.fbtn.miss{border-color:var(--y);color:var(--warn);background:var(--warn-soft)}
+.fdet{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:var(--sunken)}.fdet summary{cursor:pointer;display:flex;gap:10px;align-items:center;font-size:14px}.fdet .fbody{display:grid;gap:12px;margin-top:12px}
+.fsum{display:grid;gap:4px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;font-size:13px}
+.fsum b{font-weight:600}.fsum .ln a{color:var(--accent-text)}
+.flist{display:grid;gap:6px}.flist .fr{display:grid;grid-template-columns:1fr 1.6fr auto;gap:6px;align-items:center}
+.flist .ff{display:flex;gap:8px;align-items:center;font-size:13px}.flist .ff a{color:var(--accent-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.icon-btn:hover{opacity:1;background:rgba(127,127,127,.18)}
+
+/* Encabezado del trimestre */
+.qhead{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;border-top:3px solid var(--accent)}
+.qhead h2{font-size:26px;font-weight:700}
+.qhead .success{color:var(--muted);margin-top:4px}
+.qhead .right{text-align:right;display:grid;gap:6px;justify-items:end}
+.qhead .qlabel{font-family:var(--font-display);font-weight:700;font-size:20px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent-text)}
+.pill.muted{background:var(--sunken);color:var(--muted)}
+
+/* Barra de reporte semanal */
+.reportbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.reportbar .meter{flex:1;min-width:180px}
+.track{height:6px;background:var(--sunken);border-radius:99px;overflow:hidden;margin-top:8px}
+.track>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.mix{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Chips de estado */
+.chip{width:28px;height:28px;border-radius:3px;display:inline-grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:12px;color:#fff;flex:none}
+.chip.S{background:var(--s)} .chip.G{background:var(--g);color:var(--g-ink)} .chip.Y{background:var(--y);color:var(--y-ink)} .chip.R{background:var(--r)} .chip.N{background:var(--n);color:var(--n-ink)}
+.chip.sm{width:22px;height:22px;font-size:11px;border-radius:6px}
+
+/* Lista de prioridades (Mapa) */
+.plist{display:grid;gap:10px}
+.prow{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.prow-main{display:flex;align-items:center;gap:14px;padding:14px 16px}
+.num{width:28px;height:28px;border-radius:3px;background:var(--sunken);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:13px;flex:none}
+.prow .title{font-weight:600;font-size:16px}
+.prow .meta{color:var(--muted);font-size:13px}
+.prow .grow{flex:1;min-width:0}
+.kids{border-top:1px solid var(--line);background:var(--sunken)}
+.kid{display:flex;align-items:center;gap:12px;padding:10px 16px 10px 58px;font-size:14px}
+.kid+.kid{border-top:1px solid var(--line)}
+.kid .grow{flex:1;min-width:0}
+.kid .val{color:var(--muted);font-size:13px}
+
+/* Cuadrícula semana a semana */
+.gridbox{overflow-x:auto}
+table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:940px}
+.grid th,.grid td{padding:6px 4px;text-align:center}
+.grid th{font-family:var(--font-mono);font-size:12px;color:var(--muted);font-weight:500}
+.grid th.cur{color:var(--accent);font-weight:600}
+.grid .namecol{text-align:left;padding-left:14px;width:32%;min-width:240px}
+.grid tr.co td{background:var(--strong);color:var(--strong-ink)}
+.grid tr.co td:first-child{border-radius:var(--radius) 0 0 var(--radius)}
+.grid tr.co td:last-child{border-radius:0 var(--radius) var(--radius) 0}
+.grid tr.co .namecell{display:flex;align-items:center;gap:10px;font-weight:600}
+.grid tr.co .num{background:var(--strong-line);color:var(--strong-ink)}
+.grid tr.kidrow td{border-bottom:1px solid var(--line)}
+.grid tr.spacer td{height:12px;padding:0}
+.grid .actions{display:flex;gap:2px;justify-content:flex-end;align-items:center;white-space:nowrap}
+.grid tr.co .btn{background:transparent;color:var(--strong-ink);border-color:var(--strong-line)}
+.cell{width:34px;height:30px;border-radius:3px;border:1px dashed var(--line);background:none;color:var(--muted);font-family:var(--font-mono);font-size:12px;display:inline-grid;place-items:center}
+.cell:hover{border-color:var(--accent);color:var(--accent)}
+.cell.filled{border:0;color:#fff;font-weight:600}
+.cell.S{background:var(--s)} .cell.G{background:var(--g);color:var(--g-ink)} .cell.Y{background:var(--y);color:var(--y-ink)} .cell.R{background:var(--r)}
+.cell.cur{box-shadow:0 0 0 2px var(--accent)}
+.cell.future{opacity:.45}
+.roll{width:34px;height:30px;border-radius:3px;display:inline-grid;place-items:center;font-family:var(--font-mono);font-size:11px;font-weight:600}
+.roll.S{background:var(--s);color:#fff}.roll.G{background:var(--g);color:var(--g-ink)}.roll.Y{background:var(--y);color:var(--y-ink)}.roll.R{background:var(--r);color:#fff}.roll.N{background:var(--strong-line);color:var(--strong-muted)}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{color:var(--ink);font-weight:600}
+.foot{font-size:12px;color:var(--muted)}
+
+/* Trimestres */
+.qtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.qtools .grow{flex:1}
+.fchip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px;font-weight:600;font-size:13px}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.qcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.qcard{display:flex;flex-direction:column;gap:12px;padding:20px}
+.qcard .top{display:flex;align-items:center;gap:10px}
+.qcard h3{font-size:22px;font-weight:700}
+.qcard .theme{color:var(--muted);font-size:14px;min-height:42px}
+.stats{display:flex;gap:28px}
+.stats .v{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--accent-text);line-height:1}
+.qcard .acts{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+.qcard .acts .btn.primary{flex:1;justify-content:center}
+
+/* Estados vacíos */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);display:grid;gap:12px;justify-items:center}
+.empty h3{color:var(--ink);font-size:20px}
+
+/* Modal */
+dialog{border:1px solid var(--line-hard);padding:0;border-radius:var(--radius);background:var(--surface);color:var(--ink);width:min(640px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 30px 80px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,12,16,.55)}
+.mhead{background:var(--band);color:var(--band-ink);border-bottom:1px solid var(--line-hard);padding:18px 22px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.mhead .eyebrow{color:var(--band-muted)}
+.mhead h3{font-size:21px;font-weight:700;margin-top:2px}
+.mbody{padding:20px 22px;display:grid;gap:16px;overflow:auto}
+.mfoot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.field{display:grid;gap:6px}
+.field label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.input{width:100%;border:1px solid var(--line-hard);background:var(--surface);border-radius:2px;padding:9px 12px}
+.input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.namerow{display:grid;grid-template-columns:56px 1fr;gap:10px}
+.namerow .input:first-child{text-align:center;font-size:18px;padding:6px}
+.thr{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px}
+.thr .lab{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.help{font-size:13px;color:var(--muted);margin:0}
+.try{background:var(--sunken);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.try .input{width:120px}
+.err{color:var(--r);font-size:13px;margin:0}
+.rep-list{display:grid;gap:8px}
+.rep{display:grid;grid-template-columns:1fr 130px 30px;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.rep .t{font-weight:600;font-size:14px}
+.rep .m{font-size:12px;color:var(--muted)}
+.rep .grp{grid-column:1/-1;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.confirm{border:1px solid var(--r);border-radius:8px;padding:12px;display:grid;gap:10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:50}
+.demo-banner{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--radius);padding:16px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.demo-banner p{margin:4px 0 0;max-width:70ch}
+.demo-banner .grow{flex:1;min-width:240px}
+.infowrap{position:relative;display:inline-flex}
+.info{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--muted);display:grid;place-items:center;padding:0}
+.info[aria-expanded="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pop{position:absolute;top:30px;left:0;z-index:20;width:min(360px,80vw);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 18px 40px rgba(0,0,0,.18);padding:16px;display:grid;gap:8px;font-size:14px;font-weight:400;color:var(--muted);text-align:left}
+.pop b{color:var(--ink)}
+.pop p{margin:0}
+.prow-main{padding:0 16px 0 0;gap:14px;min-height:72px}
+.stripe{align-self:stretch;width:30px;flex:none;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.stripe span{writing-mode:vertical-rl;transform:rotate(180deg)}
+.stripe.S{background:var(--s)}.stripe.G{background:var(--g);color:var(--g-ink)}.stripe.Y{background:var(--y);color:var(--y-ink)}.stripe.R{background:var(--r)}.stripe.N{background:var(--n);color:var(--n-ink)}
+.prow-main .grow{padding-block:14px}
+.kidchips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+/* Descripción al pasar el mouse sobre un cuadro del Mapa */
+.prow{overflow:visible}
+.stripe{border-radius:var(--radius) 0 0 var(--radius)}
+.kids{border-radius:0 0 var(--radius) var(--radius)}
+.tipwrap{position:relative;display:inline-flex}
+.tip{position:absolute;bottom:calc(100% + 9px);right:0;z-index:30;width:max-content;max-width:min(340px,70vw);background:var(--strong);color:var(--strong-ink);border:1px solid var(--strong-line);border-radius:var(--radius);padding:10px 13px;font-size:13px;line-height:1.45;text-align:left;display:none;box-shadow:0 14px 34px rgba(0,0,0,.28);pointer-events:none;white-space:normal}
+.tip::after{content:"";position:absolute;top:100%;right:9px;border:6px solid transparent;border-top-color:var(--strong)}
+.tip b{display:block;font-weight:600;font-size:14px;color:var(--strong-ink);margin-bottom:5px}
+.tip .st{display:flex;align-items:center;gap:7px;color:var(--strong-muted)}
+.tip .st .dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.tip .hint{color:var(--strong-muted);font-size:11.5px;margin-top:5px;opacity:.85}
+.dot.S{background:var(--s)}.dot.G{background:var(--g)}.dot.Y{background:var(--y)}.dot.R{background:var(--r)}.dot.N{background:var(--n)}
+.tipwrap:hover .tip,.tipwrap:focus-within .tip{display:block}
+button.chip{border:0;cursor:pointer;padding:0;transition:transform .12s}
+button.chip:hover{transform:scale(1.12)}
+.grid tr.kidrow.focus td{background:var(--accent-soft);transition:background .6s}
+.cell.pick{box-shadow:0 0 0 3px var(--accent)!important}
+.grid th.focus{color:var(--accent-text);font-weight:700}
+.toggle{border:0;background:none;color:var(--muted);font-size:13px;padding:2px 0;display:inline-flex;gap:4px;align-items:center}
+.toggle:hover{color:var(--accent)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.steps i{height:4px;border-radius:2px;background:var(--line-hard)}
+.steps i.on{background:var(--accent)}
+.labelbox{background:var(--sunken);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.labelbox b{font-family:var(--font-display);font-size:20px;font-weight:700}
+.datebox{background:var(--sunken);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--muted)}
+.datebox b{color:var(--ink)}
+.opt{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:grid;grid-template-columns:20px 1fr;gap:4px 10px;cursor:pointer;align-items:start}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt input{margin:3px 0 0;accent-color:var(--accent)}
+.opt b{font-size:15px}
+.opt span{grid-column:2;font-size:13px;color:var(--muted)}
+.kidcard{border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:grid;gap:10px}
+.kidcard .hd{display:flex;justify-content:space-between;align-items:center}
+.req{color:var(--accent)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.notice{border:1px solid var(--line);background:var(--sunken);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--muted)}
+
+@media (max-width:640px){
+  .qhead .right{text-align:left;justify-items:start}
+  .row3{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr}
+  .rep{grid-template-columns:1fr 100px 28px}
+  .kid{padding-left:16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <div class="brand">
+      <img src="data:image/png;base64,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" alt="Spark225">
+      <div><p class="sub">Spark225 Consulting Firm</p><h1>Focus Map</h1></div>
+    </div>
+    <div class="qpick"><label for="qsel">Trimestre</label><select id="qsel"></select></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-mapa" data-view="mapa">Mapa</button>
+    <button class="tab" role="tab" id="tab-semanas" data-view="semanas">Semana a semana</button>
+    <button class="tab" role="tab" id="tab-trimestres" data-view="trimestres">Trimestres</button>
+  </nav>
+  <main id="app">
+    <div class="panel empty"><h3>Cargando el mapa…</h3><p>Leyendo trimestres y prioridades del equipo.</p></div>
+  </main>
+</div>
+
+<dialog id="dlg"></dialog>
+
+<!-- Configuración para la intranet: ver comentario al inicio de la capa de datos -->
+<script type="application/json" id="focusmap-seed">{"_version": "portal"}</script>
+<style>
+.fm-pick-wrap{position:fixed;inset:0;z-index:100;background:rgba(25,21,18,.55);display:grid;place-items:center;padding:16px}
+.fm-pick{background:#fff;border-radius:10px;padding:28px;max-width:420px;width:100%;font-family:Archivo,system-ui,sans-serif;color:#191512;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.fm-pick h2{font-family:Bitter,Georgia,serif;margin:0 0 6px;font-size:24px}.fm-pick p{margin:0 0 16px;color:#5E554C;font-size:14px}
+.fm-users{display:grid;gap:8px}.fm-users button{display:grid;text-align:left;gap:2px;border:1px solid #E3DBD1;background:#FBF8F5;border-radius:8px;padding:12px 14px;font:600 15px Archivo,system-ui,sans-serif;cursor:pointer;color:#191512}
+.fm-users button:hover{border-color:#D2600F;background:#FBEBDC}.fm-users small{font-weight:400;color:#5E554C;font-size:12.5px}
+.fm-data{position:fixed;left:16px;bottom:16px;z-index:50;font-family:Archivo,system-ui,sans-serif}
+.fm-data-btn{border:1px solid #C9BFB3;background:#fff;border-radius:999px;padding:7px 14px;font:600 13px Archivo,system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);color:#191512}
+.fm-data-menu{position:absolute;left:0;bottom:44px;background:#fff;border:1px solid #E3DBD1;border-radius:10px;padding:8px;display:grid;gap:2px;min-width:250px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.fm-data-menu[hidden]{display:none}
+.fm-data-menu button,.fm-data-menu label{text-align:left;border:0;background:none;padding:9px 10px;border-radius:6px;font:500 14px Archivo,system-ui,sans-serif;cursor:pointer;color:#191512}
+.fm-data-menu button:hover,.fm-data-menu label:hover{background:#FBEBDC}
+.fm-data-who{font-weight:700;font-size:13px;padding:6px 10px;color:#8F4109}.fm-data-mode{font-size:12px;color:#8C8175;padding:6px 10px;border-top:1px solid #F0E9E1;margin-top:4px}
+@media print{.fm-data{display:none}}
+</style>
+<style>
+/* Íconos propios del Portal (en lugar de emojis), con los colores del Focus Map */
+.fm-ico{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;vertical-align:-6px;margin-right:6px;flex:none;background:var(--sunken,#FBF8F5);color:var(--muted,#5E554C)}
+.fm-ico svg{width:14px;height:14px}
+.fm-ico.t-asc,.fm-ico.t-pct_asc{color:var(--s,#1F6F52)}
+.fm-ico.t-desc,.fm-ico.t-pct_desc{color:#3B6EA8}
+.fm-ico.t-date{color:var(--accent-text,#8F4109)}
+.fm-ico.t-clip{width:18px;height:18px;margin-right:4px;background:none}
+
+</style>
+<script>
+/* =====================================================================
+   Focus Map Spark225 · capa de datos para el Portal de colaboradores
+   ---------------------------------------------------------------------
+   Sustituye la capa «intranet» del archivo original. La app es la misma:
+   usa window.claude.use("db" | "user" | "assets" | "downloads").
+
+   - Datos: tabla docs del Portal (Supabase, con sesión y reglas RLS).
+       quarters → fm_trimestres · priorities → fm_prioridades · reports → fm_reportes
+       settings → fm_ajustes · kpimeta → fm_fichas (meetings queda en memoria; el original no tiene pantalla)
+     Cada documento se guarda tal cual lo escribe la app original (mismos campos).
+   - Usuario: la sesión del Portal. Roles como el original: Dirección (dueño) administra; los demás capturan.
+   - Sin datos de la empresa en este archivo: todo llega de la base.
+   ===================================================================== */
+(function(){
+  const q = new URLSearchParams(location.search);
+  if (q.get("tema") === "light" || q.get("tema") === "dark") document.documentElement.dataset.theme = q.get("tema");
+
+  const MAPA = { quarters: "fm_trimestres", priorities: "fm_prioridades", reports: "fm_reportes", settings: "fm_ajustes", kpimeta: "fm_fichas" };
+  const INV = Object.fromEntries(Object.entries(MAPA).map(([a, b]) => [b, a]));
+  const COLLS = ["quarters", "priorities", "reports", "settings", "kpimeta", "meetings"];
+  const clone = o => JSON.parse(JSON.stringify(o));
+  let DATA = {}; COLLS.forEach(c => DATA[c] = {});
+  const subs = new Set();
+  const notify = () => subs.forEach(fn => { try { fn(); } catch(e) { console.error(e); } });
+  let sb = null, ME = null, USERS = [];
+
+  // Modo demo (Portal sin sesión): todo en este navegador, sin tocar la base.
+  let DEMO = false;
+  const LS_DEMO = "focusmap.portal.demo";
+  async function cargar(){
+    const d = {}; COLLS.forEach(c => d[c] = {});
+    if (DEMO) { try { const g = JSON.parse(localStorage.getItem(LS_DEMO) || "{}"); COLLS.forEach(c => d[c] = g[c] || {}); } catch(e) {} return d; }
+    for (let desde = 0; ; desde += 1000) {
+      const { data, error } = await sb.from("docs").select("coleccion,id,datos").in("coleccion", Object.values(MAPA)).eq("borrado", false).range(desde, desde + 999);
+      if (error) throw error;
+      data.forEach(f => { d[INV[f.coleccion]][f.id] = f.datos; });
+      if (data.length < 1000) break;
+    }
+    d.meetings = DATA.meetings || {};
+    return d;
+  }
+  const guardaDemo = () => { try { localStorage.setItem(LS_DEMO, JSON.stringify(DATA)); } catch(e) {} };
+  async function poner(c, id, doc){
+    if (DEMO) return guardaDemo();
+    if (!MAPA[c]) return; // meetings: solo en memoria
+    const { error } = await sb.from("docs").upsert({ coleccion: MAPA[c], id, datos: doc, visible_para: null, borrado: false }, { onConflict: "coleccion,id" });
+    if (error) throw error;
+  }
+  async function quitar(c, id){
+    if (DEMO) return guardaDemo();
+    if (!MAPA[c]) return;
+    const { error } = await sb.from("docs").update({ borrado: true }).eq("coleccion", MAPA[c]).eq("id", id);
+    if (error) throw error;
+  }
+
+  function sinSesion(){
+    const pinta = () => { const app = document.getElementById("app"); if (app) app.innerHTML = '<div class="panel empty"><h3>Entra con tu cuenta</h3><p>El Focus Map usa tu sesión del Portal de colaboradores. Entra con Google desde el Portal y vuelve a abrir esta pestaña.</p></div>'; };
+    document.readyState === "loading" ? addEventListener("DOMContentLoaded", pinta) : pinta();
+  }
+
+  const ready = (async () => {
+    const [{ createClient }, cfg] = await Promise.all([
+      import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm"),
+      import("../nube-config.js"),
+    ]);
+    sb = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: "pkce", storageKey: "ssam-equipo-auth" } });
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      if (q.get("demo") !== "1") throw Object.assign(new Error("Sin sesión"), { code: "sin_sesion" });
+      DEMO = true; ME = { id: "demo", name: "Demo", role: "admin" }; USERS = [ME]; DATA = await cargar(); window.__focusmapMode = "demo"; return;
+    }
+    const { data: perfiles, error } = await sb.from("perfiles").select("id,nombre,corto,permiso,auth_uid").neq("permiso", "pendiente");
+    if (error) throw error;
+    USERS = (perfiles || []).map(p => ({ id: p.id, name: p.corto || p.nombre, role: p.permiso === "dueno" ? "admin" : "editor", auth: p.auth_uid }));
+    ME = USERS.find(u => u.auth === session.user.id) || null;
+    DATA = await cargar();
+    // Como el original: vuelve a leer cada 15 s y repinta si alguien más cambió algo.
+    setInterval(async () => { try { const n = await cargar(); if (JSON.stringify(n) !== JSON.stringify(DATA)) { DATA = n; notify(); } } catch(e) {} }, 15000);
+    window.__focusmapMode = "portal";
+  })().catch(e => { console.error(e); window.__focusmapLoadError = e; if (e.code === "sin_sesion") sinSesion(); });
+
+  /* ---------- API tipo db (la misma que usa la app) ---------- */
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  const snapColl = c => ({ docs: Object.entries(DATA[c] || {}).map(([id, d]) => ({ id, exists: true, data: () => clone(d) })) });
+  const snapDoc = (c, id) => { const d = (DATA[c] || {})[id]; return { id, exists: !!d, data: () => d ? clone(d) : undefined }; };
+  const split = path => { const i = path.indexOf("/"); return [path.slice(0, i), path.slice(i + 1)]; };
+  async function write(c, id, doc){ const prev = (DATA[c] || {})[id];
+    if (doc === null) delete DATA[c][id]; else DATA[c][id] = doc;
+    notify();
+    try { doc === null ? await quitar(c, id) : await poner(c, id, doc); }
+    catch(e){ if (prev === undefined) delete DATA[c][id]; else DATA[c][id] = prev; notify(); alert("No se pudo guardar: " + (e.message || e)); throw e; } }
+  const db = {
+    collection(c){ return {
+      onSnapshot(cb, err){ const fn = () => cb(snapColl(c)); subs.add(fn); ready.then(() => window.__focusmapLoadError ? err && err({ code: "load_failed" }) : fn()); return () => subs.delete(fn); },
+      async add(d){ await ready; const id = newId(); await write(c, id, clone(d)); return { id }; },
+      doc(id){ return db.doc(c + "/" + id); }
+    }; },
+    doc(path){ const [c, id] = split(path); return {
+      onSnapshot(cb, err){ const fn = () => cb(snapDoc(c, id)); subs.add(fn); ready.then(() => window.__focusmapLoadError ? err && err({ code: "load_failed" }) : fn()); return () => subs.delete(fn); },
+      async get(){ await ready; return snapDoc(c, id); },
+      async set(d){ await ready; await write(c, id, clone(d)); },
+      async update(d){ await ready; const cur = (DATA[c] || {})[id]; if (!cur) throw Object.assign(new Error("No existe"), { code: "not_found" }); await write(c, id, Object.assign(clone(cur), clone(d))); },
+      async delete(){ await ready; if ((DATA[c] || {})[id] !== undefined) await write(c, id, null); }
+    }; }
+  };
+
+  /* ---------- usuario: la sesión del Portal ---------- */
+  const userById = id => USERS.find(u => u.id === id);
+  const user = {
+    async id(){ await ready.catch(() => {}); return ME ? ME.id : null; },
+    async can(cap){ await ready.catch(() => {}); return cap === "data.write" ? !!ME : true; },
+    async isOwner(){ await ready.catch(() => {}); return !!ME && ME.role === "admin"; },
+    async canEdit(){ await ready.catch(() => {}); return !!ME && ME.role === "admin"; },
+    async profiles(ids){ await ready.catch(() => {}); const o = {}; (ids || []).forEach(id => { const u = userById(id); o[id] = { name: u ? u.name : id }; }); return o; }
+  };
+
+  /* ---------- archivos de la ficha del KPI (hasta 1.5 MB, dentro de la ficha) ---------- */
+  const assets = {
+    async upload(file){
+      if (file.size > 1.5 * 1024 * 1024) throw Object.assign(new Error("Solo caben archivos de hasta 1.5 MB. Pega un link de Drive."), { code: "too_large" });
+      const url = await new Promise((ok, ko) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = ko; fr.readAsDataURL(file); });
+      return { id: newId(), url, sizeBytes: file.size, contentType: file.type }; },
+    async list(){ return { assets: [], usage: {} }; },
+    async delete(){}
+  };
+
+  /* ---------- descargas (Excel y respaldo) ---------- */
+  const downloads = { async save({ filename, data, mimeType }){ const blob = new Blob([data], { type: mimeType || "application/octet-stream" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename || "descarga"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); } };
+
+  window.claude = { use: async name => ({ db, user, assets, downloads })[name] || null };
+
+  /* ---------- íconos propios (sin emojis): según cómo se mide cada KPI ---------- */
+  const P = { asc: "M3 17l6-6 4 4 8-8M15 7h6v6", desc: "M3 7l6 6 4-4 8 8M15 17h6v-6", pct: "M19 5L5 19M7 9a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z",
+    date: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M8 14h3v3H8z", bool: "M4 4h16v16H4zM8 12l3 3 5-6", clip: "M21 11l-8.5 8.5a5 5 0 01-7-7L14 4a3.3 3.3 0 014.7 4.7L10 17.4a1.7 1.7 0 01-2.4-2.4L15 7.6" };
+  const svg = (d, cls) => `<span class="fm-ico ${cls}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>`;
+  window.fmIco = k => { const t = (k && k.criteria && k.criteria.type) || "asc"; const tipo = t === "pct_asc" || t === "pct_desc" ? "pct" : t; return svg(P[tipo] || P.asc, "t-" + t); };
+  window.fmIcoClip = svg(P.clip, "t-clip");
+
+  /* ---------- menú Datos: respaldo e importación (la sesión reemplaza «Cambiar de usuario») ---------- */
+  window.addEventListener("DOMContentLoaded", () => {
+    const m = document.createElement("div"); m.className = "fm-data";
+    m.innerHTML = `<button type="button" class="fm-data-btn" aria-expanded="false">Datos</button>
+      <div class="fm-data-menu" hidden>
+        <div class="fm-data-who"></div>
+        <button type="button" data-a="export">Exportar respaldo (.json)</button>
+        <label>Importar respaldo<input type="file" accept="application/json,.json" hidden></label>
+        <div class="fm-data-mode">Datos compartidos en el Portal de colaboradores</div>
+      </div>`;
+    document.body.appendChild(m);
+    const btn = m.querySelector(".fm-data-btn"), menu = m.querySelector(".fm-data-menu");
+    btn.addEventListener("click", async () => { const o = menu.hidden; menu.hidden = !o; btn.setAttribute("aria-expanded", String(o)); await ready.catch(() => {});
+      m.querySelector(".fm-data-who").textContent = ME ? ME.name + " · " + (ME.role === "admin" ? "administra el mapa" : "captura sus KPI") : "Sin sesión"; });
+    m.querySelector('[data-a="export"]').addEventListener("click", async () => { await ready; const d = new Date().toISOString().slice(0, 10);
+      downloads.save({ filename: "focusmap-respaldo-" + d + ".json", data: new TextEncoder().encode(JSON.stringify(DATA, null, 1)), mimeType: "application/json" }); });
+    m.querySelector('input[type=file]').addEventListener("change", async e => { const f = e.target.files[0]; if (!f) return;
+      try { if (!ME || ME.role !== "admin") throw new Error("Solo Dirección puede importar un respaldo.");
+        const raw = JSON.parse(await f.text()); const n = {}; COLLS.forEach(c => n[c] = (raw && raw[c]) || {});
+        if (!confirm("Esto reemplaza todos los datos actuales con los del respaldo. ¿Continuar?")) return;
+        await ready; for (const c of COLLS) { for (const id of Object.keys(DATA[c])) if (!(id in n[c])) await write(c, id, null); for (const [id, doc] of Object.entries(n[c])) await write(c, id, doc); }
+        alert("Respaldo importado."); } catch(err) { alert("No se pudo importar: " + (err.message || err)); } e.target.value = ""; });
+  });
+})();
+
+</script>
+<script>
+(() => {
+const STATUS = {
+  S:{name:"Súper verde", hint:"superó la meta"},
+  G:{name:"Verde", hint:"en camino"},
+  Y:{name:"Amarillo", hint:"en riesgo"},
+  R:{name:"Rojo", hint:"fuera de camino"},
+  N:{name:"Sin reporte", hint:"no reportado"}
+};
+const CRIT = {
+  asc:{label:"Numérico — ascendente (cuanto más, mejor)", kind:"num", dir:"up"},
+  desc:{label:"Numérico — descendente (cuanto menos, mejor)", kind:"num", dir:"down"},
+  pct_asc:{label:"Porcentaje de avance — ascendente (cuanto más, mejor)", kind:"pct", dir:"up"},
+  pct_desc:{label:"Porcentaje de avance — descendente (cuanto menos, mejor)", kind:"pct", dir:"down"},
+  date:{label:"Fecha — cuanto antes, mejor", kind:"date", dir:"down"},
+  bool:{label:"Sí / No — hecho o no hecho", kind:"bool"}
+};
+const SCORE = {S:4,G:3,Y:2,R:1};
+
+const S = { reqNotes:false, turn:null, dlDay:7, dlHour:9, goals:[], mw:null, mwQ:null, meetings:{}, names:{}, me:null, user:null, canAdmin:false, maxCo:5, settingsV:null, expanded:new Set(), raw:{q:[],p:[],r:{},m:{}}, db:null, canWrite:true, quarters:[], priorities:[], reports:{}, loaded:{q:false,p:false,r:false}, view:"mapa", qid:null, year:"all", error:null };
+const $ = s => document.querySelector(s);
+const app = $("#app"), dlg = $("#dlg"), qsel = $("#qsel");
+
+const own = n => { const t=String(n||"").trim(); const ini=t.split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase(); return `<span class="own ${t?"":"none"}"><i aria-hidden="true">${esc(ini)}</i>${esc(t||"sin responsable")}</span>`; };
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* Formato ligero en nombres: *negritas* y _cursivas_ */
+const fmt = v => esc(v).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(?!\s)([^*]+?)(?<!\s)\*/g,"<b>$1</b>").replace(/(^|[\s(\[])_(?!\s)(.+?)(?<!\s)_(?=$|[\s.,;:)\]])/g,"$1<i>$2</i>");
+const plain = v => String(v ?? "").replace(/\*\*(.+?)\*\*/g,"$1").replace(/\*(?!\s)([^*]+?)(?<!\s)\*/g,"$1").replace(/(^|[\s(\[])_(?!\s)(.+?)(?<!\s)_(?=$|[\s.,;:)\]])/g,"$1$2");
+const store = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}} };
+
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
+
+/* ---------- Trimestre de ejemplo (empresa ficticia, solo lectura, nunca se guarda) ---------- */
+const DEMO = (() => {
+  const qid="demo-q";
+  const q=[{id:qid,demo:true,goals:[{id:"dg1",name:"Venta de $120M en 2026"},{id:"dg2",name:"Margen bruto de 35 %"},{id:"dg3",name:"Retención de farmacias ≥ 85 %"},{id:"dg4",name:"Certificaciones sanitarias al día"}],label:"1Q 2026",fixedWeek:11,theme:"Convertir a Distribuidora Norte (empresa ficticia) en el proveedor preferido de farmacias independientes del Bajío",success:"Ticket promedio +20%, 120 farmacias en lealtad y almacén certificado en BPD",start:"2026-01-05",end:"2026-04-05",active:false,createdAt:"2026-01-01"}];
+  const plan=[
+    ["Lanzar la línea de genéricos de alta rotación","Ana",[
+      ["","SKUs registrados en catálogo","Ana","asc",12,10,4,0,11],
+      ["","Farmacias con primer pedido","Luis","asc",60,45,15,3,52],
+      ["","Días de entrega promedio","Sofía","desc",2,3,5,7,2.6]]],
+    ["Subir el ticket promedio por farmacia 20%","Luis",[
+      ["","Ticket promedio (MXN)","Luis","asc",18000,16500,15000,14200,16900],
+      ["","Pedidos con venta cruzada (%)","Ana","asc",35,25,10,5,27],
+      ["","Representantes certificados","Sofía","asc",20,16,8,2,17]]],
+    ["Certificar el almacén en Buenas Prácticas de Distribución","Sofía",[
+      ["","Avance de auditoría interna (%)","Sofía","asc",100,80,50,10,64],
+      ["","Desviaciones de temperatura","Sofía","desc",0,1,4,6,2]]],
+    ["Arrancar el programa de lealtad para farmacias","Ana",[
+      ["","Farmacias inscritas","Ana","asc",150,120,40,0,95],
+      ["✉️","Apertura de campañas (%)","Luis","asc",45,35,20,12,33],
+      ["✅","Portal de lealtad publicado","Luis","bool"]]],
+    ["Bajar las devoluciones por caducidad","Sofía",[
+      ["","Devoluciones (% de la venta)","Ana","desc",1,1.5,3,4.2,1.4],
+      ["","Lotes revisados con rotación FEFO","Sofía","asc",40,30,10,4,42]]]];
+  const DN={
+    "0-0":["Dos registros esperan respuesta de COFEPRIS","Escalar con el gestor y pedir fecha de resolución"],
+    "0-1":["Las farmacias piden muestra antes del primer pedido","Llevar kit de muestras en la siguiente ruta"],
+    "0-2":["Una ruta comparte camión con la de hospitales","Separar la ruta de Celaya a partir del lunes"],
+    "1-0":["El ticket sube en León pero cae en Irapuato","Revisar descuentos de Irapuato con el gerente"],
+    "1-1":["Los representantes no ofrecen el segundo producto","Guion de venta cruzada en la junta del lunes"],
+    "1-2":["Faltan 3 representantes por presentar examen","Agendar examen el jueves"],
+    "2-0":["La auditoría interna de cadena de frío va atrasada","Contratar apoyo externo dos semanas"],
+    "2-1":["El termógrafo del andén 2 falla de noche","Cambiar el equipo y revisar lecturas diario"],
+    "3-0":["La invitación llegó sin liga al registro","Reenviar con liga directa y llamada de seguimiento"],
+    "3-1":["El asunto del correo no menciona el beneficio","Probar dos asuntos con 50 farmacias cada uno"],
+    "3-2":["El proveedor del portal entregó tarde","Penalización por contrato y fecha firme"],
+    "4-0":["Devoluciones altas en un laboratorio","Negociar cambio de lote con el laboratorio"],
+    "4-1":["Revisión FEFO solo se hace en un turno","Asignar la revisión también al turno de tarde"]};
+  const p=[], r={};
+  plan.forEach(([name,owner,kids],i)=>{
+    const cid="demo-c"+i;
+    p.push({id:cid,demo:true,kind:"company",quarterId:qid,parentId:null,name,owner,order:i,goalId:["dg1","dg1","dg4","dg3","dg2"][i],createdAt:"2026-01-01"});
+    kids.forEach(([icon,kname,kowner,type,sg,g,rd,a,b],j)=>{
+      const kid=`demo-i${i}-${j}`;
+      const criteria = type==="bool" ? {type:"bool"} : {type,sg,g,r:rd};
+      p.push({id:kid,demo:true,kind:"individual",quarterId:qid,parentId:cid,name:kname,icon,owner:kowner,order:j,criteria,createdAt:"2026-01-01"});
+      for(let w=1;w<=11;w++){
+        let v;
+        if(type==="bool") v = w>=9;
+        else { const t=Math.pow((w-1)/10,1.15), noise=Math.sin((i*7+j*3+w)*1.7)*Math.abs(b-a)*0.04;
+          v=a+(b-a)*t+noise; const dec=Math.abs(b-a)<10?1:0; v=Number(v.toFixed(dec)); if(v<0) v=0; }
+        const rec={priorityId:kid,quarterId:qid,week:w,value:v,demo:true};
+        const st=statusFor(criteria,v), dn=DN[`${i}-${j}`];
+        if((st==="Y"||st==="R")&&dn){ const due=new Date(Date.UTC(2026,0,5+(w-1)*7+11)).toISOString().slice(0,10); rec.note={cause:dn[0],action:dn[1],due}; }
+        r[`${kid}_w${w}`]=rec;
+      }
+    });
+  });
+  const m={};
+  m[qid+"_w10"]={demo:true,agreements:[{id:"a1",text:"Llamar a las 8 farmacias que no repitieron pedido",owner:"Luis",due:"2026-03-13",done:true},{id:"a2",text:"Cotizar un segundo termógrafo para el andén 2",owner:"Sofía",due:"2026-03-13",done:false}]};
+  m[qid+"_w11"]={demo:true,agreements:[{id:"a3",text:"Decidir si se retira el SKU de menor rotación",owner:"Ana",due:"2026-03-20",done:false}]};
+  return {q,p,r,m};
+})();
+const demoOn = () => store.get("focus.demoHidden")!=="1";
+function compose(){
+  const on=demoOn();
+  S.quarters = S.raw.q.concat(on?DEMO.q:[]);
+  S.priorities = S.raw.p.concat(on?DEMO.p:[]);
+  S.reports = on ? Object.assign({},DEMO.r,S.raw.r) : S.raw.r;
+  S.meetings = on ? Object.assign({},DEMO.m,S.raw.m) : S.raw.m;
+}
+const DAYS=["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
+const DL_OPTS=[...DAYS.map(d=>d+" de la misma semana"),"lunes de la semana siguiente","martes de la semana siguiente"];
+function deadlineOf(q,w){ const a=parseDate(q.start); if(!a) return null; return new Date(a.getUTCFullYear(),a.getUTCMonth(),a.getUTCDate()+(w-1)*7+S.dlDay,S.dlHour,0,0); }
+function fmtDeadline(d){ return d ? `${DAYS[(d.getDay()+6)%7]} ${d.toLocaleDateString("es-MX",{day:"numeric",month:"short"})}, ${String(d.getHours()).padStart(2,"0")}:00` : ""; }
+/* Semana que se está cargando: la primera cuyo cierre no ha pasado (con cierre el lunes siguiente, es la que acaba de terminar hasta las 9:00) */
+function reportWeek(q){ if(q.fixedWeek) return q.fixedWeek; const W=weeksOf(q), cw=currentWeek(q), now=new Date();
+  if(qPhase(q)==="futuro") return 1; for(let w=1;w<=W;w++){ const d=deadlineOf(q,w); if(d&&d>=now) return Math.min(w,cw); } return W; }
+/* Semana que se discute en la reunión: la última cuyo cierre ya pasó */
+function closedWeek(q){ if(q.fixedWeek) return q.fixedWeek; const W=weeksOf(q), now=new Date(); let last=1;
+  for(let w=1;w<=W;w++){ const d=deadlineOf(q,w); if(d&&d<=now) last=w; } return last; }
+/* Semana que pinta el Mapa: la más reciente con algún reporte, sin pasar de la que se está cargando */
+function mapWeek(q){ const rw=reportWeek(q), ids=indsOfQ(q.id).map(k=>k.id); for(let w=rw;w>=1;w--){ if(ids.some(id=>repOf(id,w))) return w; } return rw; }
+function isLate(q,r){ if(!r||r.demo) return false; const t=r.firstAt||r.updatedAt, d=deadlineOf(q,r.week); return !!(t&&d&&new Date(t)>d); }
+const goalsFor = q => (q?.demo ? q.goals : S.goals) || [];
+function goalName(q,id){ return goalsFor(q).find(g=>g.id===id)?.name || ""; }
+function goalPill(q,c){ const n=goalName(q,c.goalId); if(!goalsFor(q).length) return ""; return n ? `<span class="goal" title="Meta del año que empuja">→ ${esc(n)}</span>` : `<span class="goal miss" title="Esta prioridad no está ligada a ninguna meta del año">Sin meta del año</span>`; }
+function alignStrip(q){
+  const gs=goalsFor(q);
+  if(!gs.length) return S.canAdmin&&!q.demo ? `<div class="align"><span class="lab">Alineación</span><span class="foot">Define las metas del año en Trimestres → Reglas del mapa para ver qué empuja cada prioridad.</span></div>` : "";
+  const cos=coOf(q.id);
+  const orphan=cos.filter(c=>!gs.some(g=>g.id===c.goalId)).length;
+  return `<div class="align"><span class="lab">Metas del año</span>${gs.map(g=>{const n=cos.filter(c=>c.goalId===g.id).length; return `<span class="goal ${n?"":"miss"}" title="${n?n+" prioridad(es) de empresa la empujan":"Ninguna prioridad de este trimestre la empuja"}"><b>${n}</b> ${esc(g.name)}</span>`}).join("")}${orphan?`<span class="goal miss"><b>${orphan}</b> sin meta</span>`:""}</div>`;
+}
+const needsNote = (p,v) => S.reqNotes && v!==null && v!==undefined && ["Y","R"].includes(statusFor(p.criteria,v));
+function noteFields(pref, note, st){
+  note=note||{};
+  return `<div class="notebox ${st==="R"?"R":""}" id="${pref}-note"><div class="h">Quedó en ${st==="R"?"rojo":"amarillo"}: explica antes de guardar</div>
+    <textarea class="input" id="${pref}-cause" rows="2" placeholder="¿Qué está pasando? La causa, en una o dos líneas">${esc(note.cause||"")}</textarea>
+    <div class="row2"><input class="input" id="${pref}-action" value="${esc(note.action||"")}" placeholder="¿Qué vas a hacer para regresar a verde?"><input class="input" type="date" id="${pref}-due" value="${esc(note.due||"")}" aria-label="¿Para cuándo?" title="¿Para cuándo?"></div></div>`;
+}
+function readNote(pref){ const g=id=>dlg.querySelector("#"+pref+"-"+id)?.value?.trim()||""; return {cause:g("cause"),action:g("action"),due:g("due")}; }
+const noteOk = n => n.cause && n.action && n.due;
+function noteHTML(r,st,q){ const n=r?.note; if(!n||!["Y","R"].includes(st)||(q?.demo&&!S.reqNotes)) return ""; const od=n.due && n.due<refToday(q);
+  return `<div class="kidnote ${st}"><b>Causa:</b> ${esc(n.cause)} · <b>Acción:</b> ${esc(n.action)} · <b>Para:</b> <span class="${od?"overdue":""}">${esc(fmtDay(n.due))}${od?" (vencida)":""}</span></div>`; }
+const refToday = q => q?.demo ? "2026-03-20" : todayISO();
+const todayISO = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const fmtDay = iso => { if(!iso) return ""; const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("es-MX",{day:"numeric",month:"short"}); };
+const canEditQ = q => S.canAdmin && !!q && !q.demo;      /* estructura: trimestres y prioridades */
+const canReportQ = q => S.canWrite && !!q && !q.demo;    /* reportar avances semanales */
+const copyBadge = p => (p.copyCount||0)>=2 ? `<span class="pill warn" title="Se ha copiado ${p.copyCount} trimestres seguidos. ¿Sigue siendo prioridad o ya es operación del día a día?">⚠ ${p.copyCount+1}.º trimestre seguido</span>` : "";
+
+/* ---------- Lógica de fechas y estados ---------- */
+function parseDate(s){ const [y,m,d]=String(s||"").split("-").map(Number); return y? new Date(Date.UTC(y,m-1,d)) : null; }
+function todayUTC(){ const n=new Date(); return new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())); }
+function weeksOf(q){ const a=parseDate(q.start), b=parseDate(q.end); if(!a||!b) return 13; return Math.min(14,Math.max(1,Math.ceil(((b-a)/864e5+1)/7))); }
+/* Semana del año (ISO 8601) del lunes de la semana w del trimestre: la columna 13 de 4Q 2026 es la semana 52 */
+function isoWeek(d){ const t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())); const dow=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-dow+3); const y1=new Date(Date.UTC(t.getUTCFullYear(),0,4)); return 1+Math.round(((t-y1)/864e5-3+((y1.getUTCDay()+6)%7))/7); }
+function wn(q,w){ const a=parseDate(q.start); if(!a) return w; return isoWeek(new Date(a.getTime()+(w-1)*7*864e5)); }
+function wDates(q,w){ const a=parseDate(q.start); if(!a) return ""; const m=new Date(a.getTime()+(w-1)*7*864e5), s=new Date(m.getTime()+6*864e5); const f=d=>d.toLocaleDateString("es-MX",{day:"numeric",month:"short",timeZone:"UTC"}); return `${f(m)} – ${f(s)}`; }
+function currentWeek(q){ if(q.fixedWeek) return q.fixedWeek; const a=parseDate(q.start); if(!a) return 1; const w=Math.floor((todayUTC()-a)/864e5/7)+1; return Math.min(weeksOf(q),Math.max(1,w)); }
+function qPhase(q){ if(q.fixedWeek) return "en curso"; const a=parseDate(q.start), b=parseDate(q.end), t=todayUTC(); if(a&&t<a) return "futuro"; if(b&&t>b) return "cerrado"; return "en curso"; }
+
+function critKind(c){ const t={asc:"num",desc:"num",pct_asc:"pct",pct_desc:"pct",date:"date",bool:"bool"}; return t[c?.type]||"bool"; }
+function critDir(c){ return ["desc","pct_desc","date"].includes(c?.type) ? "down" : "up"; }
+function isISO(x){ return typeof x==="string" && /^\d{4}-\d{2}-\d{2}$/.test(x); }
+function toNum(c, x){
+  if(critKind(c)==="date"){ if(!isISO(x)) return NaN; const [y,m,d]=x.split("-").map(Number); return Date.UTC(y,m-1,d)/864e5; }
+  if(x===""||x===null||x===undefined) return NaN;
+  return Number(String(x).replace("%","").replace(",","."));
+}
+function statusFor(c, v){
+  if (v === null || v === undefined || v === "") return "N";
+  if (critKind(c)==="bool") return (v === true || v === "true" || v === 1 || v === "1") ? "G" : "R";
+  const n=toNum(c,v), sg=toNum(c,c.sg), g=toNum(c,c.g), r=toNum(c,c.r);
+  if ([n,sg,g,r].some(Number.isNaN)) return "N";
+  if (critDir(c)==="down"){ if(n<=sg) return "S"; if(n<=g) return "G"; if(n>=r) return "R"; return "Y"; }
+  if(n>=sg) return "S"; if(n>=g) return "G"; if(n<=r) return "R"; return "Y";
+}
+function critValid(c){
+  const k=critKind(c);
+  if(k==="bool") return {ok:true};
+  const sg=toNum(c,c.sg), g=toNum(c,c.g), r=toNum(c,c.r);
+  if([sg,g,r].some(Number.isNaN)) return {ok:false,msg: k==="date" ? "Elige las tres fechas: súper verde, verde y rojo." : "Súper verde, verde y rojo son obligatorios."};
+  if(k==="pct" && [sg,g,r].some(x=>x<0||x>100)) return {ok:false,msg:"Los porcentajes van de 0 a 100."};
+  if(k==="date" && !(sg<=g && g<r)) return {ok:false,msg:"Con fechas se espera: súper verde (la más temprana) ≤ verde < rojo (la más tardía)."};
+  if(k!=="date" && critDir(c)==="up" && !(sg>=g && g>r)) return {ok:false,msg:"Si más es mejor: súper verde ≥ verde > rojo."};
+  if(k!=="date" && critDir(c)==="down" && !(sg<=g && g<r)) return {ok:false,msg:"Si menos es mejor: súper verde ≤ verde < rojo."};
+  return {ok:true};
+}
+function fmtThr(c, x){ const k=critKind(c); return k==="pct" ? `${x}%` : k==="date" ? fmtDay(x) : `${x}`; }
+function critText(c){
+  const k=critKind(c);
+  if(k==="bool") return "Sí / No";
+  if(k==="date") return `S antes de ${fmtThr(c,c.sg)} · V antes de ${fmtThr(c,c.g)} · R desde ${fmtThr(c,c.r)}`;
+  return critDir(c)==="up" ? `S ≥ ${fmtThr(c,c.sg)} · V ≥ ${fmtThr(c,c.g)} · R ≤ ${fmtThr(c,c.r)}` : `S ≤ ${fmtThr(c,c.sg)} · V ≤ ${fmtThr(c,c.g)} · R ≥ ${fmtThr(c,c.r)}`;
+}
+function critHelp(type){
+  const c={type}, k=critKind(c);
+  if(k==="bool") return "Sí pinta verde, No pinta rojo.";
+  if(k==="date") return "Se captura la fecha comprometida o lograda. Súper verde es la fecha más temprana; verde, la fecha límite que se considera en camino; de la fecha roja en adelante, rojo. El amarillo es automático: es lo que queda entre verde y rojo.";
+  const unit = k==="pct" ? " Se captura el porcentaje de avance, de 0 a 100." : "";
+  return (critDir(c)==="up" ? "Cuanto más, mejor: igualar o superar súper verde es súper verde; quedar en rojo o abajo es rojo." : "Cuanto menos, mejor: igualar o bajar de súper verde es súper verde; quedar en rojo o arriba es rojo.") + " El amarillo es automático: es el rango entre rojo y verde." + unit;
+}
+function normCrit(cr){
+  const k=critKind(cr);
+  if(k==="bool") return {type:"bool"};
+  if(k==="date") return {type:cr.type, sg:cr.sg, g:cr.g, r:cr.r};
+  return {type:cr.type, sg:toNum(cr,cr.sg), g:toNum(cr,cr.g), r:toNum(cr,cr.r)};
+}
+const thrAttrs = type => critKind({type})==="date" ? 'type="date"' : 'type="text" inputmode="decimal"';
+const repKey = (pid,w) => `${pid}_w${w}`;
+function repOf(pid,w){ return S.reports[repKey(pid,w)]; }
+function indStatus(p,w){ const r=repOf(p.id,w); return r? statusFor(p.criteria, r.value) : "N"; }
+/* Estado de la prioridad de empresa = promedio de sus individuales reportadas; un rojo nunca queda tapado por verdes: si hay rojo, el máximo es amarillo. */
+function coStatus(co,w){
+  const st = kidsOf(co.id).map(k=>indStatus(k,w)).filter(s=>s!=="N");
+  if(!st.length) return "N";
+  const avg = st.reduce((a,s)=>a+SCORE[s],0)/st.length;
+  let res = avg>=3.5?"S":avg>=2.5?"G":avg>=1.5?"Y":"R";
+  if(st.includes("R") && (res==="S"||res==="G")) res="Y";
+  return res;
+}
+
+/* ---------- Selectores de datos ---------- */
+const byOrder = (a,b)=>(a.order??0)-(b.order??0) || String(a.createdAt).localeCompare(String(b.createdAt));
+function qById(id){ return S.quarters.find(q=>q.id===id); }
+function coOf(qid){ return S.priorities.filter(p=>p.quarterId===qid && p.kind==="company").sort(byOrder); }
+function kidsOf(pid){ return S.priorities.filter(p=>p.parentId===pid && p.kind==="individual").sort(byOrder); }
+function indsOfQ(qid){ return coOf(qid).flatMap(c=>kidsOf(c.id)); }
+function owners(){ return [...new Set(S.priorities.filter(p=>!p.demo).map(p=>p.owner).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")); }
+function sortedQuarters(){ return [...S.quarters].sort((a,b)=>(a.demo?1:0)-(b.demo?1:0) || String(b.start).localeCompare(String(a.start))); }
+function pickQuarter(){
+  if(S.qid && qById(S.qid)) return;
+  const saved = store.get("focus.qid");
+  const hasReal = S.quarters.some(q=>!q.demo);
+  if(saved && qById(saved) && !(qById(saved).demo && hasReal)){ S.qid=saved; return; }
+  const act = S.quarters.find(q=>q.active&&!q.demo); S.qid = act? act.id : (sortedQuarters()[0]?.id ?? null);
+}
+
+/* ---------- Render ---------- */
+function setView(v){ if(v!=="semanas") S.focus=null; S.view=v; store.set("focus.view",v); render(); }
+function goTo(pid,w){
+  S.focus={pid,w}; S.view="semanas"; store.set("focus.view","semanas"); render();
+  const row=document.getElementById("row-"+pid);
+  if(row){ row.scrollIntoView({block:"center",behavior:"smooth"}); row.querySelector(`[data-w="${w}"]`)?.focus({preventScroll:true}); }
+  clearTimeout(S.focusT); S.focusT=setTimeout(()=>{ S.focus=null; document.querySelectorAll("tr.kidrow.focus,th.focus").forEach(el=>el.classList.remove("focus")); }, 4000);
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+qsel.addEventListener("change",()=>{ S.qid=qsel.value; store.set("focus.qid",S.qid); render(); });
+
+function renderQsel(){
+  const qs = sortedQuarters();
+  qsel.innerHTML = qs.length ? qs.map(q=>`<option value="${esc(q.id)}" ${q.id===S.qid?"selected":""}>${esc(q.label)}${q.active?" · activo":""}${q.demo?" · ejemplo":""}</option>`).join("") : `<option>Sin trimestres</option>`;
+  qsel.disabled = !qs.length;
+}
+
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.view===S.view)));
+  if(S.error){ app.innerHTML = `<div class="panel empty"><h3>No se pudo abrir el mapa</h3><p>${esc(S.error)}</p></div>`; return; }
+  if(!(S.loaded.q&&S.loaded.p&&S.loaded.r)) return;
+  pickQuarter(); renderQsel();
+  const ro = !S.canWrite ? `<div class="notice">Estás en modo lectura: puedes ver el mapa pero no editarlo.</div>`
+    : !S.canAdmin ? `<div class="notice">Puedes reportar los avances de cada semana. Solo los editores crean trimestres y cambian prioridades o criterios.</div>` : "";
+  if(S.view==="trimestres"){ app.innerHTML = ro + viewQuarters(); }
+  else if(!S.qid){ app.innerHTML = ro + emptyQuarter(); }
+  else if(S.view==="semanas"){ app.innerHTML = ro + viewWeeks(); }
+  else { app.innerHTML = ro + viewMap(); }
+}
+
+function infoBtn(id){
+  return `<span class="infowrap"><button class="info" data-act="info" data-pop="${id}" aria-expanded="false" aria-controls="${id}" aria-label="Cómo se calcula el color">i</button>
+  <div class="pop" id="${id}" hidden><p><b>El color no se elige, se calcula.</b></p>
+  <p>Cada semana se captura el número real y el mapa lo compara con el criterio de esa prioridad para pintar la celda.</p>
+  <p>Se definen tres valores: súper verde, verde y rojo. El amarillo es la franja entre rojo y verde; no se captura por separado.</p>
+  <p>La prioridad de empresa promedia sus individuales reportadas. Si alguna está en rojo, la de empresa queda como máximo en amarillo.</p></div></span>`;
+}
+function demoBanner(q){
+  if(!q.demo) return "";
+  return `<section class="demo-banner"><div class="grow"><div class="eyebrow" style="color:var(--accent)">Trimestre de ejemplo</div>
+    <p>Datos de una empresa ficticia para mostrar cómo se usa el Focus Map. Es de solo lectura: no se puede editar y nunca se mezcla con el trabajo real del equipo.</p></div>
+    ${S.canAdmin?`<button class="btn primary" data-act="new-q">+ Crear trimestre real</button>`:""}</section>`;
+}
+function emptyQuarter(){
+  return `<div class="panel empty"><h3>Aún no hay trimestres</h3><p>Crea el primer trimestre con su tema y criterio de éxito; luego agrega las prioridades de empresa y las individuales.</p>${S.canAdmin?`<button class="btn primary" data-act="new-q">+ Nuevo trimestre</button>`:""}</div>`;
+}
+
+function qHeader(q){
+  const cw=currentWeek(q), W=weeksOf(q);
+  return `<section class="panel pad qhead">
+    <div style="min-width:0;flex:1">
+      <h2>${esc(q.theme||"Sin tema definido")}</h2>
+      <div class="success"><b>Éxito:</b> ${esc(q.success||"—")}</div>
+    </div>
+    <div class="right"><div class="qlabel">${esc(q.label)}</div>
+      ${qPhase(q)==="en curso"?`<span class="pill mono">Semana ${wn(q,cw)} del año · ${cw} de ${W}</span>`:`<span class="pill muted">Trimestre ${qPhase(q)}</span>`}
+    </div>${alignStrip(q)}
+  </section>`;
+}
+function legend(q){
+  return `<div class="foot">Tu acceso: <b>${esc(S.access||"sin dato")}</b>${q.demo?" · estás viendo el trimestre de ejemplo, que es de solo lectura":""}</div>`+`<div class="legend"><b>Leyenda</b>${["S","G","Y","R","N"].map(k=>`<span><i class="chip sm ${k}">${k==="G"?"V":k==="Y"?"A":k}</i><b>${STATUS[k].name}</b> ${STATUS[k].hint}</span>`).join("")}</div>
+  <div class="foot mono">${esc(q.label)} · inicio ${esc(q.start)} · fin ${esc(q.end)} · semana ${wn(q,currentWeek(q))} del año (${currentWeek(q)} de ${weeksOf(q)}) · la prioridad de empresa promedia sus individuales y un rojo la limita a amarillo</div>`;
+}
+const letter = k => k==="G"?"V":k==="Y"?"A":k==="N"?"–":k;
+
+function viewMap(){
+  const q=qById(S.qid), rw=reportWeek(q), cw=mapWeek(q), inds=indsOfQ(q.id), cos=coOf(q.id), ed=canEditQ(q), rp=canReportQ(q), full=cos.length>=S.maxCo;
+  const done = inds.filter(p=>repOf(p.id,rw)).length, dlr=deadlineOf(q,rw);
+  const mix = {S:0,G:0,Y:0,R:0,N:0}; inds.forEach(p=>mix[indStatus(p,rw)]++);
+  const bar = `<section class="panel pad reportbar">
+    <div class="meter"><div><b>Carga de la semana ${wn(q,rw)}</b> <span class="mono">· ${done} de ${inds.length} reportadas</span> <span class="foot">· faltan ${inds.length-done} · cierre: ${esc(fmtDeadline(dlr))}${inds.length-done&&dlr<new Date()&&!q.demo?` <b class="overdue">· vencido</b>`:""}</span></div><div class="track"><i style="width:${inds.length?Math.round(done/inds.length*100):0}%"></i></div></div>
+    <div class="mix" aria-label="Estado de la semana">${["S","G","Y","R","N"].filter(k=>mix[k]).map(k=>`<span class="pill muted"><i class="chip sm ${k}">${letter(k)}</i><span class="mono">${mix[k]}</span></span>`).join("")}</div>
+    ${rp&&inds.length?`<button class="btn primary" data-act="report" data-w="${rw}">Cargar semana ${wn(q,rw)}</button>`:""}
+  </section>`;
+  const list = cos.length ? cos.map((c,i)=>{
+    const kids=kidsOf(c.id), cs=coStatus(c,cw), open=S.expanded.has(c.id);
+    return `<div class="prow"><div class="prow-main">
+      <div class="stripe ${cs}" title="Prioridad de empresa: ${STATUS[cs].name}"><span>Prioridad</span></div>
+      <span class="num">${i+1}</span>
+      <div class="grow"><div class="title">${fmt(c.name)} ${copyBadge(c)} ${goalPill(q,c)}</div><div class="meta">${esc(q.label)} · ${kids.length} prioridad${kids.length===1?"":"es"} individual${kids.length===1?"":"es"} · ${own(c.owner)}</div>
+        ${kids.length?`<button class="toggle" data-act="toggle" data-id="${c.id}" aria-expanded="${open}">${open?"▾ Ocultar":"▸ Ver"} individuales</button>`:""}</div>
+      <div class="kidchips">${kids.length?kids.map(k=>{const st=indStatus(k,cw), r=repOf(k.id,cw); return `<span class="tipwrap"><button class="chip ${st}" data-act="goto" data-id="${k.id}" data-w="${cw}" aria-label="${esc(plain(k.name))} · ${STATUS[st].name}">${letter(st)}</button><span class="tip" role="tooltip"><b>${fmt(k.name)}</b><span class="st"><i class="dot ${st}"></i>${STATUS[st].name}${k.owner?` · ${esc(k.owner)}`:""}${r?` · ${esc(fmtVal(k,r.value))}`:""}</span><span class="hint">Semana ${wn(q,cw)} · clic para ver semana a semana</span></span></span>`}).join(""):`<i class="chip N" title="Sin prioridades individuales">–</i>`}</div>
+    </div>${kids.length&&open?`<div class="kids">${kids.map(k=>{const r=repOf(k.id,cw), st=indStatus(k,cw);
+      return `<div class="kid">${fmIco(k)}<div class="grow"><div>${fmt(k.name)} <span class="val">· ${own(k.owner)}</span></div><div class="val mono">${critText(k.criteria)}${r?` · reportado: ${esc(fmtVal(k,r.value))} (${esc(who(r))})${isLate(q,r)?" · tarde":""}`:""}</div>${noteHTML(r,st,q)}</div><span class="chip sm ${st}">${letter(st)}</span></div>`}).join("")}</div>`:""}</div>`;
+  }).join("") : `<div class="empty"><h3>Sin prioridades de empresa</h3><p>Define de 3 a 5 prioridades para el trimestre en la pestaña Semana a semana.</p>${ed?`<button class="btn primary" data-act="new-co">+ Prioridad de empresa</button>`:""}</div>`;
+  return demoBanner(q) + (q.demo?"":bar) + qHeader(q) + `<section class="panel pad" style="display:grid;gap:14px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="font-size:18px;font-weight:600">Prioridades de empresa</h3><span class="pill ${cos.length>S.maxCo?"warn":"muted"} mono" title="Tope de prioridades de empresa">${cos.length} / ${S.maxCo}</span><span class="foot">color de la semana ${wn(q,cw)}</span>${infoBtn("pop-map")}<span style="flex:1"></span><button class="btn sm" data-act="export">Exportar a Excel</button></div><div class="plist">${list}</div></section>` + legend(q);
+}
+
+function fmtVal(p,v){ const k=critKind(p.criteria); return k==="bool" ? ((v===true||v==="true")?"Sí":"No") : k==="pct" ? `${v}%` : k==="date" ? fmtDay(v) : String(v); }
+
+function viewWeeks(){
+  const q=qById(S.qid), W=weeksOf(q), cw=currentWeek(q), phase=qPhase(q), cos=coOf(q.id), ed=canEditQ(q), rp=canReportQ(q), full=cos.length>=S.maxCo;
+  const wk = Array.from({length:W},(_,i)=>i+1);
+  const isFuture = w => phase==="futuro" || (phase==="en curso" && w>cw);
+  const head = `<tr><th class="namecol" style="font-weight:400;color:var(--faint)">semana del año</th>${wk.map(w=>`<th class="${phase==="en curso"&&w===cw?"cur":""} ${S.focus?.w===w?"focus":""}" title="Semana ${w} de ${W} del trimestre · ${wDates(q,w)}">${wn(q,w)}</th>`).join("")}<th></th></tr>`;
+  const rows = cos.map((c,i)=>{
+    const kids = kidsOf(c.id);
+    const coRow = `<tr class="co"><td class="namecol"><div class="namecell"><span class="num">${i+1}</span><span>${fmt(c.name)}</span><span style="font-weight:400;font-size:13px">${own(c.owner)}</span>${copyBadge(c)}</div></td>
+      ${wk.map(w=>{const s=coStatus(c,w); return `<td><span class="roll ${s}" title="Semana ${wn(q,w)} (${w} de ${W}): ${STATUS[s].name}">${s==="N"?"":letter(s)}</span></td>`}).join("")}
+      <td><div class="actions">${ed?`<button class="btn sm" data-act="new-ind" data-id="${c.id}">+ Individual</button>
+        <button class="icon-btn" title="Subir" aria-label="Subir" data-act="move" data-id="${c.id}" data-d="-1" ${i===0?"disabled":""}>↑</button>
+        <button class="icon-btn" title="Bajar" aria-label="Bajar" data-act="move" data-id="${c.id}" data-d="1" ${i===cos.length-1?"disabled":""}>↓</button>
+        <button class="icon-btn" title="Editar" aria-label="Editar" data-act="edit-co" data-id="${c.id}">✎</button>`:""}</div></td></tr>`;
+    const kidRows = kids.length ? kids.map((k,ki)=>`<tr class="kidrow ${S.focus?.pid===k.id?"focus":""}" id="row-${k.id}"><td class="namecol"><button class="icon-btn" style="opacity:1;text-align:left" data-act="edit-ind" data-id="${k.id}" ${ed||canReportQ(q)?"":"disabled"}>${fmIco(k)} ${fmt(k.name)} <span>${own(k.owner)}</span></button></td>
+      ${wk.map(w=>{const r=repOf(k.id,w), s=r?statusFor(k.criteria,r.value):"N";
+        const cls=["cell", S.focus?.pid===k.id&&S.focus?.w===w?"pick":"", r?"filled "+s:"", r?.note&&["Y","R"].includes(s)&&(S.reqNotes||!q.demo)?"has-note":"", phase==="en curso"&&w===cw?"cur":"", isFuture(w)&&!r?"future":""].join(" ");
+        return `<td><button class="${cls}" data-act="cell" data-id="${k.id}" data-w="${w}" title="Semana ${wn(q,w)}${r?": "+esc(fmtVal(k,r.value))+" ("+STATUS[s].name+") · reportó "+esc(who(r))+(isLate(q,r)?" (tarde)":"")+(r.note&&["Y","R"].includes(s)&&(S.reqNotes||!q.demo)?" · Causa: "+esc(r.note.cause)+" · Acción: "+esc(r.note.action):""):": sin reporte"}" ${rp?"":"disabled"}>${r?esc(compact(k,r.value)):"+"}</button></td>`}).join("")}
+      <td><div class="actions">${ed?`<button class="icon-btn" title="Subir" aria-label="Subir" data-act="move" data-id="${k.id}" data-d="-1" ${ki===0?"disabled":""}>↑</button><button class="icon-btn" title="Bajar" aria-label="Bajar" data-act="move" data-id="${k.id}" data-d="1" ${ki===kids.length-1?"disabled":""}>↓</button>`:""}</div></td></tr>`).join("") : `<tr class="kidrow"><td class="namecol foot" colspan="${W+2}">Sin prioridades individuales. Agrega al menos una: la prioridad de empresa toma su color de ellas.</td></tr>`;
+    return coRow + kidRows + `<tr class="spacer"><td colspan="${W+2}"></td></tr>`;
+  }).join("");
+  return demoBanner(q) + qHeader(q) + `<section class="panel pad" style="display:grid;gap:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="font-size:18px;font-weight:600">Semana a semana</h3>${infoBtn("pop-weeks")}<span style="flex:1"></span><button class="btn" data-act="export">Exportar a Excel</button>${ed?`<button class="btn primary" data-act="new-co" ${full?`disabled title="Ya tienes ${S.maxCo} prioridades de empresa: el tope del trimestre"`:""}>+ Prioridad de empresa</button>`:""}</div>
+    ${cos.length?`<div class="gridbox"><table class="grid"><thead>${head}</thead><tbody>${rows}</tbody></table></div>`:`<div class="empty"><h3>Sin prioridades de empresa</h3><p>Crea la primera prioridad de empresa y luego asigna las individuales con su criterio de aceptación.</p></div>`}
+  </section>` + legend(q);
+}
+function compact(p,v){
+  const k=critKind(p.criteria);
+  if(k==="bool") return (v===true||v==="true")?"Sí":"No";
+  if(k==="date"){ if(!isISO(v)) return ""; const [,m,d]=v.split("-"); return `${+d}/${+m}`; }
+  if(k==="pct"){ const n=Number(v); return Number.isNaN(n)?"":`${Math.round(n)}%`; }
+  const n=Number(v); if(Number.isNaN(n)) return "";
+  const a=Math.abs(n);
+  if(a>=10000) return Math.round(n/1000)+"k";
+  if(a>=1000) return (n/1000).toFixed(1).replace(/\.0$/,"")+"k";
+  return Number.isInteger(n)? String(n) : n.toFixed(1);
+}
+
+function viewQuarters(){
+  const years = [...new Set(S.quarters.map(q=>String(q.start||"").slice(0,4)).filter(Boolean))].sort();
+  const list = sortedQuarters().filter(q=>S.year==="all"||String(q.start).startsWith(S.year));
+  const cards = list.map(q=>{
+    const cos=coOf(q.id), inds=indsOfQ(q.id), cw=currentWeek(q);
+    return `<article class="panel qcard">
+      <div class="top"><h3>${esc(q.label)}</h3>${q.demo?`<span class="pill">Ejemplo</span>`:q.active?`<span class="pill">Activo</span>`:`<span class="pill muted">${qPhase(q)}</span>`}</div>
+      <div class="theme">${esc(q.theme||"Sin tema")}</div>
+      <div class="stats"><div><div class="v">${cos.length}</div><div class="eyebrow">Empresa</div></div><div><div class="v">${inds.length}</div><div class="eyebrow">Individuales</div></div></div>
+      <div class="mix" aria-label="Estado por prioridad de empresa en la semana ${cw}">${cos.length?cos.map(c=>{const s=coStatus(c,cw);return `<i class="chip ${s}" title="${esc(c.name)}: ${STATUS[s].name}">${letter(s)}</i>`}).join(""):`<i class="chip N">–</i>`}</div>
+      <div class="acts"><button class="btn primary" data-act="open-q" data-id="${q.id}">Abrir</button>
+        ${q.demo?`<button class="btn" data-act="hide-demo">Ocultar ejemplo</button>`:canEditQ(q)?`${q.active?"":`<button class="btn" data-act="activate-q" data-id="${q.id}">Activar</button>`}<button class="btn" data-act="edit-q" data-id="${q.id}">Editar</button>`:""}</div>
+    </article>`;
+  }).join("");
+  return `<div class="qtools"><span class="foot">Año</span>
+    <button class="fchip" data-act="year" data-y="all" aria-pressed="${S.year==="all"}">Todos</button>
+    ${years.map(y=>`<button class="fchip" data-act="year" data-y="${y}" aria-pressed="${S.year===y}">${y}</button>`).join("")}
+    <span class="grow"></span>${demoOn()?"":`<button class="btn" data-act="show-demo">Ver trimestre de ejemplo</button>`}${S.canAdmin?`<button class="btn" data-act="settings">Reglas del mapa</button><button class="btn primary" data-act="new-q">+ Nuevo trimestre</button>`:`<span class="foot">Tope: ${S.maxCo} prioridades de empresa</span>`}</div>
+    ${list.length?`<div class="qcards">${cards}</div>`:emptyQuarter()}`;
+}
+
+/* ---------- Modales ---------- */
+function openModal({eyebrow,title,body,foot,onMount,extra}){
+  dlg.innerHTML = `<div class="mhead"><div style="flex:1"><div class="eyebrow">${esc(eyebrow)}</div><h3>${esc(title)}</h3>${extra||""}</div><button class="icon-btn" style="color:var(--band-ink);font-size:18px" data-close aria-label="Cerrar">✕</button></div>
+  <form class="mbody" id="mform" novalidate>${body}</form><div class="mfoot">${foot}</div>`;
+  dlg.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>dlg.close()));
+  if(!dlg.open) dlg.showModal(); onMount && onMount();
+  const first = dlg.querySelector(".mbody input, .mbody select"); first && first.focus();
+}
+const val = id => dlg.querySelector("#"+id)?.value?.trim() ?? "";
+
+function ownerField(cur){
+  return `<div class="field"><label for="f-owner">Responsable</label><input class="input" id="f-owner" list="owners" value="${esc(cur||"")}" placeholder="Nombre de la persona"><datalist id="owners">${owners().map(o=>`<option value="${esc(o)}">`).join("")}</datalist></div>`;
+}
+function deleteBlock(what){
+  return `<div id="delzone"><button type="button" class="btn danger" data-del>Eliminar ${what}</button></div>`;
+}
+function wireDelete(onDelete, warning){
+  const z = dlg.querySelector("#delzone"); if(!z) return;
+  z.querySelector("[data-del]").addEventListener("click",()=>{
+    z.innerHTML = `<div class="confirm"><span>${esc(warning)}</span><div style="display:flex;gap:8px"><button type="button" class="btn danger" data-yes>Sí, eliminar</button><button type="button" class="btn" data-no>Conservar</button></div></div>`;
+    z.querySelector("[data-no]").addEventListener("click",()=>{ z.innerHTML=""; });
+    z.querySelector("[data-yes]").addEventListener("click", async()=>{ try{ await onDelete(); dlg.close(); toast("Eliminado"); }catch(e){ toast("No se pudo eliminar: "+(e.message||e.code)); } });
+  });
+}
+
+function quarterModal(q){
+  const isNew=!q; q = q || suggestQuarter();
+  openModal({ eyebrow:"Trimestre", title:isNew?"Nuevo trimestre":"Editar trimestre",
+    body:`<div class="row2"><div class="field"><label for="f-label">Nombre</label><input class="input" id="f-label" value="${esc(q.label)}" placeholder="1Q 2027"></div>
+      <div class="field"><label for="f-active">Estado</label><select class="input" id="f-active"><option value="1" ${q.active?"selected":""}>Activo</option><option value="0" ${q.active?"":"selected"}>Inactivo</option></select></div></div>
+      <div class="field"><label for="f-theme">Tema del trimestre</label><input class="input" id="f-theme" value="${esc(q.theme)}" placeholder="La frase que alinea al equipo"></div>
+      <div class="field"><label for="f-success">Criterio de éxito</label><textarea class="input" id="f-success" rows="2" placeholder="Cómo sabremos que ganamos el trimestre">${esc(q.success)}</textarea></div>
+      <div class="row2"><div class="field"><label for="f-start">Inicio</label><input class="input" type="date" id="f-start" value="${esc(q.start)}"></div>
+      <div class="field"><label for="f-end">Fin</label><input class="input" type="date" id="f-end" value="${esc(q.end)}"></div></div>
+      <p class="err" id="f-err"></p>${isNew?"":deleteBlock("trimestre")}`,
+    foot:`<button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">${isNew?"Crear trimestre":"Guardar cambios"}</button>`,
+    onMount(){
+      dlg.querySelector("#f-save").addEventListener("click", async()=>{
+        const d={label:val("f-label"),theme:val("f-theme"),success:val("f-success"),start:val("f-start"),end:val("f-end"),active:val("f-active")==="1"};
+        const err=dlg.querySelector("#f-err");
+        if(!d.label||!d.start||!d.end){ err.textContent="Nombre, inicio y fin son obligatorios."; return; }
+        if(d.end<=d.start){ err.textContent="La fecha de fin debe ser posterior al inicio."; return; }
+        try{
+          let id=q.id;
+          if(isNew){ const ref=await S.db.collection("quarters").add({...d,createdAt:new Date().toISOString()}); id=ref.id; }
+          else await S.db.doc("quarters/"+id).update(d);
+          if(d.active) await deactivateOthers(id);
+          S.qid=id; store.set("focus.qid",id); dlg.close(); toast(isNew?"Trimestre creado":"Cambios guardados");
+        }catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); }
+      });
+      if(!isNew) wireDelete(()=>deleteQuarter(q.id), "Se eliminan el trimestre, sus prioridades y todos sus reportes.");
+    }});
+}
+/* Trimestre fijo de 13 semanas: arranca el lunes de la semana que contiene el día 1 del trimestre calendario */
+function qDates(year,qn){
+  const d=new Date(Date.UTC(year,(qn-1)*3,1)), dow=(d.getUTCDay()+6)%7;
+  const st=new Date(d.getTime()-dow*864e5), en=new Date(st.getTime()+(13*7-1)*864e5);
+  return {start:st.toISOString().slice(0,10), end:en.toISOString().slice(0,10)};
+}
+let WZ=null;
+function settingsModal(){
+  let goals=S.goals.map(g=>({...g}));
+  const goalRows=()=>goals.map((g,i)=>`<div class="goalrow"><input class="input" data-g="${i}" value="${esc(g.name)}" placeholder="Ej. Meta de ingresos del año"><button type="button" class="icon-btn" data-grm="${i}" aria-label="Quitar meta">✕</button></div>`).join("");
+  openModal({eyebrow:"Reglas del mapa", title:"Reglas del mapa",
+    body:`<div class="field"><label>Metas del año</label><p class="help">Las metas que cada prioridad de empresa debe empujar. Se capturan aquí a mano; deben coincidir con las del Cockpit.</p><div id="goal-list" style="display:grid;gap:8px">${goalRows()}</div><button type="button" class="btn sm" id="goal-add" style="justify-self:start">+ Agregar meta</button></div>
+      <div class="row2"><div class="field"><label for="f-dlday">Cierre de la carga semanal</label><select class="input" id="f-dlday">${DL_OPTS.map((d,i)=>`<option value="${i}" ${i===S.dlDay?"selected":""}>${d}</option>`).join("")}</select></div>
+      <div class="field"><label for="f-dlhour">Hora</label><select class="input" id="f-dlhour">${Array.from({length:17},(_,h)=>h+6).map(h=>`<option value="${h}" ${h===S.dlHour?"selected":""}>${String(h).padStart(2,"0")}:00</option>`).join("")}</select></div></div>
+      <p class="help" style="margin-top:-8px">Lo que se cargue después se marca como «tarde». Conviene que cierre antes de la reunión.</p>
+      <label class="opt" style="grid-template-columns:20px 1fr"><input type="checkbox" id="f-notes" ${S.reqNotes?"checked":""}><b>Pedir causa, acción y fecha en amarillo y rojo</b><span>No es parte de la metodología original. Actívalo solo si, después de probarla, la discusión de los rojos se queda corta.</span></label>
+      <div class="field"><label for="f-max">Tope de prioridades de empresa por trimestre</label><input class="input mono" id="f-max" type="number" min="1" max="10" value="${S.maxCo}"></div><p class="err" id="f-err"></p>`,
+    foot:`<button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">Guardar reglas</button>`,
+    onMount(){
+      const list=dlg.querySelector("#goal-list");
+      const sync=()=>list.querySelectorAll("[data-g]").forEach(el=>goals[+el.dataset.g].name=el.value);
+      const redraw=()=>{ list.innerHTML=goalRows(); wire(); };
+      const wire=()=>{ list.querySelectorAll("[data-g]").forEach(el=>el.addEventListener("input",sync)); list.querySelectorAll("[data-grm]").forEach(b=>b.addEventListener("click",()=>{ sync(); goals.splice(+b.dataset.grm,1); redraw(); })); };
+      wire();
+      dlg.querySelector("#goal-add").addEventListener("click",()=>{ sync(); goals.push({id:"g"+Date.now().toString(36),name:""}); redraw(); list.querySelector("[data-g]:last-of-type")?.focus(); });
+      dlg.querySelector("#f-save").addEventListener("click", async()=>{
+        sync(); const n=parseInt(val("f-max"),10), err=dlg.querySelector("#f-err");
+        if(!(n>=1&&n<=10)) { err.textContent="El tope va de 1 a 10."; return; }
+        const gl=goals.map(g=>({id:g.id,name:g.name.trim()})).filter(g=>g.name);
+        try{ await S.db.doc("settings/config").set({maxCompany:n,deadlineDay:+val("f-dlday"),deadlineHour:+val("f-dlhour"),requireNotes:dlg.querySelector("#f-notes").checked,goals:gl}); dlg.close(); toast("Reglas guardadas"); }
+        catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); }
+      });
+    }});
+}
+let xlsxLoading=null;
+function loadXLSX(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxLoading ||= new Promise((ok,ko)=>{ const sc=document.createElement("script"); sc.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload=()=>ok(window.XLSX); sc.onerror=()=>{xlsxLoading=null;ko(new Error("no se pudo cargar el generador de Excel"));}; document.head.appendChild(sc); });
+}
+async function exportXLSX(btn){
+  const q=qById(S.qid); if(!q) return;
+  const dl = window.claude ? await window.claude.use("downloads") : null;
+  if(!dl){ toast("La descarga no está disponible en esta vista."); return; }
+  const label=btn.textContent; btn.disabled=true; btn.textContent="Preparando…";
+  try{
+    const X=await loadXLSX(), W=weeksOf(q), cw=currentWeek(q), wk=Array.from({length:W},(_,i)=>i+1);
+    const critCols=k=>{const c=k.criteria||{type:"bool"}, b=critKind(c)==="bool"; return [CRIT[c.type]?.label||"", b?"":fmtThr(c,c.sg), b?"":fmtThr(c,c.g), b?"":fmtThr(c,c.r)];};
+    const head=["#","Prioridad de empresa","Prioridad individual","Responsable","Criterio","Súper verde","Verde","Rojo",...wk.map(w=>"S"+wn(q,w))];
+    const vals=[head], sts=[head.slice(0,4).concat(wk.map(w=>"S"+wn(q,w)))];
+    coOf(q.id).forEach((c,i)=>{
+      vals.push([i+1,plain(c.name),"",c.owner||"","Promedio de individuales","","","",...wk.map(()=> "")]);
+      sts.push([i+1,plain(c.name),"(empresa)",c.owner||"",...wk.map(w=>{const s=coStatus(c,w); return s==="N"?"":STATUS[s].name;})]);
+      kidsOf(c.id).forEach(k=>{
+        vals.push([i+1,plain(c.name),plain(k.name),k.owner||"",...critCols(k),...wk.map(w=>{const r=repOf(k.id,w); return r? (["bool","date","pct"].includes(critKind(k.criteria))?fmtVal(k,r.value):r.value) : "";})]);
+        sts.push([i+1,plain(c.name),plain(k.name),k.owner||"",...wk.map(w=>{const s=indStatus(k,w); return s==="N"?"":STATUS[s].name;})]);
+      });
+    });
+    const resumen=[["Trimestre",q.label],["Tema",q.theme||""],["Éxito",q.success||""],["Inicio",q.start],["Fin",q.end],["Semana actual",`${wn(q,cw)} del año (${cw} de ${W})`],["Exportado",new Date().toISOString().slice(0,10)],q.demo?["Nota","Trimestre de ejemplo con datos ficticios"]:[]];
+    const wb=X.utils.book_new();
+    X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(resumen),"Resumen");
+    const s1=X.utils.aoa_to_sheet(vals); s1["!cols"]=[{wch:4},{wch:40},{wch:36},{wch:14},{wch:30},{wch:10},{wch:8},{wch:8}]; X.utils.book_append_sheet(wb,s1,"Valores semanales");
+    const s2=X.utils.aoa_to_sheet(sts); s2["!cols"]=[{wch:4},{wch:40},{wch:36},{wch:14}]; X.utils.book_append_sheet(wb,s2,"Semáforo");
+    const log=[["Semana","Prioridad de empresa","Prioridad individual","Responsable","Valor","Estado","Reportó","Fecha de captura","Tarde","Causa","Acción","Fecha compromiso"]];
+    coOf(q.id).forEach(c=>kidsOf(c.id).forEach(k=>wk.forEach(w=>{const r=repOf(k.id,w); if(!r) return;
+      log.push([wn(q,w),plain(c.name),plain(k.name),k.owner||"",fmtVal(k,r.value),STATUS[statusFor(k.criteria,r.value)].name, r.demo?"ejemplo":(r.reportedBy?(S.names[r.reportedBy]||r.reportedBy):"sin registro"), r.updatedAt?r.updatedAt.slice(0,16).replace("T"," "):"", isLate(q,r)?"Sí":"", r.note?.cause||"", r.note?.action||"", r.note?.due||""]);})));
+    const s3=X.utils.aoa_to_sheet(log); s3["!cols"]=[{wch:8},{wch:40},{wch:36},{wch:14},{wch:10},{wch:12},{wch:22},{wch:17}]; X.utils.book_append_sheet(wb,s3,"Bitácora");
+    const buf=X.write(wb,{type:"array",bookType:"xlsx"});
+    await dl.save({filename:`Focus Map ${q.label}.xlsx`, data:new Uint8Array(buf)});
+    toast("Excel guardado");
+  }catch(e){
+    if(e?.code!=="declined") toast(e?.code==="rate_limited" ? "Ya hay una descarga abierta. Intenta en un momento." : "No se pudo exportar: "+(e?.message||e?.code||"error"));
+  }finally{ btn.disabled=false; btn.textContent=label; }
+}
+function blankKid(){ return {icon:"",name:"",owner:"",criteria:{type:"asc",sg:"",g:"",r:""}}; }
+function wizardStart(){
+  const real=sortedQuarters().filter(q=>!q.demo);
+  let year=todayUTC().getUTCFullYear(), qn=Math.floor(todayUTC().getUTCMonth()/3)+1;
+  const m=real[0]?.label?.match(/^(\d)Q (\d{4})$/);
+  if(m){ qn=+m[1]+1; year=+m[2]; if(qn>4){qn=1;year++;} }
+  WZ={step:1,year,qn,theme:"",success:"",mode:real.length?"copy":"assistant",copyFrom:real[0]?.id||S.quarters[0]?.id||"",active:!real.some(q=>q.active),co:{name:"",owner:""},kids:[blankKid()],err:""};
+  wizardRender();
+}
+function wzLabel(){ return `${WZ.qn}Q ${WZ.year}`; }
+function wizardRender(){
+  const total = WZ.mode==="assistant"?3:1, st=WZ.step;
+  const bars = `<div class="steps">${[1,2,3].map(n=>`<i class="${n<=st && n<=total?"on":""}" ${n>total?'style="opacity:.25"':""}></i>`).join("")}</div>`;
+  let body="", next="";
+  if(st===1){
+    const d=qDates(WZ.year,WZ.qn);
+    const srcs=sortedQuarters();
+    body=`<div class="row2"><div class="field"><label for="w-year">Año <span class="req">*</span></label><input class="input mono" id="w-year" type="number" min="2020" max="2100" value="${WZ.year}"></div>
+      <div class="field"><label for="w-qn">Trimestre <span class="req">*</span></label><select class="input" id="w-qn">${[1,2,3,4].map(n=>`<option value="${n}" ${WZ.qn===n?"selected":""}>${n}Q</option>`).join("")}</select></div></div>
+      <div class="labelbox"><span class="foot">Nombre</span><b>${wzLabel()}</b></div>
+      <div class="field"><label for="w-theme">Tema principal del trimestre <span class="req">*</span></label><input class="input" id="w-theme" value="${esc(WZ.theme)}" placeholder="La frase que alinea al equipo"></div>
+      <div class="field"><label for="w-success">Cómo se ve el éxito (meta medible) <span class="req">*</span></label><input class="input" id="w-success" value="${esc(WZ.success)}" placeholder="Ej. 9 NPS, 4 clientes nuevos y OC firmada antes del cierre"></div>
+      <div class="datebox">Duración fija: <b>13 semanas</b>, del <b class="mono">${d.start}</b> al <b class="mono">${d.end}</b> (automático).</div>
+      <label class="opt" style="grid-template-columns:20px 1fr"><input type="checkbox" id="w-active" ${WZ.active?"checked":""}><b>Marcar como trimestre activo</b><span>Es el que se abre por defecto. Solo puede haber uno.</span></label>
+      <div class="field"><label>Punto de partida</label>
+        <label class="opt"><input type="radio" name="w-mode" value="assistant" ${WZ.mode==="assistant"?"checked":""}><b>Con asistente</b><span>Crea tu primera prioridad de empresa y sus individuales paso a paso. Después puedes agregar más.</span></label>
+        <label class="opt"><input type="radio" name="w-mode" value="blank" ${WZ.mode==="blank"?"checked":""}><b>En blanco</b><span>Empieza sin prioridades y agrégalas después.</span></label>
+        <label class="opt"><input type="radio" name="w-mode" value="copy" ${WZ.mode==="copy"?"checked":""} ${srcs.length?"":"disabled"}><b>Copiar estructura</b><span>Reutiliza las prioridades de empresa e individuales de otro trimestre, con sus criterios. Los reportes empiezan en cero.</span></label>
+        ${WZ.mode==="copy"&&srcs.length?`<select class="input" id="w-src">${srcs.map(q=>`<option value="${esc(q.id)}" ${q.id===WZ.copyFrom?"selected":""}>${esc(q.label)}${q.demo?" (ejemplo)":""} · ${coOf(q.id).length} de empresa, ${indsOfQ(q.id).length} individuales</option>`).join("")}</select>${(()=>{const st=coOf(WZ.copyFrom).filter(c=>(c.copyCount||0)>=1); return st.length?`<div class="notice">⚠ ${st.length} prioridad${st.length===1?"":"es"} de empresa llegaría${st.length===1?"":"n"} a su 3.er trimestre seguido o más: ${st.map(c=>esc(c.name)).join(", ")}. Antes de copiar, pregúntate si siguen siendo prioridades o ya son operación.</div>`:""})()}`:""}
+      </div>`;
+    next = WZ.mode==="assistant" ? "Siguiente →" : "Crear trimestre";
+  } else if(st===2){
+    body=`<p class="help">Una prioridad de empresa es algo que debe ser verdad al cierre de ${wzLabel()}. Empieza por la más importante; después agregas el resto.</p>
+      <div class="field"><label for="w-coname">Prioridad de empresa <span class="req">*</span></label><input class="input" id="w-coname" value="${esc(WZ.co.name)}" placeholder="Ej. Orden de compra firmada antes del cierre del año"></div>
+      <div class="field"><label for="w-coowner">Responsable</label><input class="input" id="w-coowner" list="owners" value="${esc(WZ.co.owner)}" placeholder="Nombre de la persona"><datalist id="owners">${owners().map(o=>`<option value="${esc(o)}">`).join("")}</datalist></div>
+      ${S.goals.length?`<div class="field"><label for="w-cogoal">Meta del año que empuja <span class="req">*</span></label><select class="input" id="w-cogoal"><option value="">Elige una meta…</option>${S.goals.map(g=>`<option value="${esc(g.id)}" ${g.id===WZ.co.goalId?"selected":""}>${esc(g.name)}</option>`).join("")}</select></div>`:""}`;
+    next="Siguiente →";
+  } else {
+    body=`<p class="help">Las prioridades individuales son los números semanales que empujan "<b>${esc(WZ.co.name)}</b>". Cada una tiene un responsable y un criterio que pinta su color.</p>
+      ${WZ.kids.map((k,i)=>`<div class="kidcard"><div class="hd"><span class="eyebrow">Individual ${i+1}</span>${WZ.kids.length>1?`<button type="button" class="icon-btn" data-wrm="${i}" aria-label="Quitar">✕</button>`:""}</div>
+        <div class="namerow"><input type="hidden" data-k="${i}" data-f="icon" value=""><input class="input" data-k="${i}" data-f="name" value="${esc(k.name)}" placeholder="Nombre de la prioridad individual"></div>
+        <div class="row2"><input class="input" data-k="${i}" data-f="owner" list="owners" value="${esc(k.owner)}" placeholder="Responsable"><select class="input" data-k="${i}" data-f="type">${Object.entries(CRIT).map(([t,v])=>`<option value="${t}" ${k.criteria.type===t?"selected":""}>${v.label}</option>`).join("")}</select></div>
+        ${critKind(k.criteria)==="bool"?"":`<p class="help">${esc(critHelp(k.criteria.type))}</p><div class="row3">${[["sg","S","Súper verde"],["g","G","Verde"],["r","R","Rojo"]].map(([f,c,l])=>`<div class="thr"><span class="lab"><i class="chip sm ${c}">${letter(c)}</i>${l}</span><input class="input mono" ${thrAttrs(k.criteria.type)} data-k="${i}" data-f="${f}" value="${esc(k.criteria[f])}"></div>`).join("")}</div>`}
+      </div>`).join("")}
+      <button type="button" class="btn" id="w-addkid">+ Agregar otra individual</button><datalist id="owners">${owners().map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`;
+    next="Crear trimestre";
+  }
+  openModal({eyebrow:`Nuevo trimestre · paso ${st} de ${total}`, title:st===1?"Nuevo trimestre":st===2?"Prioridad de empresa":"Prioridades individuales", extra:bars,
+    body: body + `<p class="err" id="w-err">${esc(WZ.err)}</p>`,
+    foot:`${st>1?`<button class="btn" id="w-back">← Atrás</button>`:`<button class="btn" data-close>Cancelar</button>`}<button class="btn primary" id="w-next">${next}</button>`,
+    onMount(){
+      WZ.err="";
+      const g=id=>dlg.querySelector("#"+id);
+      if(st===1){
+        g("w-year").addEventListener("input",e=>{ const y=parseInt(e.target.value,10); if(y>2000&&y<2200){ WZ.year=y; refresh1(); } });
+        g("w-qn").addEventListener("change",e=>{ WZ.qn=+e.target.value; refresh1(); });
+        g("w-theme").addEventListener("input",e=>WZ.theme=e.target.value);
+        g("w-success").addEventListener("input",e=>WZ.success=e.target.value);
+        g("w-active").addEventListener("change",e=>WZ.active=e.target.checked);
+        dlg.querySelectorAll('input[name="w-mode"]').forEach(r=>r.addEventListener("change",e=>{ WZ.mode=e.target.value; wizardRender(); }));
+        g("w-src")?.addEventListener("change",e=>WZ.copyFrom=e.target.value);
+      }
+      if(st===2){ g("w-coname").addEventListener("input",e=>WZ.co.name=e.target.value); g("w-coowner").addEventListener("input",e=>WZ.co.owner=e.target.value); g("w-cogoal")?.addEventListener("change",e=>WZ.co.goalId=e.target.value); }
+      if(st===3){
+        dlg.querySelectorAll("[data-k]").forEach(el=>el.addEventListener("input",e=>{
+          const k=WZ.kids[+el.dataset.k], f=el.dataset.f;
+          if(["icon","name","owner"].includes(f)) k[f]=e.target.value;
+          else if(f==="type"){ const was=critKind(k.criteria); k.criteria.type=e.target.value; if(critKind(k.criteria)!==was){ k.criteria.sg=k.criteria.g=k.criteria.r=""; } wizardRender(); }
+          else k.criteria[f]=e.target.value;
+        }));
+        dlg.querySelectorAll("[data-wrm]").forEach(b=>b.addEventListener("click",()=>{ WZ.kids.splice(+b.dataset.wrm,1); wizardRender(); }));
+        g("w-addkid").addEventListener("click",()=>{ const prev=WZ.kids[WZ.kids.length-1]; const k=blankKid(); k.owner=prev?.owner||WZ.co.owner; WZ.kids.push(k); wizardRender(); });
+      }
+      g("w-back")?.addEventListener("click",()=>{ WZ.step--; wizardRender(); });
+      g("w-next").addEventListener("click",wizardNext);
+      function refresh1(){ const d=qDates(WZ.year,WZ.qn); dlg.querySelector(".labelbox b").textContent=wzLabel(); const bs=dlg.querySelectorAll(".datebox b"); bs[1].textContent=d.start; bs[2].textContent=d.end; }
+    }});
+}
+function wzFail(msg){ dlg.querySelector("#w-err").textContent=msg; }
+async function wizardNext(){
+  if(WZ.step===1){
+    if(!WZ.theme.trim()||!WZ.success.trim()) return wzFail("El tema y la meta medible son obligatorios.");
+    if(S.quarters.some(q=>!q.demo&&q.label===wzLabel())) return wzFail(`Ya existe un trimestre ${wzLabel()}. Elige otro trimestre o edita el existente.`);
+    if(WZ.mode==="copy"){ const n=coOf(WZ.copyFrom).length; if(n>S.maxCo) return wzFail(`El trimestre origen tiene ${n} prioridades de empresa y el tope es ${S.maxCo}. Elige otro origen o sube el tope en Trimestres.`); }
+    if(WZ.mode==="assistant"){ WZ.step=2; return wizardRender(); }
+    return wizardFinish();
+  }
+  if(WZ.step===2){ if(!WZ.co.name.trim()) return wzFail("Escribe la prioridad de empresa."); if(S.goals.length&&!WZ.co.goalId) return wzFail("Elige qué meta del año empuja."); WZ.step=3; return wizardRender(); }
+  for(const [i,k] of WZ.kids.entries()){
+    if(!k.name.trim()) return wzFail(`Falta el nombre de la individual ${i+1}.`);
+    const v=critValid(k.criteria); if(!v.ok) return wzFail(`Individual ${i+1}: ${v.msg}`);
+  }
+  return wizardFinish();
+}
+async function wizardFinish(){
+  const btn=dlg.querySelector("#w-next"); btn.disabled=true; btn.textContent="Creando…";
+  const now=()=>new Date().toISOString();
+  const crit=normCrit;
+  try{
+    const d=qDates(WZ.year,WZ.qn);
+    const ref=await S.db.collection("quarters").add({label:wzLabel(),theme:WZ.theme.trim(),success:WZ.success.trim(),start:d.start,end:d.end,active:WZ.active,createdAt:now()});
+    const qid=ref.id;
+    if(WZ.active) await deactivateOthers(qid);
+    const addP=data=>S.db.collection("priorities").add({...data,quarterId:qid,createdAt:now()});
+    if(WZ.mode==="assistant"){
+      const co=await addP({kind:"company",parentId:null,name:WZ.co.name.trim(),owner:WZ.co.owner.trim(),goalId:WZ.co.goalId||null,order:0});
+      for(const [j,k] of WZ.kids.entries()) await addP({kind:"individual",parentId:co.id,name:k.name.trim(),icon:k.icon||"•",owner:k.owner.trim(),order:j,criteria:crit(k.criteria)});
+    } else if(WZ.mode==="copy"){
+      for(const [i,c] of coOf(WZ.copyFrom).entries()){
+        const co=await addP({kind:"company",parentId:null,name:c.name,owner:c.owner||"",goalId:S.goals.some(g=>g.id===c.goalId)?c.goalId:null,order:i,copyCount:(c.copyCount||0)+1});
+        for(const [j,k] of kidsOf(c.id).entries()) await addP({kind:"individual",parentId:co.id,name:k.name,icon:k.icon||"•",owner:k.owner||"",order:j,criteria:k.criteria||{type:"bool"},copyCount:(k.copyCount||0)+1});
+      }
+    }
+    S.qid=qid; store.set("focus.qid",qid); dlg.close(); toast(`${wzLabel()} creado`);
+    setView(WZ.mode==="blank"?"semanas":"mapa");
+  }catch(e){ btn.disabled=false; btn.textContent="Crear trimestre"; wzFail("No se pudo crear: "+(e.message||e.code)); }
+}
+function suggestQuarter(){
+  const last = sortedQuarters()[0];
+  let start;
+  if(last && parseDate(last.end)){ start=new Date(parseDate(last.end).getTime()+864e5); }
+  else { const t=todayUTC(); const dow=(t.getUTCDay()+6)%7; start=new Date(t.getTime()-dow*864e5); }
+  const end=new Date(start.getTime()+(13*7-1)*864e5);
+  const iso=d=>d.toISOString().slice(0,10);
+  const mid=new Date(start.getTime()+45*864e5);
+  return {label:`${Math.floor(mid.getUTCMonth()/3)+1}Q ${mid.getUTCFullYear()}`,theme:"",success:"",start:iso(start),end:iso(end),active:!S.quarters.some(q=>q.active)};
+}
+async function deactivateOthers(id){ for(const q of S.quarters) if(!q.demo && q.id!==id && q.active) await S.db.doc("quarters/"+q.id).update({active:false}); }
+async function deleteQuarter(id){
+  for(const c of coOf(id)) await deletePriority(c.id);
+  await S.db.doc("quarters/"+id).delete();
+  if(S.qid===id) S.qid=null;
+}
+async function deletePriority(pid){
+  const p = S.priorities.find(x=>x.id===pid);
+  if(p?.kind==="company") for(const k of kidsOf(pid)) await deletePriority(k.id);
+  for(const key of Object.keys(S.raw.r)) if(S.raw.r[key].priorityId===pid) await S.db.doc("reports/"+key).delete();
+  await S.db.doc("priorities/"+pid).delete();
+}
+
+function goalSelect(id, cur){
+  const gs=goalsFor(qById(S.qid)); if(!gs.length) return "";
+  return `<div class="field"><label for="${id}">Meta del año que empuja</label><select class="input" id="${id}"><option value="">Elige una meta…</option>${gs.map(g=>`<option value="${esc(g.id)}" ${g.id===cur?"selected":""}>${esc(g.name)}</option>`).join("")}</select></div>`;
+}
+function companyModal(c){
+  const isNew=!c; c=c||{name:"",owner:""};
+  openModal({eyebrow:"Prioridad de empresa", title:isNew?"Nueva prioridad de empresa":"Editar prioridad de empresa",
+    body:`<div class="field"><label for="f-name">Nombre</label><input class="input" id="f-name" value="${esc(c.name)}" placeholder="Qué debe ser verdad al cierre del trimestre"></div>${ownerField(c.owner)}${goalSelect("f-goal", c.goalId)}
+      <p class="help">Su color semanal se calcula con sus prioridades individuales.</p><p class="err" id="f-err"></p>${isNew?"":deleteBlock("prioridad")}`,
+    foot:`<button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">${isNew?"Crear prioridad":"Guardar cambios"}</button>`,
+    onMount(){
+      dlg.querySelector("#f-save").addEventListener("click", async()=>{
+        const d={name:val("f-name"),owner:val("f-owner"),goalId:val("f-goal")||null}, err=dlg.querySelector("#f-err");
+        if(!d.name){ err.textContent="Escribe el nombre de la prioridad."; return; }
+        if(goalsFor(qById(S.qid)).length && !d.goalId){ err.textContent="Elige qué meta del año empuja esta prioridad."; return; }
+        if(isNew && coOf(S.qid).length>=S.maxCo){ err.textContent=`El trimestre ya tiene ${S.maxCo} prioridades de empresa, el tope definido.`; return; }
+        try{
+          if(isNew){ const n=coOf(S.qid).length; await S.db.collection("priorities").add({...d,kind:"company",quarterId:S.qid,parentId:null,order:n,createdAt:new Date().toISOString()}); }
+          else await S.db.doc("priorities/"+c.id).update(d);
+          dlg.close(); toast(isNew?"Prioridad creada":"Cambios guardados");
+        }catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); }
+      });
+      if(!isNew) wireDelete(()=>deletePriority(c.id), "Se eliminan la prioridad, sus individuales y sus reportes.");
+    }});
+}
+
+function individualModal(parentId, p){
+  const isNew=!p; p=p||{name:"",icon:"",owner:"",criteria:{type:"asc",sg:"",g:"",r:""}};
+  const c=p.criteria||{type:"bool"};
+  const adm=S.canAdmin!==false;
+  openModal({eyebrow:"Prioridad individual", title:isNew?"Nueva prioridad individual":(adm?"Editar prioridad individual":"Ficha del KPI"),
+    body:`<div class="field"><label for="f-name">Nombre</label><div class="namerow"><input type="hidden" id="f-icon" value=""><input class="input" id="f-name" value="${esc(p.name)}" placeholder="Ej. # de unidades de negocio cerradas"></div></div>
+      ${ownerField(p.owner)}
+      <div class="field"><label for="f-type">Criterio de aceptación</label><select class="input" id="f-type">${Object.entries(CRIT).map(([k,v])=>`<option value="${k}" ${c.type===k?"selected":""}>${v.label}</option>`).join("")}</select></div>
+      <div id="thrbox"><p class="help" id="f-chelp">${esc(critHelp(c.type))}</p>
+      <div class="row3" style="margin-top:10px">
+        <div class="thr"><span class="lab"><i class="chip sm S">S</i>Súper verde</span><input class="input mono" id="f-sg" ${thrAttrs(c.type)} value="${esc(c.sg??"")}"></div>
+        <div class="thr"><span class="lab"><i class="chip sm G">V</i>Verde</span><input class="input mono" id="f-g" ${thrAttrs(c.type)} value="${esc(c.g??"")}"></div>
+        <div class="thr"><span class="lab"><i class="chip sm R">R</i>Rojo</span><input class="input mono" id="f-r" ${thrAttrs(c.type)} value="${esc(c.r??"")}"></div>
+      </div></div>
+      <div class="try"><span>Prueba: si el valor es</span><input class="input mono" id="f-try" placeholder="—"><span>→</span><span id="f-tryout"></span></div>
+      ${isNew?`<p class="help">Guarda la prioridad para capturar su fuente, fórmula y evidencia.</p>`:fichaBlock(p.id)}
+      <p class="err" id="f-err"></p>${isNew||!adm?"":deleteBlock("prioridad")}`,
+    foot:`<button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">${isNew?"Crear prioridad":"Guardar cambios"}</button>`,
+    onMount(){
+      const fi = isNew ? null : mountFicha(p.id);
+      if(!adm) ["f-icon","f-name","f-owner","f-type","f-sg","f-g","f-r"].forEach(id=>{ const el=dlg.querySelector("#"+id); if(el) el.disabled=true; });
+      const read = ()=>({type:val("f-type"),sg:val("f-sg"),g:val("f-g"),r:val("f-r")});
+      const upd = ()=>{
+        const cr=read(), kd=critKind(cr);
+        dlg.querySelector("#f-chelp").textContent = critHelp(cr.type);
+        dlg.querySelector("#thrbox").hidden = kd==="bool";
+        const want = kd==="date" ? "date" : "text";
+        ["f-sg","f-g","f-r","f-try"].forEach(id=>{ const el=dlg.querySelector("#"+id); if(el.type!==want){ el.value=""; el.type=want; } if(want==="text") el.setAttribute("inputmode","decimal"); });
+        const t=dlg.querySelector("#f-try"); t.placeholder = kd==="bool" ? "sí / no" : kd==="pct" ? "% de avance" : "—";
+        let v=val("f-try"); if(kd==="bool") v = v==="" ? "" : /^(s|si|sí|y|yes|1|true)$/i.test(v);
+        const ok=critValid(cr).ok, s = ok||kd==="bool" ? statusFor(cr,v) : "N";
+        dlg.querySelector("#f-tryout").innerHTML = `<span style="display:inline-flex;gap:8px;align-items:center"><i class="chip sm ${s}">${letter(s)}</i>${STATUS[s].name}</span>`;
+      };
+      ["f-type","f-sg","f-g","f-r","f-try"].forEach(id=>{ const el=dlg.querySelector("#"+id); el.addEventListener("input",upd); el.addEventListener("change",upd); }); upd();
+      dlg.querySelector("#f-save").addEventListener("click", async()=>{
+        const cr=read(), err=dlg.querySelector("#f-err"), name=val("f-name");
+        const fe=fi?fi.check():""; if(fe){ err.textContent=fe; return; }
+        if(!adm){ try{ await fi.save(); dlg.close(); toast("Ficha guardada"); }catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); } return; }
+        if(!name){ err.textContent="Escribe el nombre de la prioridad."; return; }
+        const v=critValid(cr); if(!v.ok){ err.textContent=v.msg; return; }
+        const criteria = normCrit(cr);
+        const d={name,icon:val("f-icon")||"•",owner:val("f-owner"),criteria};
+        try{
+          if(isNew){ const par=S.priorities.find(x=>x.id===parentId); await S.db.collection("priorities").add({...d,kind:"individual",parentId,quarterId:par.quarterId,order:kidsOf(parentId).length,createdAt:new Date().toISOString()}); }
+          else { await S.db.doc("priorities/"+p.id).update(d); await fi.save(); }
+          dlg.close(); toast(isNew?"Prioridad creada":"Cambios guardados");
+        }catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); }
+      });
+      if(!isNew) wireDelete(()=>deletePriority(p.id), "Se eliminan la prioridad y todos sus reportes semanales.");
+    }});
+}
+
+function valueInput(p, id, cur){
+  const k=critKind(p.criteria);
+  if(k==="date") return `<input class="input mono" type="date" id="${id}" value="${esc(isISO(cur)?cur:"")}">`;
+  if(k==="pct") return `<input class="input mono" id="${id}" inputmode="decimal" value="${esc(cur??"")}" placeholder="% de avance">`;
+  if(k==="bool") return `<select class="input" id="${id}"><option value="">—</option><option value="true" ${cur===true||cur==="true"?"selected":""}>Sí</option><option value="false" ${cur===false||cur==="false"?"selected":""}>No</option></select>`;
+  return `<input class="input mono" id="${id}" inputmode="decimal" value="${esc(cur??"")}" placeholder="—">`;
+}
+function parseValue(p, raw){
+  if(raw==="") return null;
+  const k=critKind(p.criteria);
+  if(k==="bool") return raw==="true";
+  if(k==="date") return isISO(raw) ? raw : undefined;
+  const n=Number(raw.replace("%","").replace(",",".")); if(Number.isNaN(n)) return undefined;
+  if(k==="pct" && (n<0||n>100)) return undefined;
+  return n;
+}
+async function saveReport(p,w,v,note){
+  const key=repKey(p.id,w), prev=S.raw.r[key], now=new Date().toISOString();
+  if(v===null){ if(prev) await S.db.doc("reports/"+key).delete(); return; }
+  await S.db.doc("reports/"+key).set({priorityId:p.id,quarterId:p.quarterId,week:w,value:v,updatedAt:now,firstAt:prev?.firstAt||prev?.updatedAt||now,reportedBy:S.me||null,note:needsNote(p,v)?note:null});
+}
+
+function who(r){
+  if(!r) return "";
+  const n = r.demo ? "ejemplo" : (r.reportedBy ? (S.names[r.reportedBy] || "alguien del equipo") : "sin registro");
+  const d = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString("es-MX",{day:"numeric",month:"short"}) : "";
+  return `${n}${d?" · "+d:""}`;
+}
+async function resolveNames(){
+  if(!S.user) return;
+  const ids=[...new Set(Object.values(S.raw.r).map(r=>r.reportedBy).filter(Boolean))].filter(id=>!(id in S.names));
+  if(!ids.length) return;
+  try{ const ps=await S.user.profiles(ids); ids.forEach(id=>{ S.names[id]=ps?.[id]?.name||""; }); render(); }catch(e){}
+}
+function reportModal(w){
+  const q=qById(S.qid), cos=coOf(q.id);
+  const dl=deadlineOf(q,w);
+  const body = cos.map(c=>{ const kids=kidsOf(c.id); if(!kids.length) return "";
+    return `<div class="rep-list"><div class="rep grp" style="border:0;padding:0">${fmt(c.name)}</div>${kids.map(k=>{const r=repOf(k.id,w), st=r?statusFor(k.criteria,r.value):"N";
+      return `<div class="rep"><div><div class="t">${esc(k.icon||"")} ${fmt(k.name)}</div><div class="m mono">${own(k.owner)} · ${critText(k.criteria)}${r?` · último: ${esc(who(r))}`:""}</div>${fichaFilled(k.id)?`<div class="m">Fuente: ${esc(metaOf(k.id).source)}${metaOf(k.id).formula?` · Fórmula: <span class="mono">${esc(metaOf(k.id).formula)}</span>`:""}</div>`:`<div class="m" style="color:var(--warn)">Sin fuente: captúrala al abrir el KPI</div>`}</div>${valueInput(k,"v-"+k.id,r?.value)}<i class="chip sm ${st}" id="s-${k.id}">${letter(st)}</i>
+        <div id="nw-${k.id}" style="grid-column:1/-1" ${S.reqNotes&&["Y","R"].includes(st)?"":"hidden"}>${noteFields("n-"+k.id, r?.note, st)}</div></div>`}).join("")}</div>`;
+  }).join("");
+  openModal({eyebrow:`${q.label} · semana ${wn(q,w)} del año · cierre ${fmtDeadline(dl)}`, title:"Reporte semanal",
+    body: body + `<p class="help">Cada quien carga lo suyo antes del cierre. ${S.reqNotes?"Lo que salga en amarillo o rojo pide causa, acción y fecha. ":""}Dejar vacío un valor borra su reporte.</p><p class="err" id="f-err"></p>`,
+    foot:`<button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">Guardar reporte</button>`,
+    onMount(){
+      const inds=indsOfQ(q.id);
+      inds.forEach(k=>dlg.querySelector("#v-"+k.id).addEventListener("input",e=>{
+        const v=parseValue(k,e.target.value.trim()); const s=(v===null||v===undefined)?"N":statusFor(k.criteria,v);
+        const ch=dlg.querySelector("#s-"+k.id); ch.className="chip sm "+s; ch.textContent=letter(s);
+        const box=dlg.querySelector("#nw-"+k.id); box.hidden=!(S.reqNotes&&["Y","R"].includes(s));
+        const nb=box.querySelector(".notebox"); nb.classList.toggle("R",s==="R"); nb.querySelector(".h").textContent=`Quedó en ${s==="R"?"rojo":"amarillo"}: explica antes de guardar`;
+      }));
+      dlg.querySelector("#f-save").addEventListener("click", async()=>{
+        const err=dlg.querySelector("#f-err");
+        for(const k of inds){ const v=parseValue(k,val("v-"+k.id));
+          if(v===undefined){ err.textContent=`"${k.name}" necesita un número.`; return; }
+          if(needsNote(k,v) && !noteOk(readNote("n-"+k.id))){ err.textContent=`"${k.name}" quedó en ${statusFor(k.criteria,v)==="R"?"rojo":"amarillo"}: falta causa, acción o fecha.`; dlg.querySelector("#n-"+k.id+"-cause").focus(); return; } }
+        try{
+          for(const k of inds){ const v=parseValue(k,val("v-"+k.id)), prev=repOf(k.id,w), note=needsNote(k,v)?readNote("n-"+k.id):null;
+            if(v===null && !prev) continue;
+            if(prev && v===prev.value && JSON.stringify(note)===JSON.stringify(prev.note||null)) continue;
+            await saveReport(k,w,v,note); }
+          dlg.close(); toast(`Semana ${wn(q,w)} reportada`);
+        }catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); }
+      });
+    }});
+}
+
+/* ---------- Ficha del KPI: fuente, fórmula y evidencia (la captura el equipo) ---------- */
+const safeUrl = u => /^https:\/\//i.test(String(u||"").trim()) ? String(u).trim() : (String(u||"").startsWith("/_blob/") ? String(u) : "");
+const metaOf = pid => (S.meta||{})[pid] || {};
+function fichaFilled(pid){ const m=metaOf(pid); return !!(m.source&&m.source.trim()); }
+function fichaBtn(pid){ const m=metaOf(pid), ok=fichaFilled(pid), n=(m.links||[]).length+(m.files||[]).length;
+  return `<button class="icon-btn fbtn ${ok?"ok":"miss"}" data-act="ficha" data-id="${pid}" title="${ok?"Fuente y fórmula del KPI"+(n?" · "+n+" evidencia(s)":""):"Falta la fuente del dato"}">${ok?"Fuente ✓":"Fuente ?"}</button>`; }
+function fichaSummary(pid){ const m=metaOf(pid); if(!m.source&&!m.formula&&!(m.links||[]).length&&!(m.files||[]).length) return `<p class="help">Este KPI no tiene fuente ni fórmula. Captúralas abriendo el KPI (clic en su nombre).</p>`;
+  const lk=(m.links||[]).map(l=>{const u=safeUrl(l.url); return u?`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l.label||u)}</a>`:""}).filter(Boolean)
+    .concat((m.files||[]).map(f=>{const u=safeUrl(f.url); return u?`<a href="${esc(u)}" target="_blank" rel="noopener"> ${esc(f.name||"archivo")}</a>`:""}).filter(Boolean));
+  return `<div class="fsum">${m.source?`<div><b>Fuente:</b> ${esc(m.source)}</div>`:""}${m.formula?`<div><b>Fórmula:</b> <span class="mono">${esc(m.formula)}</span></div>`:""}${lk.length?`<div class="ln"><b>Evidencia:</b> ${lk.join(" · ")}</div>`:""}</div>`; }
+function fichaBlock(pid){
+  const m=metaOf(pid), can=S.canWrite!==false, empty=!fichaFilled(pid);
+  return `<details class="fdet" ${empty?"open":""}><summary><b>Fuente, fórmula y evidencia</b> <span class="fbtn ${empty?"miss":"ok"}">${empty?"falta la fuente":"✓ capturada"}</span></summary>
+    <div class="fbody">
+      <div class="field"><label for="f-src">Fuente del dato</label><textarea class="input" id="f-src" rows="2" ${can?"":"disabled"} placeholder="De dónde sale el número: base de Notion y vista, hoja de Drive, reporte de GHL, correo… Específico, para que cualquiera llegue al mismo dato.">${esc(m.source||"")}</textarea></div>
+      <div class="field"><label for="f-frm">Fórmula (si aplica)</label><textarea class="input mono" id="f-frm" rows="2" ${can?"":"disabled"} placeholder="Ej.: materiales enviados en o antes de su fecha compromiso ÷ materiales con fecha compromiso en la semana × 100">${esc(m.formula||"")}</textarea></div>
+      <div class="field"><label>Links</label><div class="flist" id="f-links"></div>${can?`<button class="btn" id="f-addlink" type="button" style="justify-self:start">+ Link</button>`:""}</div>
+      <div class="field"><label>Archivos</label><div class="flist" id="f-files"></div>${can?`<label class="btn" style="justify-self:start;cursor:pointer">+ Subir archivo<input type="file" id="f-up" hidden></label><p class="help" id="f-uph">PDF, imagen, CSV o texto, hasta 20 MB.</p>`:""}</div>
+      ${m.updatedAt?`<p class="help">Ficha actualizada: ${esc(new Date(m.updatedAt).toLocaleString("es-MX",{dateStyle:"medium",timeStyle:"short"}))}${m.updatedByName?" · "+esc(m.updatedByName):""}</p>`:""}
+    </div></details>`;
+}
+function mountFicha(pid){
+  const m=metaOf(pid), can=S.canWrite!==false;
+  let links=(m.links||[]).map(x=>({label:x.label||"",url:x.url||""})), files=(m.files||[]).slice(), touched=false;
+  const lbox=dlg.querySelector("#f-links"), fbox=dlg.querySelector("#f-files");
+  const syncL=()=>{ lbox.querySelectorAll(".fr").forEach((r,i)=>{ links[i]={label:r.querySelector("[data-l]").value.trim(),url:r.querySelector("[data-u]").value.trim()}; }); };
+  const drawL=()=>{ lbox.innerHTML=links.length?links.map((l,i)=>`<div class="fr"><input class="input" data-l value="${esc(l.label)}" placeholder="Nombre (ej. Vista Notion)" ${can?"":"disabled"}><input class="input" data-u value="${esc(l.url)}" placeholder="https://…" ${can?"":"disabled"}>${can?`<button class="icon-btn" type="button" data-rm="${i}" aria-label="Quitar link">✕</button>`:"<span></span>"}</div>`).join(""):`<p class="help">Sin links.</p>`;
+    lbox.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{ syncL(); links.splice(+b.dataset.rm,1); touched=true; drawL(); }));
+    lbox.querySelectorAll("input").forEach(x=>x.addEventListener("input",()=>{touched=true;})); };
+  const drawF=()=>{ fbox.innerHTML=files.length?files.map((f,i)=>{const u=safeUrl(f.url); return `<div class="ff">${fmIcoClip} ${u?`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.name||"archivo")}</a>`:esc(f.name||"archivo")}${can?`<button class="icon-btn" type="button" data-frm="${i}" aria-label="Quitar archivo">✕</button>`:""}</div>`;}).join(""):`<p class="help">Sin archivos.</p>`;
+    fbox.querySelectorAll("[data-frm]").forEach(b=>b.addEventListener("click",()=>{ files.splice(+b.dataset.frm,1); touched=true; drawF(); })); };
+  drawL(); drawF();
+  ["f-src","f-frm"].forEach(id=>dlg.querySelector("#"+id).addEventListener("input",()=>{touched=true;}));
+  if(can){
+    dlg.querySelector("#f-addlink").addEventListener("click",()=>{ syncL(); links.push({label:"",url:""}); drawL(); lbox.querySelector(".fr:last-child [data-l]")?.focus(); });
+    const up=dlg.querySelector("#f-up"), uph=dlg.querySelector("#f-uph");
+    up.addEventListener("change", async()=>{ const f=up.files&&up.files[0]; if(!f) return;
+      if(f.size>20*1024*1024){ uph.textContent="El archivo pasa de 20 MB."; return; }
+      const assets = window.claude ? await window.claude.use("assets") : null;
+      if(!assets){ uph.textContent="Tu acceso no permite subir archivos aquí. Pega un link de Drive en su lugar."; return; }
+      uph.textContent="Subiendo…";
+      try{ const r=await assets.upload(f); files.push({id:r.id,url:r.url||("/_blob/"+r.id),name:f.name,type:r.contentType||f.type||""}); touched=true; drawF(); uph.textContent="Archivo listo; se guarda con el reporte."; }
+      catch(e){ uph.textContent="No se pudo subir: "+(e.message||e.code||"error"); }
+      up.value=""; });
+  }
+  return {
+    check(){ syncL(); const bad=links.find(l=>l.url&&!/^https:\/\//i.test(l.url)); return bad?"Los links deben empezar con https://":""; },
+    async save(){ if(!can||!touched) return; syncL();
+      let name=null; try{ if(S.user&&S.me){ const ps=await S.user.profiles([S.me]); name=ps?.[S.me]?.name||null; } }catch(e){}
+      await S.db.doc("kpimeta/"+pid).set({source:val("f-src"),formula:val("f-frm"),links:links.filter(l=>l.url),files,updatedAt:new Date().toISOString(),updatedBy:S.me||null,updatedByName:name||null}); }
+  };
+}
+function cellModal(pid,w){
+  const k=S.priorities.find(x=>x.id===pid), r=repOf(pid,w), q=qById(k.quarterId);
+  const st0=r?statusFor(k.criteria,r.value):"N";
+  openModal({eyebrow:`${k.owner||""} · semana ${wn(q,w)} del año · cierre ${fmtDeadline(deadlineOf(q,w))}`, title:k.name,
+    body:`${fichaSummary(pid)}<div class="field"><label for="v-cell">Valor de la semana ${wn(q,w)}</label>${valueInput(k,"v-cell",r?.value)}</div>
+      <div class="try"><span class="mono">${critText(k.criteria)}</span><span>→</span><span id="f-tryout"></span></div>
+      <div id="nw-cell" ${S.reqNotes&&["Y","R"].includes(st0)?"":"hidden"}>${noteFields("nc", r?.note, st0)}</div>
+      ${r?`<p class="help">Último reporte: <b>${esc(fmtVal(k,r.value))}</b> · ${esc(who(r))}${isLate(q,r)?" · llegó tarde":""}</p>`:""}<p class="err" id="f-err"></p>`,
+    foot:`${r?`<button class="btn danger" id="f-clear">Borrar reporte</button>`:"<span></span>"}<span style="display:flex;gap:8px"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="f-save">Guardar</button></span>`,
+    onMount(){
+      const upd=()=>{ const v=parseValue(k,val("v-cell")); const s=(v===null||v===undefined)?"N":statusFor(k.criteria,v);
+        dlg.querySelector("#f-tryout").innerHTML=`<span style="display:inline-flex;gap:8px;align-items:center"><i class="chip sm ${s}">${letter(s)}</i>${STATUS[s].name}</span>`;
+        const box=dlg.querySelector("#nw-cell"); box.hidden=!(S.reqNotes&&["Y","R"].includes(s)); const nb=box.querySelector(".notebox"); nb.classList.toggle("R",s==="R"); nb.querySelector(".h").textContent=`Quedó en ${s==="R"?"rojo":"amarillo"}: explica antes de guardar`; };
+      dlg.querySelector("#v-cell").addEventListener("input",upd); upd();
+      dlg.querySelector("#f-save").addEventListener("click", async()=>{
+        const v=parseValue(k,val("v-cell")), err=dlg.querySelector("#f-err");
+        if(v===undefined){ err.textContent="Escribe un número."; return; }
+        const note=needsNote(k,v)?readNote("nc"):null;
+        if(note && !noteOk(note)){ err.textContent="Quedó en amarillo o rojo: falta causa, acción o fecha."; return; }
+        try{ await saveReport(k,w,v,note); dlg.close(); toast("Reporte guardado"); }catch(e){ err.textContent="No se pudo guardar: "+(e.message||e.code); }
+      });
+      dlg.querySelector("#f-clear")?.addEventListener("click", async()=>{ try{ await saveReport(k,w,null); dlg.close(); toast("Reporte borrado"); }catch(e){ toast("No se pudo borrar"); } });
+    }});
+}
+
+async function move(pid,d){
+  const p=S.priorities.find(x=>x.id===pid), sib=p.kind==="individual"?kidsOf(p.parentId):coOf(p.quarterId), i=sib.findIndex(x=>x.id===pid), j=i+d;
+  if(j<0||j>=sib.length) return;
+  [sib[i],sib[j]]=[sib[j],sib[i]];
+  try{ for(let n=0;n<sib.length;n++) if(sib[n].order!==n) await S.db.doc("priorities/"+sib[n].id).update({order:n}); }catch(e){ toast("No se pudo reordenar"); }
+}
+
+app.addEventListener("click", e=>{
+  const b=e.target.closest("[data-act]");
+  if(!b || b.dataset.act!=="info") document.querySelectorAll(".pop:not([hidden])").forEach(p=>{p.hidden=true; document.querySelector(`[data-pop="${p.id}"]`)?.setAttribute("aria-expanded","false");});
+  if(!b) return;
+  const id=b.dataset.id, a=b.dataset.act;
+  if(a==="new-q") wizardStart();
+  else if(a==="edit-q") quarterModal(qById(id));
+  else if(a==="open-q"){ S.qid=id; store.set("focus.qid",id); setView("mapa"); }
+  else if(a==="activate-q"){ S.db.doc("quarters/"+id).update({active:true}).then(()=>deactivateOthers(id)).then(()=>toast("Trimestre activado")).catch(()=>toast("No se pudo activar")); }
+  else if(a==="year"){ S.year=b.dataset.y; render(); }
+  else if(a==="settings") settingsModal();
+  else if(a==="goto"){ goTo(id, Number(b.dataset.w)); }
+  else if(a==="toggle"){ S.expanded.has(id)?S.expanded.delete(id):S.expanded.add(id); render(); }
+  else if(a==="info"){ const pop=document.getElementById(b.dataset.pop); const open=pop.hidden; pop.hidden=!open; b.setAttribute("aria-expanded",String(open)); }
+  else if(a==="hide-demo"){ store.set("focus.demoHidden","1"); if(qById(S.qid)?.demo) S.qid=null; compose(); render(); toast("Ejemplo oculto"); }
+  else if(a==="show-demo"){ store.set("focus.demoHidden","0"); compose(); render(); }
+  else if(a==="new-co") companyModal();
+  else if(a==="edit-co") companyModal(S.priorities.find(x=>x.id===id));
+  else if(a==="new-ind") individualModal(id);
+  else if(a==="edit-ind") individualModal(null, S.priorities.find(x=>x.id===id));
+  else if(a==="move") move(id, Number(b.dataset.d));
+  else if(a==="cell") cellModal(id, Number(b.dataset.w));
+  else if(a==="report") reportModal(Number(b.dataset.w));
+});
+
+/* ---------- Arranque ---------- */
+S.view = ["mapa","semanas","trimestres"].includes(store.get("focus.view")) ? store.get("focus.view") : "mapa";
+render();
+const timer = setTimeout(()=>{ if(!(S.loaded.q&&S.loaded.p&&S.loaded.r)){ S.error="El servidor de datos no respondió. Revisa la conexión con la intranet o avisa a sistemas."; render(); } }, 60000);
+
+(async()=>{
+  const db = window.claude ? await window.claude.use("db") : null;
+  if(!db){ clearTimeout(timer); S.error="No se encontró la capa de datos del Focus Map."; render(); return; }
+  S.db=db;
+  const user = await window.claude.use("user");
+  S.user=user;
+  if(user){ try{ S.me=await user.id(); }catch(e){} }
+  /* Permisos: por defecto se muestran los controles y el servidor decide; solo se ocultan si la plataforma dice explícitamente que no */
+  S.canAdmin = true; S.access = "sin dato";
+  if(user){
+    const safe = async f => { try{ return await f(); }catch(e){ return null; } };
+    const w = await safe(()=>user.can("data.write")), own = await safe(()=>user.isOwner()), ed = await safe(()=>user.canEdit());
+    if(w===false) S.canWrite=false;
+    if(own===false && ed===false) S.canAdmin=false;
+    if(!S.canWrite) S.canAdmin=false;
+    S.access = own ? "dueño" : ed ? "editor" : S.canWrite ? "colaborador" : "solo lectura";
+  }
+  db.doc("settings/config").onSnapshot(d=>{ const c=d.exists?(d.data()||{}):{}; const m=Number(c.maxCompany); S.maxCo = m>=1&&m<=10 ? m : 5;
+    S.dlDay = Number.isInteger(c.deadlineDay)&&c.deadlineDay>=0&&c.deadlineDay<=8 ? c.deadlineDay : 7; S.dlHour = Number.isInteger(c.deadlineHour) ? c.deadlineHour : 9; S.reqNotes = c.requireNotes===true;
+    S.goals = Array.isArray(c.goals) ? c.goals.filter(g=>g&&g.id&&g.name) : []; render(); }, ()=>{});
+
+  const fail = e => { clearTimeout(timer); S.error="No se pudieron leer los datos ("+(e?.code||"error")+")."; render(); };
+  const done = () => { if(S.loaded.q&&S.loaded.p&&S.loaded.r){ clearTimeout(timer); S.error=null; } render(); };
+  db.collection("quarters").onSnapshot(s=>{ S.raw.q=s.docs.map(d=>({id:d.id,...d.data()})); compose(); S.loaded.q=true; done(); }, fail);
+  db.collection("priorities").onSnapshot(s=>{ S.raw.p=s.docs.map(d=>({id:d.id,...d.data()})); compose(); S.loaded.p=true; done(); }, fail);
+  db.collection("reports").onSnapshot(s=>{ const m={}; s.docs.forEach(d=>m[d.id]=d.data()); S.raw.r=m; compose(); S.loaded.r=true; resolveNames(); done(); }, fail);
+  db.collection("kpimeta").onSnapshot(s=>{ const m={}; s.docs.forEach(d=>m[d.id]=d.data()); S.meta=m; render(); }, ()=>{});
+})();
+})();
+</script>
+
+</body></html>

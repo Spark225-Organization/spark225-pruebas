@@ -1,28 +1,28 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261700';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261900';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261700';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261700';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261700';
-import { AltaRapida } from './mecha.js?v=202611261700';
-import { Inicio } from './vistas.js?v=202611261700';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261700';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611261700';
-import { Tablero } from './tablero.js?v=202611261700';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611261700';
-import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611261700';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261700';
-import { Chat } from './chat.js?v=202611261700';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261700';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261700';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261700';
-import { Instalar } from './instalar.js?v=202611261700';
-import { notificar, activarPush } from './avisos.js?v=202611261700';
-import { Bienvenida, Recorrido } from './tour.js?v=202611261700';
-import { useArrastre } from './arrastre.js?v=202611261700';
-import { Galeria } from './widgets.js?v=202611261700';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261900';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261900';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261900';
+import { AltaRapida } from './mecha.js?v=202611261900';
+import { Inicio } from './vistas.js?v=202611261900';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261900';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611261900';
+import { Tablero } from './tablero.js?v=202611261900';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611261900';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611261900';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261900';
+import { Chat } from './chat.js?v=202611261900';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261900';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261900';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261900';
+import { Instalar } from './instalar.js?v=202611261900';
+import { notificar, activarPush } from './avisos.js?v=202611261900';
+import { Bienvenida, Recorrido } from './tour.js?v=202611261900';
+import { useArrastre } from './arrastre.js?v=202611261900';
+import { Galeria } from './widgets.js?v=202611261900';
 
 function useStore() {
   const [, set] = useState(0);
@@ -143,7 +143,7 @@ function App() {
   const persona = ruta.startsWith('/persona/') && db.personas.some((p) => p.id === ruta.split('/')[2]) ? ruta.split('/')[2] : yo;
   const clienteRuta = ruta.startsWith('/cliente/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
   const rhRuta = ruta === '/equipo' ? 'personas' : ruta.startsWith('/rh') ? (['documentos', 'personas'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'spark') : null;
-  const vista = clienteRuta ? 'cliente' : rhRuta ? 'rh' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/tablero': 'tablero' }[ruta] || 'dia';
+  const vista = clienteRuta ? 'cliente' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes' }[ruta] || 'dia';
   const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
@@ -234,7 +234,7 @@ function App() {
           ${vista === 'clientes' && html`<${Archivero} ctx=${ctx} />`}
           ${vista === 'cliente' && html`<${DetalleCliente} id=${clienteRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
-          ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} />`}
+          ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} pestana=${ruta.split('/')[2] === 'entregas' ? 'entregas' : 'enfoque'} />`}
           ${vista === 'rh' && html`<${RecursosHumanos} ctx=${ctx} pestana=${rhRuta} Personas=${html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`} />`}
           ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
         <//>
@@ -511,7 +511,8 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
     { t: 'Nuevo proyecto', ico: 'proyectos', f: () => ctx.crear('proyecto') },
     { t: 'Pipeline', ico: 'columnas', f: () => { location.hash = '#/pipeline'; } },
     { t: 'Clientes', ico: 'clientes', f: () => { location.hash = '#/clientes'; } },
-    { t: 'Cómo va Spark (tablero)', ico: 'grafica', f: () => { location.hash = '#/tablero'; } },
+    { t: 'Mapa de enfoque (prioridades del trimestre)', ico: 'foco', f: () => { location.hash = '#/tablero/enfoque'; } },
+    { t: 'Entregas a tiempo (tablero)', ico: 'grafica', f: () => { location.hash = '#/tablero/entregas'; } },
     { t: 'Organigrama de Spark', ico: 'organigrama', f: () => { location.hash = '#/rh/spark'; } },
     { t: 'Documentos de la compañía', ico: 'documento', f: () => { location.hash = '#/rh/documentos'; } },
     { t: 'Chat', ico: 'chat', f: () => ctx.abrirChat() },

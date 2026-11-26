@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261700';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261900';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -38,7 +38,7 @@ function migrar(e) {
 function reparar(e) {
   const base = semilla();
   ['personas', 'clientes', 'proyectos', 'actividades', 'avisos', 'correos', 'minutas', 'eventos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = base[k]; });
-  ['areas', 'documentos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
+  ['areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
   ['personal', 'layouts', 'prefs'].forEach((k) => { if (!e[k] || typeof e[k] !== 'object') e[k] = {}; });
   if (!e.chat || !Array.isArray(e.chat.mensajes)) e.chat = base.chat;
   if (!e.personas.length) e.personas = base.personas;
@@ -422,10 +422,10 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611261700';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611261900';
 
-const COLECCIONES_RH = new Set(['areas', 'documentos']);
-const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'areas', 'documentos'];
+const COLECCIONES_RH = new Set(['areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas']);
+const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube
 export const nube = { activa: false, yo: null, estado: 'listo', pendientes: 0, ultimoError: '' };
 const oyentesNube = new Set();
@@ -473,6 +473,7 @@ export async function conectarNube(perfil) {
     clientes: por('clientes'), proyectos: por('proyectos'), actividades: por('actividades'), minutas: por('minutas').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
     avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
     correos: [], areas: por('areas'), documentos: por('documentos'),
+    fm_ajustes: por('fm_ajustes'), fm_trimestres: por('fm_trimestres'), fm_prioridades: por('fm_prioridades'), fm_reportes: por('fm_reportes'), fm_fichas: por('fm_fichas'),
     chat: { canales: por('canales'), mensajes: por('mensajes').sort((a, b) => a.cuando.localeCompare(b.cuando)), leidos: ajustes.leidos ? { [y]: ajustes.leidos } : {} },
     layouts: ajustes.layout ? { [y]: ajustes.layout } : {},
     personal: ajustes.personal ? { [y]: ajustes.personal } : {},
@@ -677,4 +678,23 @@ export async function cambiarMiPerfil(uId, cambios) {
     oyentes.forEach((f) => f(estado));
     throw new Error(/foto/.test(String(err?.message)) ? 'Falta activar las fotos en la base (un paso de una vez).' : 'No se pudo guardar tu perfil.');
   }
+}
+
+// ---------- Mapa de enfoque (Focus Map) ----------
+// Los datos llegan de la base; el código público no trae ninguno.
+import { AJUSTES_BASE } from './enfoque-datos.js?v=202611261900';
+export function datosEnfoque() {
+  return { ajustes: estado.fm_ajustes?.[0] || AJUSTES_BASE, trimestres: estado.fm_trimestres || [], prioridades: estado.fm_prioridades || [],
+    reportes: estado.fm_reportes || [], fichas: estado.fm_fichas || [] };
+}
+export function guardarEnfoque(col, doc, uId, texto) {
+  const lista = estado[col] || [];
+  estado[col] = lista.some((x) => x.id === doc.id) ? lista.map((x) => (x.id === doc.id ? doc : x)) : [...lista, doc];
+  if (texto) evento(uId, texto);
+  guardar();
+}
+export function borrarEnfoque(col, id, uId, texto) {
+  estado[col] = (estado[col] || []).filter((x) => x.id !== id);
+  if (texto) evento(uId, texto);
+  guardar();
 }

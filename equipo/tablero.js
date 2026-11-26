@@ -2,15 +2,24 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611261700';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611261700';
-import { I, Avatar, LogoCliente } from './ui.js?v=202611261700';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611261700';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611261900';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611261900';
+import { I, Avatar, LogoCliente } from './ui.js?v=202611261900';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611261900';
+import { MapaEnfoque } from './enfoque.js?v=202611261900';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
 
-export function Tablero({ ctx }) {
+export function Tablero({ ctx, pestana = 'enfoque' }) {
+  const pestanas = html`<nav class="segmentado tb-pest" aria-label="Tablero">${[['enfoque', 'Mapa de enfoque', 'foco'], ['entregas', 'Entregas a tiempo', 'grafica']].map(([k, t, ico]) => html`<a key=${k} href=${'#/tablero/' + k} role="button" aria-pressed=${pestana === k} class="seg-link">${I(ico)}<span>${t}</span></a>`)}</nav>`;
+  if (pestana === 'enfoque') return html`<div class="tablero">
+    <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Prioridades del trimestre</span></div>${pestanas}</header>
+    <${MapaEnfoque} ctx=${ctx} /></div>`;
+  return html`<${TableroEntregas} ctx=${ctx} pestanas=${pestanas} />`;
+}
+
+function TableroEntregas({ ctx, pestanas }) {
   const { db, yo } = ctx;
   const hoy = hoyISO();
   const [ventana, setVentana] = useState(VENTANA_DIAS);
@@ -27,8 +36,11 @@ export function Tablero({ ctx }) {
   return html`<div class="tablero">
     <header class="cab-inicio">
       <div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Entrega a tiempo, ponderada por prioridad</span></div>
-      <div class="segmentado chico" aria-label="Periodo">${[[7, '7 días'], [30, '30 días'], [90, '90 días']].map(([d, t]) => html`<button key=${d} aria-pressed=${ventana === d} onClick=${() => setVentana(d)}>${t}</button>`)}</div>
+      ${pestanas}
     </header>
+    <div class="tb-periodo">
+      <div class="segmentado chico" aria-label="Periodo">${[[7, '7 días'], [30, '30 días'], [90, '90 días']].map(([d, t]) => html`<button key=${d} aria-pressed=${ventana === d} onClick=${() => setVentana(d)}>${t}</button>`)}</div>
+    </div>
 
     <section class=${'tb-hero s-' + (total.salud || 'nada')}>
       <div class="tb-num">
@@ -164,12 +176,12 @@ export function HighlightsSpark({ ctx }) {
   const fmtRel = (iso) => { const d = Math.round((new Date(iso + 'T12:00:00') - new Date(hoy + 'T12:00:00')) / 864e5); return d === 0 ? 'hoy' : d === 1 ? 'mañana' : `en ${d} días`; };
 
   return html`<section class="hl" aria-label="Highlights de Spark">
-    <a href="#/tablero" class=${'hl-it hl-main s-' + (total.salud || 'nada')}>
+    <a href="#/tablero/entregas" class=${'hl-it hl-main s-' + (total.salud || 'nada')}>
       <span class="hl-etq">Spark · entrega a tiempo</span>
       <b class="num">${total.pct === null ? '—' : total.pct + ' %'}</b>
       <span class="hl-sub">${total.salud ? html`<span class=${'sema s-' + total.salud}><i></i>${NOMBRE_SALUD[total.salud]}</span>` : 'Sin entregas en 30 días'}</span>
     </a>
-    <a href="#/tablero" class="hl-it">
+    <a href="#/tablero/entregas" class="hl-it">
       <span class="hl-etq">Cerradas esta semana</span>
       <b class="num">${cerradas.length}</b>
       <span class="hl-sub hl-caras">${cerradas.slice(0, 4).map((a) => html`<${Avatar} key=${a.id} p=${db.personas.find((p) => p.id === a.responsable)} />`)}${cerradas[0] ? html`<span class="hl-ult">${cerradas[0].titulo}</span>` : 'Aún nada'}</span>

@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270010';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270040';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -168,6 +168,7 @@ export function actualizar(id, cambios, uId, motivoFecha) {
   const a = act(id); if (!a) return;
   const antes = { ...a };
   Object.assign(a, cambios);
+  if (cambios.fecha && a.sinFecha) delete a.sinFecha; // ya tiene fecha compromiso
   if (cambios.fecha && cambios.fecha !== antes.fecha) {
     log(a, uId, `movió la fecha límite de ${antes.fecha} a ${cambios.fecha}`, motivoFecha);
     if (a.foco && cambios.fecha > hoyISO()) a.foco = null; // el foco es solo para hoy
@@ -424,7 +425,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270010';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270040';
 
 const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas']);
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'];
@@ -615,6 +616,7 @@ export function evaluarEntrega(a, hoy = hoyISO()) {
   const limite = fechaCompromiso(a);
   // La fecha real de entrega (Notion «Fecha Entrega REAL») manda; si no hay, cuenta cuándo se cerró.
   const cerrada = a.estatus === 'hecho' ? (a.entregaReal || (a.cerrada || '').slice(0, 10) || null) : null;
+  if (a.sinFecha) return null; // sin fecha compromiso en Notion: no se puede medir
   if (!cerrada && limite >= hoy) return null; // aún no vence: no cuenta
   if (a.estatus === 'hecho' && a.cerradaAprox && !a.entregaReal) return null; // llegó terminada de Notion sin fecha real: «Sin fecha real», no cuenta
   return { aTiempo: !!cerrada && cerrada <= limite, limite, cerrada, peso: PESO_PRIORIDAD[a.prioridad] || 2, diasTarde: cerrada ? Math.max(0, diasEntreISO(limite, cerrada)) : diasEntreISO(limite, hoy) };
@@ -686,7 +688,7 @@ export async function cambiarMiPerfil(uId, cambios) {
 
 // ---------- Mapa de enfoque (Focus Map) ----------
 // Los datos llegan de la base; el código público no trae ninguno.
-import { AJUSTES_BASE } from './enfoque-datos.js?v=202611270010';
+import { AJUSTES_BASE } from './enfoque-datos.js?v=202611270040';
 export function datosEnfoque() {
   return { ajustes: estado.fm_ajustes?.[0] || AJUSTES_BASE, trimestres: estado.fm_trimestres || [], prioridades: estado.fm_prioridades || [],
     reportes: estado.fm_reportes || [], fichas: estado.fm_fichas || [] };
@@ -710,7 +712,7 @@ export function borrarEnfoque(col, id, uId, texto) {
 export function saludProyecto(p, hoy = hoyISO()) {
   const tareas = estado.actividades.filter((a) => !a.archivada && a.proyecto === p.id);
   const vivas = tareas.filter((a) => a.estatus !== 'hecho');
-  const vencidas = vivas.filter((a) => a.fecha < hoy);
+  const vencidas = vivas.filter((a) => !a.sinFecha && a.fecha < hoy);
   // Los proyectos que no vienen de Notion usan su última actividad como señal.
   let senal = p.fechaActualizacion || null;
   if (!p.deNotion) {

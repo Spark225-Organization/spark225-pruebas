@@ -2,12 +2,12 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270010';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270010';
-import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270010';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270040';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270040';
+import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270040';
 const T_ENTREGA = 'Porcentaje de tareas que se cerraron en su fecha compromiso, de las que vencieron en el periodo. Una tarea Alta pesa 3, una Media 2 y una Baja 1. Si la fecha la movió el cliente o algo externo, cuenta la nueva; si la movimos nosotros, cuenta la original. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %.';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270010';
-import { MapaEnfoque } from './enfoque.js?v=202611270010';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270040';
+import { MapaEnfoque } from './enfoque.js?v=202611270040';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
@@ -34,7 +34,7 @@ function TableroEntregas({ ctx, pestanas }) {
   const conteo = { bien: 0, atencion: 0, riesgo: 0 };
   porCliente.forEach(({ cu }) => { if (cu.salud) conteo[cu.salud]++; });
   const abiertas = vigentes().filter((a) => a.estatus !== 'hecho' && visiblePara(a, yo) && a.cliente !== 'personal');
-  const vencidas = abiertas.filter((a) => a.fecha < hoy);
+  const vencidas = abiertas.filter((a) => !a.sinFecha && a.fecha < hoy);
   const semana7 = abiertas.filter((a) => a.fecha >= hoy && a.fecha <= sumarDias(hoy, 6));
 
   return html`<div class="tablero">
@@ -213,6 +213,7 @@ function OrdenLimpieza({ ctx }) {
   const ultimoMov = (a) => [a.creada, ...(a.historial || []).map((h) => h.cuando)].filter(Boolean).sort().pop() || hoy;
   const vivas = vigentes().filter((a) => a.estatus !== 'hecho' && visiblePara(a, yo) && a.cliente !== 'personal');
   const sinProyecto = vivas.filter((a) => !a.proyecto || a.proyecto.startsWith('g-'));
+  const sinFecha = vivas.filter((a) => a.sinFecha);
   const estancadas = vivas.filter((a) => a.estatus !== 'esperando' && dias(ultimoMov(a)) > 7).sort((a, b) => ultimoMov(a).localeCompare(ultimoMov(b)));
   const revision = vivas.filter((a) => a.estatus === 'esperando' && dias(ultimoMov(a)) > 7);
   const activos = db.proyectos.filter((p) => !p.id.startsWith('g-') && (p.fase || 'en_curso') !== 'terminado' && p.fase !== 'por_iniciar');
@@ -228,6 +229,7 @@ function OrdenLimpieza({ ctx }) {
   </section>`;
   return html`<div class="tb-rejilla">
     ${bloque('Tareas sin proyecto', 'Están en «General» del cliente. Ligarlas a su proyecto evita que se pierdan si alguien sale del equipo.', sinProyecto, (a) => filaTarea(a, fechaCorta(a.fecha)), 'Todas las tareas tienen proyecto.')}
+    ${bloque('Tareas sin fecha compromiso', 'En Notion no tienen «Fecha Compromiso de Entrega», así que no se puede medir si llegan a tiempo. Ponles fecha.', sinFecha, (a) => filaTarea(a, 'sin fecha'), 'Todas tienen fecha.')}
     ${bloque('Tareas estancadas', 'Abiertas y sin ningún movimiento en más de 7 días.', estancadas, (a) => filaTarea(a, `${dias(ultimoMov(a))} d`), 'Nada estancado.')}
     ${bloque('En revisión hace más de 7 días', 'Esperan respuesta (del cliente o de otra persona) desde hace más de una semana.', revision, (a) => filaTarea(a, `${dias(ultimoMov(a))} d`), 'Nada esperando de más.')}
     ${bloque('Proyectos sin actualización ejecutiva', 'Activos y sin «Actualización ejecutiva» en más de 21 días (se actualiza en Notion).', sinAct, (p) => filaProy(p, saludProyecto(p, hoy).dias === null ? 'sin fecha' : `${saludProyecto(p, hoy).dias} d`), 'Todos al día.')}

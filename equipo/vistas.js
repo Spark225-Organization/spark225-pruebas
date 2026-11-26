@@ -1,12 +1,12 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270010';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270010';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270010';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270010';
-import { Widgets } from './widgets.js?v=202611270010';
-import { HighlightsSpark } from './tablero.js?v=202611270010';
-import { useArrastre } from './arrastre.js?v=202611270010';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270040';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270040';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270040';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270040';
+import { Widgets } from './widgets.js?v=202611270040';
+import { HighlightsSpark } from './tablero.js?v=202611270040';
+import { useArrastre } from './arrastre.js?v=202611270040';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -202,7 +202,7 @@ function Lista({ ctx, hoy }) {
   const [hechas, setHechas] = useState(false);
   const [soloVencidas, setSoloVencidas] = useState(false);
 
-  const vencida = (a) => a.estatus !== 'hecho' && a.fecha < hoy;
+  const vencida = (a) => a.estatus !== 'hecho' && !a.sinFecha && a.fecha < hoy;
   const base = (alcance === 'equipo' ? vigentes().filter((a) => visiblePara(a, yo) && enFiltroInicio(a, yo)) : misActs(ctx))
     .filter((a) => a.estatus !== 'hecho' || (hechas && (a.cerrada || '').slice(0, 10) >= sumarDias(hoy, -14)));
   const nVencidas = base.filter(vencida).length;
@@ -225,7 +225,7 @@ function Lista({ ctx, hoy }) {
   });
 
   // Mi semana: cada tarea cae en un solo grupo (en revisión primero, luego por fecha).
-  const tramo = (a) => (a.estatus === 'hecho' ? 'terminadas' : a.estatus === 'esperando' ? 'revision' : a.fecha < hoy ? 'vencidas' : a.fecha === hoy ? 'hoy' : a.fecha <= sumarDias(hoy, 7) ? 'proximos' : 'despues');
+  const tramo = (a) => (a.estatus === 'hecho' ? 'terminadas' : a.estatus === 'esperando' ? 'revision' : a.sinFecha ? 'despues' : a.fecha < hoy ? 'vencidas' : a.fecha === hoy ? 'hoy' : a.fecha <= sumarDias(hoy, 7) ? 'proximos' : 'despues');
   const TRAMOS = [['vencidas', 'Vencidas', 'alerta'], ['hoy', 'Hoy', 'hoy'], ['proximos', 'Próximos 7 días', 'semana'], ['revision', 'En revisión', 'espera'], ['despues', 'Más adelante', 'flecha'], ['terminadas', 'Terminadas', 'check']];
   const grupos = por === 'semana'
     ? TRAMOS.map(([id, nombre, ico]) => ({ id, nombre, icono: I(ico, id === 'despues' ? 'rot-180' : ''), lista: acts.filter((a) => tramo(a) === id) }))
@@ -272,7 +272,7 @@ function Lista({ ctx, hoy }) {
                 <span><span class="ls-tit">${a.titulo}</span>${proy(a) && proy(a).nombre !== 'General' && html`<small>${proy(a).nombre}</small>`}</span></div></td>
               <td class="c-cli">${c && html`<span class="ls-cli" style=${`--c:${c.color}`}><i></i>${c.nombre}</span>`}</td>
               <td class="c-resp">${r && html`<span class="ls-per"><${Avatar} p=${r} />${r.corto}</span>`}</td>
-              <td class="c-fecha">${v ? html`<span class="ls-atraso">${atraso} ${atraso === 1 ? 'día' : 'días'} tarde</span>` : fechaRelativa(a.fecha)}</td>
+              <td class="c-fecha">${a.sinFecha ? html`<span class="tenue">Sin fecha</span>` : v ? html`<span class="ls-atraso">${atraso} ${atraso === 1 ? 'día' : 'días'} tarde</span>` : fechaRelativa(a.fecha)}</td>
               <td class="c-pri"><button class=${'ls-pri pri-' + (a.prioridad || 'nada')} onClick=${(e) => cambiarPri(e, a)} title="Cambiar prioridad" aria-label=${`Prioridad: ${pri?.nombre || 'sin prioridad'}. Cambiar`}>${pri ? html`<i></i>${pri.nombre}` : '—'}</button></td>
             </tr>`;
           })}

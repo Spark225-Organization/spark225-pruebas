@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES } from './datos.js?v=202611261300';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611261300';
-import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611261300';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611261500';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611261500';
+import { I, Avatar, LogoCliente, fechaRelativa, fechaCorta } from './ui.js?v=202611261500';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {
@@ -172,16 +172,17 @@ export function AsistenteCliente({ ctx, cerrar }) {
     { id: 'color', tipo: 'color', corto: 'Color', pregunta: 'Elige su color', ayuda: 'Así lo reconoces en todo el Portal.', resumen: (x) => html`<i class="bolita" style=${`--c:${x}`}></i>` },
     { id: 'responsable', tipo: 'opciones', corto: 'Lleva la cuenta', pregunta: '¿Quién lleva la cuenta?',
       opciones: db.personas.map((p) => ({ id: p.id, nombre: p.id === yo ? 'Yo' : p.corto, sub: p.puesto, persona: p })), resumen: (x) => db.personas.find((p) => p.id === x)?.corto },
-    { id: 'salud', tipo: 'salud', corto: 'Cómo va', pregunta: '¿Cómo va la relación?', resumen: (x) => SALUD.find((s) => s.id === x)?.nombre },
-    { id: 'satisfaccion', tipo: 'caritas', corto: 'Satisfacción', pregunta: '¿Qué tan contento está?', ayuda: 'Lo puedes actualizar cada mes desde su carpeta.', resumen: (x) => (x ? CARITAS[x - 1] : 'Aún no sé') },
+    { id: 'etapa', tipo: 'opciones', corto: 'Etapa', pregunta: '¿En qué etapa está?', ayuda: 'El semáforo se calcula solo con la entrega a tiempo.',
+      opciones: ETAPAS_CLIENTE.map((e) => ({ id: e.id, nombre: e.nombre, sub: e.ayuda })), resumen: (x) => ETAPAS_CLIENTE.find((e) => e.id === x)?.nombre },
+    { id: 'satisfaccion', tipo: 'caritas', corto: 'Satisfacción', pregunta: '¿Qué tan contento está?', ayuda: 'Lo puedes actualizar cada mes desde su ficha.', resumen: (x) => (x ? CARITAS[x - 1] : 'Aún no sé') },
   ];
-  const Vista = ({ v }) => html`<div class="folder mini" style=${`--c:${v.color}`}><span class="f-tab"></span><span class="f-papel"></span><span class="f-frente"><b>${v.nombre}</b></span></div>`;
+  const Vista = ({ v }) => html`<div class="cli-card mini" style=${`--c:${v.color}`}><${LogoCliente} c=${{ nombre: v.nombre || '?', color: v.color }} /><b>${v.nombre}</b></div>`;
   return html`<${Asistente} titulo="Nuevo cliente" textoCrear="Crear cliente" pasos=${pasos} Vista=${Vista} cerrar=${cerrar}
-    inicial=${{ color: libre, responsable: yo, salud: undefined, satisfaccion: undefined }}
+    inicial=${{ color: libre, responsable: yo, etapa: 'activo', satisfaccion: undefined }}
     alCrear=${(v) => {
       if (db.clientes.some((c) => c.nombre.toLowerCase() === v.nombre.trim().toLowerCase())) { ctx.toast('Ya existe un cliente con ese nombre'); return false; }
       const c = crearCliente(v, yo);
-      ctx.toast(`${c.nombre} ya está en el archivero`, { texto: 'Abrir', f: () => { location.hash = '#/cliente/' + c.id; } });
+      ctx.toast(`${c.nombre} ya está en Clientes`, { texto: 'Abrir', f: () => { location.hash = '#/cliente/' + c.id; } });
     }} />`;
 }
 

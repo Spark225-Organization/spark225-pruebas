@@ -53,6 +53,12 @@ export const VISTAS = [
   { id: 'tarjetas', nombre: 'Tarjetas', icono: 'cuadricula' },
   { id: 'lista', nombre: 'Lista', icono: 'lista' },
 ];
+// Etapa del cliente: separa clientes activos de propuestas y prospectos (junta 25 nov).
+export const ETAPAS_CLIENTE = [
+  { id: 'activo', nombre: 'Activos', uno: 'Activo', ayuda: 'Ya trabajamos con él' },
+  { id: 'propuesta', nombre: 'En propuesta', uno: 'En propuesta', ayuda: 'Le estamos cotizando' },
+  { id: 'prospecto', nombre: 'Prospectos', uno: 'Prospecto', ayuda: 'Aún no hay propuesta' },
+];
 // Prioridad: mismas tres opciones que «Priority» en Notion (HIGH, Medium, Low).
 export const PRIORIDADES = [
   { id: 'alta', nombre: 'Alta', notion: 'HIGH', orden: 0 },

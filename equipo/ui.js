@@ -1,12 +1,17 @@
 // Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611261300';
+import { hoyISO } from './datos.js?v=202611261500';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
   sol: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
   luna: 'M20 14.5A8 8 0 019.5 4 7 7 0 1020 14.5z',
   mas: 'M12 5v14M5 12h14',
+  grafica: 'M3 20h18M6 16v-4M11 16V6M16 16v-7M20 16v-2',
+  rh: 'M4 6h16v14H4zM9 3h6v3H9zM9 10.5a2 2 0 100 4 2 2 0 000-4zM6.5 18c.4-1.4 1.4-2 2.5-2s2.1.6 2.5 2M14 11h3.5M14 14h3',
+  organigrama: 'M9 3h6v4H9zM3 17h6v4H3zM15 17h6v4h-6zM12 7v5M6 17v-5h12v5',
+  documento: 'M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6',
+  subir: 'M12 16V4M7 9l5-5 5 5M4 20h16',
   buscar: 'M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5',
   campana: 'M6 17V11a6 6 0 1112 0v6l1.5 2h-15L6 17zM10 21h4',
   semana: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
@@ -72,6 +77,15 @@ export function Anillo({ estatus }) {
 // Chispa de cuatro puntas del isotipo de Spark: marca el «ahora» en la mecha.
 export function Estrella() {
   return html`<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="g-chispa" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5C245" /><stop offset="1" stop-color="#E47739" /></linearGradient></defs><path d="M12 1.5c.9 5.6 4.9 9.6 10.5 10.5-5.6.9-9.6 4.9-10.5 10.5-.9-5.6-4.9-9.6-10.5-10.5C7.1 11.1 11.1 7.1 12 1.5z" fill="url(#g-chispa)" /></svg>`;
+}
+
+// Logo del cliente: su imagen si la subieron; si no, sus iniciales sobre su color.
+export function LogoCliente({ c, tam = 'm' }) {
+  if (!c) return null;
+  const ini = (c.nombre || '?').replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean).map((s) => s[0]).slice(0, 2).join('').toUpperCase();
+  return c.logo
+    ? html`<span class=${'logo-cli t-' + tam + ' con-img'} style=${`--c:${c.color}`}><img src=${c.logo} alt=${`Logo de ${c.nombre}`} /></span>`
+    : html`<span class=${'logo-cli t-' + tam} style=${`--c:${c.color}`} aria-hidden="true">${ini}</span>`;
 }
 
 export function Avatar({ p, grande }) {

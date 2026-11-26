@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261300';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261500';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -38,6 +38,7 @@ function migrar(e) {
 function reparar(e) {
   const base = semilla();
   ['personas', 'clientes', 'proyectos', 'actividades', 'avisos', 'correos', 'minutas', 'eventos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = base[k]; });
+  ['areas', 'documentos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
   ['personal', 'layouts', 'prefs'].forEach((k) => { if (!e[k] || typeof e[k] !== 'object') e[k] = {}; });
   if (!e.chat || !Array.isArray(e.chat.mensajes)) e.chat = base.chat;
   if (!e.personas.length) e.personas = base.personas;
@@ -50,7 +51,7 @@ function reparar(e) {
     responsable: personas.has(a.responsable) ? a.responsable : e.personas[0].id,
     fecha: /^\d{4}-\d{2}-\d{2}$/.test(a.fecha || '') ? a.fecha : hoyISO(),
   }));
-  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; });
+  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; if (!c.etapa) c.etapa = 'activo'; });
   e.minutas.forEach((m) => { if (!Array.isArray(m.acuerdos)) m.acuerdos = []; });
   return e;
 }
@@ -344,7 +345,7 @@ export function crearCliente(d, uId) {
   const base = d.nombre.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente';
   let id = base, k = 2;
   while (clienteDe(id)) id = base + '-' + k++;
-  const c = { id, nombre: d.nombre.trim(), color: d.color, responsable: d.responsable, salud: d.salud || 'bien',
+  const c = { id, nombre: d.nombre.trim(), color: d.color, responsable: d.responsable, salud: d.salud || 'bien', etapa: d.etapa || 'activo',
     satisfaccion: d.satisfaccion ? [{ fecha: hoyISO(), valor: d.satisfaccion }] : [] };
   estado.clientes = [...estado.clientes, c];
   estado.proyectos = [...estado.proyectos, { id: 'g-' + id, nombre: 'General', cliente: id, responsable: d.responsable, entrega: null }];
@@ -421,9 +422,10 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611261300';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611261500';
 
-const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos'];
+const COLECCIONES_RH = new Set(['areas', 'documentos']);
+const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'areas', 'documentos'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube
 export const nube = { activa: false, yo: null, estado: 'listo', pendientes: 0, ultimoError: '' };
 const oyentesNube = new Set();
@@ -440,6 +442,7 @@ function visibleParaDoc(col, d) {
   if (col === 'avisos') return [...new Set([d.para, nube.yo])]; // quien lo crea también debe poder leerlo (regla de Supabase al guardar)
   if (col === 'actividades' && estado.clientes.find((c) => c.id === d.cliente)?.privado) return [d.responsable];
   if (col === 'mensajes') return estado.chat.canales.find((c) => c.id === d.canal)?.miembros || null;
+  if (col === 'documentos' && d.soloDireccion) return [...new Set([...estado.personas.filter((p) => p.permiso === 'admin' || p.permiso === 'dueno').map((p) => p.id), nube.yo])];
   if (col === 'canales') return d.id === 'general' ? null : d.miembros;
   return null;
 }
@@ -469,7 +472,7 @@ export async function conectarNube(perfil) {
     pendientes: perfiles.filter((p) => p.permiso === 'pendiente'),
     clientes: por('clientes'), proyectos: por('proyectos'), actividades: por('actividades'), minutas: por('minutas').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
     avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
-    correos: [],
+    correos: [], areas: por('areas'), documentos: por('documentos'),
     chat: { canales: por('canales'), mensajes: por('mensajes').sort((a, b) => a.cuando.localeCompare(b.cuando)), leidos: ajustes.leidos ? { [y]: ajustes.leidos } : {} },
     layouts: ajustes.layout ? { [y]: ajustes.layout } : {},
     personal: ajustes.personal ? { [y]: ajustes.personal } : {},
@@ -518,7 +521,17 @@ async function subirAhora() {
   if (!nube.pendientes) { nube.estado = 'listo'; avisarNube(); return; }
   nube.estado = 'guardando'; avisarNube();
   try {
-    if (filas.length) await subirDocs(filas.map(({ _k, _s, ...f }) => f));
+    if (filas.length) {
+      try { await subirDocs(filas.map(({ _k, _s, ...f }) => f)); }
+      catch (err) {
+        // Si la base aún no acepta organigrama y documentos, se guarda todo lo demás y eso queda en este navegador.
+        if (!/coleccion_check/.test(String(err?.message || err))) throw err;
+        nube.sinRH = true;
+        const otras = filas.filter((f) => !COLECCIONES_RH.has(f.coleccion));
+        if (otras.length) await subirDocs(otras.map(({ _k, _s, ...f }) => f));
+        filas.splice(0, filas.length, ...otras);
+      }
+    }
     if (aj !== fotoAjustes) await subirAjustes(nube.yo, JSON.parse(aj));
     filas.forEach((f) => (f._s === null ? foto.delete(f._k) : foto.set(f._k, f._s)));
     fotoAjustes = aj;
@@ -583,3 +596,71 @@ function limpiarTitulo(asunto) {
   return asunto.replace(/^(notas|transcripci[oó]n|notes|meeting notes)\s*[:·-]\s*/i, '').replace(/[“”"«»]/g, '').replace(/,\s*\d{1,2}\s+\w{3,10}\.?\s+\d{4}\s*$/, '').trim().slice(0, 90) || asunto;
 }
 export function quitarMinuta(id) { estado.minutas = estado.minutas.filter((m) => m.id !== id); guardar(); }
+
+// ---------- Entrega a tiempo y semáforo (satisfacción calculada) ----------
+// Cuenta las tareas con fecha en los últimos 30 días (sin contar hoy). A tiempo = se cerró en su fecha o antes.
+// Si la fecha se movió por el cliente o por algo externo, vale la fecha nueva; si se movió por algo interno, la original.
+// Peso por relevancia: Alta 3, Media 2, Baja 1. Semáforo: 95 % o más va bien, 85–94 % atención, menos de 85 % en riesgo.
+export const PESO_PRIORIDAD = { alta: 3, media: 2, baja: 1 };
+const MOTIVOS_SIN_CULPA = ['Lo pidió el cliente', 'Dependencia externa'];
+export const VENTANA_DIAS = 30;
+export function fechaCompromiso(a) {
+  const movidaPorDentro = (a.historial || []).some((h) => /^movió la fecha/.test(h.que || '') && !MOTIVOS_SIN_CULPA.includes(h.motivo));
+  return movidaPorDentro && a.fechaOriginal ? a.fechaOriginal : a.fecha;
+}
+export function evaluarEntrega(a, hoy = hoyISO()) {
+  const limite = fechaCompromiso(a);
+  const cerrada = a.estatus === 'hecho' && a.cerrada ? a.cerrada.slice(0, 10) : null;
+  if (!cerrada && limite >= hoy) return null; // aún no vence: no cuenta
+  return { aTiempo: !!cerrada && cerrada <= limite, limite, cerrada, peso: PESO_PRIORIDAD[a.prioridad] || 2, diasTarde: cerrada ? Math.max(0, diasEntreISO(limite, cerrada)) : diasEntreISO(limite, hoy) };
+}
+function diasEntreISO(a, b) { return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / DIA_MS); }
+export function cumplimiento(filtro = () => true, hoy = hoyISO(), dias = VENTANA_DIAS) {
+  const desde = sumarDias(hoy, -dias);
+  const evaluadas = [];
+  for (const a of estado.actividades) {
+    if (a.archivada || a.cliente === 'personal' || !filtro(a)) continue;
+    const ev = evaluarEntrega(a, hoy);
+    if (!ev || ev.limite < desde) continue;
+    evaluadas.push({ a, ...ev });
+  }
+  const total = evaluadas.reduce((s, x) => s + x.peso, 0);
+  const bien = evaluadas.filter((x) => x.aTiempo).reduce((s, x) => s + x.peso, 0);
+  const pct = total ? Math.round((bien / total) * 100) : null;
+  return { pct, salud: saludPorPct(pct), evaluadas, tarde: evaluadas.filter((x) => !x.aTiempo).sort((x, y) => y.peso - x.peso || y.diasTarde - x.diasTarde), nATiempo: evaluadas.filter((x) => x.aTiempo).length };
+}
+export function saludPorPct(pct) { return pct === null ? null : pct >= 95 ? 'bien' : pct >= 85 ? 'atencion' : 'riesgo'; }
+export const cumplimientoCliente = (cid, hoy) => cumplimiento((a) => a.cliente === cid, hoy);
+
+// ---------- Organigrama y documentos (Recursos Humanos) ----------
+const AREAS_BASE = [
+  { id: 'direccion', nombre: 'Dirección', orden: 0, raiz: true, busca: /direcci|director|ceo|socio/i },
+  { id: 'marketing', nombre: 'Growth y Marketing', orden: 1, busca: /growth|marketing|performance|ads|medios/i },
+  { id: 'diseno', nombre: 'Diseño y Creativo', orden: 2, busca: /dise|creativ|arte|video/i },
+  { id: 'cuentas', nombre: 'Cuentas y Proyectos', orden: 3, busca: /cuenta|proyect|ejecutiv/i },
+  { id: 'admin', nombre: 'Administración', orden: 4, busca: /admin|finanz|factur|contab/i },
+];
+// Si nadie ha armado el organigrama, se propone uno con el puesto de cada quien.
+export function areasVigentes() {
+  if (estado.areas?.length) return [...estado.areas].sort((a, b) => a.orden - b.orden);
+  return AREAS_BASE.map(({ busca, ...a }) => ({ ...a, personas: estado.personas.filter((p) => busca.test(p.puesto || '')).map((p) => p.id), propuesta: true }));
+}
+export function guardarAreas(lista, uId) {
+  estado.areas = lista.map(({ propuesta, ...a }, i) => ({ ...a, orden: i }));
+  evento(uId, 'actualizó el organigrama');
+  guardar();
+}
+export function guardarDocumento(d, uId) {
+  const nuevo = !d.id;
+  const doc = { ...d, id: d.id || uid('d'), actualizado: ahora(), subidoPor: d.subidoPor || uId };
+  estado.documentos = nuevo ? [...(estado.documentos || []), doc] : estado.documentos.map((x) => (x.id === doc.id ? doc : x));
+  if (nuevo) evento(uId, `agregó el documento «${doc.titulo}»`);
+  guardar();
+  return doc;
+}
+export function quitarDocumento(id, uId) {
+  const d = estado.documentos.find((x) => x.id === id); if (!d) return;
+  estado.documentos = estado.documentos.filter((x) => x.id !== id);
+  evento(uId, `quitó el documento «${d.titulo}»`);
+  guardar();
+}

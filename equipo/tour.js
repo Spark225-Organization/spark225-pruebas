@@ -1,7 +1,7 @@
 // Recorrido de inducción: bienvenida y pasos con foco sobre cada parte de la app.
 // Cada paso trae una mini animación que muestra el gesto (arrastrar, tocar, conectar).
 import { html, useState, useEffect, useLayoutEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611261300';
+import { I, Estrella } from './ui.js?v=202611261500';
 
 export const PASOS = [
   { sel: '[data-tour="dias"]', demo: 'dias', t: 'Tus días', d: 'Toca un día para verlo. Para mover una tarea a otro día, arrástrala y suéltala sobre el día que quieras.' },
@@ -39,7 +39,7 @@ function Demo({ tipo }) {
   return null;
 }
 
-export function Bienvenida({ empezar, saltar, nombre }) {
+export function Bienvenida({ empezar, saltar, nombre, area, verSpark }) {
   return html`
     <div class="velo alto"></div>
     <div class="bienvenida" role="dialog" aria-modal="true" aria-label="Bienvenida">
@@ -49,6 +49,7 @@ export function Bienvenida({ empezar, saltar, nombre }) {
       <div class="bv-gestos">
         <span><i class="g-arr"></i>Arrastra</span><span><i class="g-toc"></i>Toca</span><span><i class="g-con"></i>Conecta</span>
       </div>
+      ${area && html`<button class="bv-area" onClick=${verSpark}>${I('organigrama')}<span>Así está organizado Spark: tú estás en <b>${area}</b></span>${I('flecha', 'rot-180')}</button>`}
       <button class="btn prim ancho" onClick=${empezar}>Ver cómo funciona</button>
       <button class="btn fantasma ancho" onClick=${saltar}>Ahora no</button>
     </div>`;

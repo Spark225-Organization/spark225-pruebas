@@ -1,25 +1,27 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261300';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261500';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261300';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261300';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261300';
-import { AltaRapida } from './mecha.js?v=202611261300';
-import { Inicio } from './vistas.js?v=202611261300';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261300';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611261300';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261300';
-import { Chat } from './chat.js?v=202611261300';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261300';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261300';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261300';
-import { Instalar } from './instalar.js?v=202611261300';
-import { notificar, activarPush } from './avisos.js?v=202611261300';
-import { Bienvenida, Recorrido } from './tour.js?v=202611261300';
-import { useArrastre } from './arrastre.js?v=202611261300';
-import { Galeria } from './widgets.js?v=202611261300';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261500';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261500';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261500';
+import { AltaRapida } from './mecha.js?v=202611261500';
+import { Inicio } from './vistas.js?v=202611261500';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261500';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611261500';
+import { Tablero } from './tablero.js?v=202611261500';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611261500';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261500';
+import { Chat } from './chat.js?v=202611261500';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261500';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261500';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261500';
+import { Instalar } from './instalar.js?v=202611261500';
+import { notificar, activarPush } from './avisos.js?v=202611261500';
+import { Bienvenida, Recorrido } from './tour.js?v=202611261500';
+import { useArrastre } from './arrastre.js?v=202611261500';
+import { Galeria } from './widgets.js?v=202611261500';
 
 function useStore() {
   const [, set] = useState(0);
@@ -138,7 +140,8 @@ function App() {
 
   const persona = ruta.startsWith('/persona/') && db.personas.some((p) => p.id === ruta.split('/')[2]) ? ruta.split('/')[2] : yo;
   const clienteRuta = ruta.startsWith('/cliente/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
-  const vista = clienteRuta ? 'cliente' : { '/equipo': 'equipo', '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes' }[ruta] || 'dia';
+  const rhRuta = ruta === '/equipo' ? 'personas' : ruta.startsWith('/rh') ? (['documentos', 'personas'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'spark') : null;
+  const vista = clienteRuta ? 'cliente' : rhRuta ? 'rh' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/tablero': 'tablero' }[ruta] || 'dia';
   const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
@@ -227,7 +230,8 @@ function App() {
           ${vista === 'clientes' && html`<${Archivero} ctx=${ctx} />`}
           ${vista === 'cliente' && html`<${DetalleCliente} id=${clienteRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
-          ${vista === 'equipo' && html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`}
+          ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} />`}
+          ${vista === 'rh' && html`<${RecursosHumanos} ctx=${ctx} pestana=${rhRuta} Personas=${html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`} />`}
           ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
         <//>
       </main>
@@ -238,10 +242,11 @@ function App() {
           : html`
             <a href="#/" class="dock-it" aria-current=${vista === 'dia' && persona === yo ? 'page' : null} onClick=${() => setFecha(hoyISO())}>${I('inicio')}<span>Inicio</span></a>
             <a href="#/pipeline" class="dock-it" aria-current=${vista === 'pipeline' ? 'page' : null} data-tour="pipeline">${I('columnas')}<span>Pipeline</span></a>
+            <a href="#/tablero" class="dock-it" aria-current=${vista === 'tablero' ? 'page' : null}>${I('grafica')}<span>Tablero</span></a>
             <span class="rel"><button class="dock-mas" onClick=${() => setMenuCrear((v) => !v)} aria-label="Crear" aria-expanded=${menuCrear} data-tour="mas">${I('mas')}</button>
               ${menuCrear && html`<${MenuCrear} elegir=${(t) => ctx.crear(t, t === 'tarea' ? {} : clienteRuta && db.clientes.some((c) => c.id === clienteRuta) ? { cliente: clienteRuta } : {})} cerrar=${() => setMenuCrear(false)} />`}</span>
-            <a href="#/clientes" class="dock-it" aria-current=${vista === 'clientes' || vista === 'cliente' ? 'page' : null} data-tour="clientes">${I('carpeta')}<span>Clientes</span></a>
-            <a href="#/equipo" class="dock-it" aria-current=${vista === 'equipo' || persona !== yo ? 'page' : null}>${I('equipo')}<span>Equipo</span></a>`}
+            <a href="#/clientes" class="dock-it" aria-current=${vista === 'clientes' || vista === 'cliente' ? 'page' : null} data-tour="clientes">${I('clientes')}<span>Clientes</span></a>
+            <a href="#/rh" class="dock-it" aria-current=${vista === 'rh' || persona !== yo ? 'page' : null}>${I('rh')}<span>RH</span></a>`}
       </nav>
 
       ${arr && html`<div class="fantasma-arr" style=${`left:${arr.x}px;top:${arr.y}px;--c:${arr.color || 'var(--chispa)'}`}><i></i>${arr.etiqueta}</div>`}
@@ -258,7 +263,7 @@ function App() {
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} abrirMinuta=${ctx.abrirMinuta} conexiones=${() => setBienvenida('conexiones')} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
-      ${tour === 'bienvenida' && html`<${Bienvenida} nombre=${yoP?.corto} empezar=${() => { location.hash = '#/'; setTour('pasos'); }} saltar=${cerrarTour} />`}
+      ${tour === 'bienvenida' && html`<${Bienvenida} nombre=${yoP?.corto} area=${areaDe(yo)?.nombre} verSpark=${() => { cerrarTour(); location.hash = '#/rh/spark'; }} empezar=${() => { location.hash = '#/'; setTour('pasos'); }} saltar=${cerrarTour} />`}
       ${tour === 'pasos' && html`<${Recorrido} terminar=${cerrarTour} />`}
       ${galeria && html`<${Galeria} db=${db} agregar=${galeria.agregar} cerrar=${() => setGaleria(null)} />`}
       ${asis?.tipo === 'tarea' && html`<${AsistenteTarea} ctx=${ctx} inicial=${asis.inicial} cerrar=${() => setAsis(null)} />`}
@@ -497,13 +502,16 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
   const t = norm(q.trim());
   const acciones = [
     { t: 'Nueva tarea', ico: 'mas', f: () => ctx.crear('tarea') },
-    { t: 'Nuevo cliente', ico: 'carpeta', f: () => ctx.crear('cliente') },
+    { t: 'Nuevo cliente', ico: 'clientes', f: () => ctx.crear('cliente') },
     { t: 'Nuevo proyecto', ico: 'proyectos', f: () => ctx.crear('proyecto') },
     { t: 'Pipeline', ico: 'columnas', f: () => { location.hash = '#/pipeline'; } },
-    { t: 'Clientes', ico: 'carpeta', f: () => { location.hash = '#/clientes'; } },
+    { t: 'Clientes', ico: 'clientes', f: () => { location.hash = '#/clientes'; } },
+    { t: 'Cómo va Spark (tablero)', ico: 'grafica', f: () => { location.hash = '#/tablero'; } },
+    { t: 'Organigrama de Spark', ico: 'organigrama', f: () => { location.hash = '#/rh/spark'; } },
+    { t: 'Documentos de la compañía', ico: 'documento', f: () => { location.hash = '#/rh/documentos'; } },
     { t: 'Chat', ico: 'chat', f: () => ctx.abrirChat() },
     { t: 'Historial', ico: 'historial', f: () => { location.hash = '#/historial'; } },
-    { t: 'Equipo', ico: 'equipo', f: () => { location.hash = '#/equipo'; } },
+    { t: 'Equipo', ico: 'equipo', f: () => { location.hash = '#/rh/personas'; } },
     { t: 'Papelera', ico: 'papelera', f: () => { location.hash = '#/papelera'; } },
     { t: 'Claro / oscuro', ico: 'tema', f: setTema },
   ].filter((x) => !t || norm(x.t).includes(t));

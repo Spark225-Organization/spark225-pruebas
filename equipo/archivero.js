@@ -1,66 +1,88 @@
-// Archivero de clientes: cada cliente es una carpeta. Al abrirla ves cómo va la cuenta,
-// qué tan contento está, el avance de sus proyectos y qué le toca a cada quien.
+// Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
+// Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, SALUD, CARITAS } from './datos.js?v=202611261300';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs } from './store.js?v=202611261300';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261300';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611261500';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611261500';
+import { I, Anillo, Avatar, LogoCliente, fechaRelativa, haceCuanto } from './ui.js?v=202611261500';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
+export const NOMBRE_SALUD = { bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' };
 const ultimaSat = (c) => c.satisfaccion?.length ? c.satisfaccion[c.satisfaccion.length - 1].valor : 0;
-const reducido = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PRI = Object.fromEntries(PRIORIDADES.map((p) => [p.id, p.nombre]));
+
+// Chip del semáforo: color + texto + forma, nunca solo color.
+export function Semaforo({ cu, corto }) {
+  if (cu.pct === null) return html`<span class="sema s-nada"><i></i>${corto ? 'Sin entregas' : `Sin entregas en ${VENTANA_DIAS} días`}</span>`;
+  return html`<span class=${'sema s-' + cu.salud}><i></i><b class="num">${cu.pct} %</b>${corto ? '' : ` a tiempo · ${NOMBRE_SALUD[cu.salud]}`}</span>`;
+}
 
 export function Archivero({ ctx }) {
   const { db, yo } = ctx;
+  const prefs = prefsDe(yo);
   const [solo, setSolo] = useState(false);
-  const [abriendo, setAbriendo] = useState(null);
+  const [etapa, setEtapa] = useState(prefs.clientesEtapa || 'activo');
   const hoy = hoyISO();
   const abiertas = vigentes().filter((a) => a.estatus !== 'hecho' && visiblePara(a, yo));
-  const lista = db.clientes.filter((c) => !c.privado && (!solo || c.responsable === yo))
-    .sort((a, b) => (ORDEN_SALUD[a.salud] ?? 3) - (ORDEN_SALUD[b.salud] ?? 3) || a.nombre.localeCompare(b.nombre));
-  const abrir = (e, c) => {
-    e.preventDefault();
-    if (reducido()) { location.hash = '#/cliente/' + c.id; return; }
-    setAbriendo(c.id);
-    setTimeout(() => { location.hash = '#/cliente/' + c.id; }, 380);
-  };
+  const visibles = db.clientes.filter((c) => !c.privado && (!solo || c.responsable === yo));
+  const porEtapa = (e) => visibles.filter((c) => (c.etapa || 'activo') === e);
+  const lista = porEtapa(etapa).map((c) => ({ c, cu: cumplimientoCliente(c.id, hoy) }))
+    .sort((a, b) => (ORDEN_SALUD[a.cu.salud] ?? 3) - (ORDEN_SALUD[b.cu.salud] ?? 3) || a.c.nombre.localeCompare(b.c.nombre));
+  const elegirEtapa = (e) => { setEtapa(e); guardarPrefs(yo, { clientesEtapa: e }); };
+
   return html`
     <header class="cab-inicio">
-      <div class="cab-dia"><h1>Clientes</h1><span class="sub num">${lista.length} carpetas</span></div>
+      <div class="cab-dia"><h1>Clientes</h1><span class="sub num">${visibles.length} en total</span></div>
       <div class="segmentado" role="tablist">
         <button aria-pressed=${!solo} onClick=${() => setSolo(false)}>Todos</button>
         <button aria-pressed=${solo} onClick=${() => setSolo(true)}>Los que llevo</button>
       </div>
     </header>
-    <div class="archivero" data-tour="archivero">
-      ${lista.map((c, k) => {
+    <div class="cli-etapas" role="tablist" aria-label="Etapa">
+      ${ETAPAS_CLIENTE.map((e) => html`<button key=${e.id} role="tab" aria-selected=${etapa === e.id} onClick=${() => elegirEtapa(e.id)}>${e.nombre}<span class="num">${porEtapa(e.id).length}</span></button>`)}
+    </div>
+    ${etapa === 'activo' && html`<p class="cli-regla">El semáforo sale solo de la entrega a tiempo de los últimos ${VENTANA_DIAS} días, con más peso a lo de prioridad alta: <span class="sema s-bien"><i></i>95 % o más</span> <span class="sema s-atencion"><i></i>85 a 94 %</span> <span class="sema s-riesgo"><i></i>menos de 85 %</span></p>`}
+    <div class="cli-grid" data-tour="archivero">
+      ${lista.map(({ c, cu }) => {
         const suyas = abiertas.filter((a) => a.cliente === c.id);
         const venc = suyas.filter((a) => a.fecha < hoy).length;
         const r = db.personas.find((p) => p.id === c.responsable);
         const sat = ultimaSat(c);
-        const papeles = Math.min(3, Math.max(1, Math.ceil(suyas.length / 2)));
-        return html`<a key=${c.id} href=${'#/cliente/' + c.id} class=${'folder' + (abriendo === c.id ? ' abriendo' : '')} style=${`--c:${c.color};--k:${k}`} onClick=${(e) => abrir(e, c)}>
-          <span class="f-tab"><i class=${'semaforo s-' + c.salud}></i></span>
-          ${Array.from({ length: papeles }).map((_, i) => html`<span key=${i} class=${'f-papel p' + (i + 1)}></span>`)}
-          <span class="f-frente">
-            <b class="f-nombre">${c.nombre}</b>
-            <span class="f-pie">
-              <span class="f-pend num">${suyas.length}<small>${suyas.length === 1 ? 'pendiente' : 'pendientes'}</small>${venc ? html`<em>${venc} ${venc === 1 ? 'vencida' : 'vencidas'}</em>` : null}</span>
-              <span class="f-der">${sat ? html`<span class="f-sat" title="Satisfacción">${CARITAS[sat - 1]}</span>` : null}<${Avatar} p=${r} /></span>
-            </span>
-          </span>
+        return html`<a key=${c.id} href=${'#/cliente/' + c.id} class="cli-card" style=${`--c:${c.color}`}>
+          <div class="cc-top"><${LogoCliente} c=${c} tam="l" /><${Avatar} p=${r} /></div>
+          <b class="cc-nombre">${c.nombre}</b>
+          ${etapa === 'activo' ? html`<${Semaforo} cu=${cu} corto />` : html`<span class="sema s-nada"><i></i>${ETAPAS_CLIENTE.find((e) => e.id === etapa).uno}</span>`}
+          <span class="cc-pie num">${suyas.length} ${suyas.length === 1 ? 'pendiente' : 'pendientes'}${venc ? html`<em>${venc} ${venc === 1 ? 'vencida' : 'vencidas'}</em>` : null}${sat ? html`<span class="cc-sat" title="Satisfacción">${CARITAS[sat - 1]}</span>` : null}</span>
         </a>`;
       })}
-      <button class="folder nueva" onClick=${() => ctx.crear('cliente')} aria-label="Nuevo cliente">
-        <span class="f-tab"></span><span class="f-frente"><span class="f-mas">${I('mas')}</span><b class="f-nombre">Nuevo cliente</b></span>
+      <button class="cli-card nueva" onClick=${() => ctx.crear('cliente')}>
+        <span class="cc-mas">${I('mas')}</span><b class="cc-nombre">Nuevo cliente</b>
       </button>
     </div>`;
 }
 
-// ---------- Carpeta abierta ----------
+// Reduce el logo a 160 px para guardarlo junto al cliente (sin depender de Drive).
+function leerLogo(archivo) {
+  return new Promise((ok, mal) => {
+    if (!archivo || !/^image\//.test(archivo.type)) return mal(new Error('Elige una imagen (PNG, JPG o SVG).'));
+    const img = new Image();
+    img.onload = () => {
+      const lado = 160, k = Math.min(1, lado / Math.max(img.width, img.height));
+      const cv = Object.assign(document.createElement('canvas'), { width: Math.round(img.width * k) || lado, height: Math.round(img.height * k) || lado });
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(img.src);
+      ok(cv.toDataURL('image/webp', 0.9));
+    };
+    img.onerror = () => mal(new Error('No pude leer esa imagen.'));
+    img.src = URL.createObjectURL(archivo);
+  });
+}
+
+// ---------- Ficha del cliente ----------
 export function DetalleCliente({ id, ctx }) {
   const { db, yo } = ctx;
   const c = db.clientes.find((x) => x.id === id);
-  if (!c) return html`<div class="vacio">${I('carpeta')}<p>Ese cliente ya no está.</p><a class="btn" href="#/clientes">Volver al archivero</a></div>`;
+  const [editando, setEditando] = useState(false);
+  if (!c) return html`<div class="vacio">${I('clientes')}<p>Ese cliente ya no está.</p><a class="btn" href="#/clientes">Volver a Clientes</a></div>`;
   const hoy = hoyISO();
   const todas = vigentes().filter((a) => a.cliente === c.id && visiblePara(a, yo));
   const abiertas = todas.filter((a) => a.estatus !== 'hecho');
@@ -68,6 +90,7 @@ export function DetalleCliente({ id, ctx }) {
   const hechas = todas.length - abiertas.length;
   const pct = todas.length ? Math.round((hechas / todas.length) * 100) : 0;
   const proyectos = db.proyectos.filter((p) => p.cliente === c.id);
+  const cu = cumplimientoCliente(c.id, hoy);
   const sat = ultimaSat(c);
   const hist = (c.satisfaccion || []).slice(-6);
   const yaCalificado = hist.some((s) => s.fecha === hoy);
@@ -76,14 +99,33 @@ export function DetalleCliente({ id, ctx }) {
   const C = 2 * Math.PI * 30;
   const verPipeline = (persona) => { guardarPrefs(yo, { pipeCliente: c.id, pipePersona: persona || 'todos' }); location.hash = '#/pipeline'; };
   const mes = (iso) => new Intl.DateTimeFormat('es-MX', { month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
+  // Materiales: los enlaces del cliente y los que traen sus tareas (sin repetir y sin los de Notion).
+  const deTareas = todas.flatMap((a) => (a.enlaces || []).filter((l) => l.id !== 'notion').map((l) => ({ ...l, tarea: a })));
+  const materiales = [...(c.enlaces || []), ...deTareas.filter((l, i, arr) => arr.findIndex((x) => x.url === l.url) === i && !(c.enlaces || []).some((x) => x.url === l.url))];
+  const subirLogo = async (e) => {
+    try { actualizarCliente(c.id, { logo: await leerLogo(e.target.files[0]) }, yo); ctx.toast('Logo actualizado'); }
+    catch (err) { ctx.toast(err.message); }
+    e.target.value = '';
+  };
 
-  return html`<div class="carpeta-abierta" style=${`--c:${c.color}`}>
-    <header class="ca-cab">
-      <a class="ca-volver" href="#/clientes">${I('flecha')}Archivero</a>
-      <div class="ca-tit">
-        <span class="ca-tab"></span>
-        <h1>${c.nombre}</h1>
-        <span class="ca-quien"><${Avatar} p=${r} />${r ? `Lleva la cuenta ${r.id === yo ? 'tú' : r.corto}` : ''}</span>
+  return html`<div class="ficha-cli" style=${`--c:${c.color}`}>
+    <header class="fc-cab">
+      <a class="ca-volver" href="#/clientes">${I('flecha')}Clientes</a>
+      <div class="fc-id">
+        <label class="fc-logo" title="Cambiar logo">
+          <${LogoCliente} c=${c} tam="xl" />
+          <span class="fc-logo-btn">${I('subir')}<span>${c.logo ? 'Cambiar logo' : 'Subir logo'}</span></span>
+          <input type="file" accept="image/*" class="oculto" onChange=${subirLogo} />
+        </label>
+        <div class="fc-tit">
+          <h1>${c.nombre}</h1>
+          <div class="fc-meta">
+            <select class="control chico" value=${c.etapa || 'activo'} aria-label="Etapa" onChange=${(e) => { actualizarCliente(c.id, { etapa: e.target.value }, yo); ctx.toast(`${c.nombre}: ${ETAPAS_CLIENTE.find((x) => x.id === e.target.value).uno}`); }}>
+              ${ETAPAS_CLIENTE.map((e) => html`<option key=${e.id} value=${e.id}>${e.uno}</option>`)}
+            </select>
+            <span class="ca-quien"><${Avatar} p=${r} />${r ? `Lleva la cuenta ${r.id === yo ? 'tú' : r.corto}` : ''}</span>
+          </div>
+        </div>
       </div>
       <div class="ca-acc">
         <button class="btn" onClick=${() => ctx.crear('proyecto', { cliente: c.id })}>${I('proyectos')}Proyecto</button>
@@ -92,11 +134,15 @@ export function DetalleCliente({ id, ctx }) {
     </header>
 
     <div class="ca-resumen">
-      <section class="ca-panel">
-        <h3>Cómo va la cuenta</h3>
-        <div class="ca-salud" role="radiogroup" aria-label="Estado general">
-          ${SALUD.map((s) => html`<button key=${s.id} role="radio" aria-checked=${c.salud === s.id} class=${'s-' + s.id} onClick=${() => { actualizarCliente(c.id, { salud: s.id }, yo); ctx.toast(`${c.nombre}: ${s.nombre}`); }}><i class="semaforo"></i>${s.nombre}</button>`)}
+      <section class=${'ca-panel fc-entrega s-' + (cu.salud || 'nada')}>
+        <h3>Entrega a tiempo<small>últimos ${VENTANA_DIAS} días</small></h3>
+        <div class="fc-pct">
+          <b class="num">${cu.pct === null ? '—' : cu.pct + ' %'}</b>
+          ${cu.salud && html`<span class=${'sema s-' + cu.salud}><i></i>${NOMBRE_SALUD[cu.salud]}</span>`}
         </div>
+        <p class="fc-expl">${cu.pct === null ? 'Aún no vence ninguna tarea de este cliente en el periodo.' : html`${cu.nATiempo} de ${cu.evaluadas.length} a tiempo. Lo de prioridad alta pesa el triple que lo de baja.`}</p>
+        ${cu.tarde.length > 0 && html`<ul class="fc-tarde">${cu.tarde.slice(0, 4).map((x) => html`<li key=${x.a.id}><button onClick=${() => ctx.abrir(x.a.id)}>
+          <span class="cl-t">${x.a.titulo}</span><span class=${'pri-txt pri-' + (x.a.prioridad || 'media')}>${PRI[x.a.prioridad] || 'Media'}</span><span class="num rojo">${x.diasTarde} d</span></button></li>`)}</ul>`}
       </section>
 
       <section class="ca-panel">
@@ -124,6 +170,24 @@ export function DetalleCliente({ id, ctx }) {
     </div>
 
     <div class="ca-cuerpo">
+      <section class="ca-bloque fc-datos">
+        <h3>Datos del cliente<button class="enlace" onClick=${() => setEditando(!editando)}>${editando ? 'Listo' : 'Editar'}</button></h3>
+        ${editando ? html`<${EditarDatos} c=${c} yo=${yo} />` : html`<dl>
+          <div><dt>Carpeta de Drive</dt><dd>${c.drive ? html`<a href=${c.drive} target="_blank" rel="noopener">${I('drive')}Abrir carpeta</a>` : html`<span class="tenue">Sin carpeta</span>`}</dd></div>
+          <div><dt>Sitio web</dt><dd>${c.web ? html`<a href=${c.web} target="_blank" rel="noopener">${c.web.replace(/^https?:\/\/(www\.)?/, '')}</a>` : html`<span class="tenue">—</span>`}</dd></div>
+          <div><dt>Contacto</dt><dd>${c.contacto || html`<span class="tenue">—</span>`}</dd></div>
+          <div><dt>Giro</dt><dd>${c.giro || html`<span class="tenue">—</span>`}</dd></div>
+          ${c.notasCliente && html`<div class="ancho"><dt>Notas</dt><dd>${c.notasCliente}</dd></div>`}
+        </dl>`}
+      </section>
+
+      <section class="ca-bloque">
+        <h3>Materiales y enlaces<span class="num">${materiales.length}</span></h3>
+        ${materiales.length === 0 ? html`<p class="ca-vacio">Pega aquí la carpeta de Drive del cliente (en Editar) o agrega enlaces a sus tareas.</p>`
+          : html`<ul class="ca-lista">${materiales.slice(0, 10).map((l) => html`<li key=${l.url}><a class="fila-enlace" href=${l.url} target="_blank" rel="noopener">
+            ${I(/drive|docs\.google/.test(l.url) ? 'drive' : 'enlace')}<span class="cl-t">${l.titulo}</span><span class="cl-f">${l.tarea ? l.tarea.titulo : 'Del cliente'}</span></a></li>`)}</ul>`}
+      </section>
+
       <section class="ca-bloque">
         <h3>Proyectos<span class="num">${proyectos.length}</span></h3>
         <ul class="ca-proyectos">${proyectos.map((p) => {
@@ -166,6 +230,17 @@ export function DetalleCliente({ id, ctx }) {
             ${I('nota')}<span class="cl-t">${m.titulo}</span><span class="num cl-f">${haceCuanto(m.fecha)}</span></button></li>`)}</ul>`}
       </section>
     </div>
-    <p class="ca-nota">El estado y la satisfacción de esta demo son de ejemplo.</p>
+  </div>`;
+}
+
+function EditarDatos({ c, yo }) {
+  const campo = (k, etiqueta, ph, tipo = 'text') => html`<label class="campo"><span>${etiqueta}</span>
+    <input class="control" type=${tipo} placeholder=${ph} value=${c[k] || ''} onChange=${(e) => actualizarCliente(c.id, { [k]: e.target.value.trim() || null }, yo)} /></label>`;
+  return html`<div class="fc-editar">
+    ${campo('drive', 'Carpeta de Drive', 'https://drive.google.com/…', 'url')}
+    ${campo('web', 'Sitio web', 'https://…', 'url')}
+    ${campo('contacto', 'Contacto', 'Nombre y puesto')}
+    ${campo('giro', 'Giro', 'Ej. Farmacéutica, oncología')}
+    <label class="campo"><span>Notas</span><textarea class="control" rows="2" value=${c.notasCliente || ''} onChange=${(e) => actualizarCliente(c.id, { notasCliente: e.target.value.trim() || null }, yo)}></textarea></label>
   </div>`;
 }

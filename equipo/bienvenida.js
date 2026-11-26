@@ -2,8 +2,8 @@
 // los menos clics posibles y explica en una línea qué pasa en cada paso.
 // Se abre sola la primera vez; después, desde Perfil › Conexiones.
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I } from './ui.js?v=202611252300';
-import { googleConectado, entrarConGoogle, buscarNotion, confirmarNotion, terminarBienvenida } from './nube.js?v=202611252300';
+import { I } from './ui.js?v=202611260010';
+import { googleConectado, entrarConGoogle, buscarNotion, confirmarNotion, terminarBienvenida } from './nube.js?v=202611260010';
 
 const CLAVE_PASO = 'ssam-bienvenida-paso';
 
@@ -22,7 +22,7 @@ export function Bienvenida({ persona, desdeConexiones, cerrar, toast }) {
     buscarNotion().then((r) => {
       if (!r.ok) return setNotion({ estado: 'error', error: r.error });
       if (r.ligado) return setNotion({ estado: 'ligado' });
-      setNotion({ estado: r.candidatos.length ? 'elegir' : 'nada', candidatos: r.candidatos });
+      setNotion({ estado: r.candidatos.length ? 'elegir' : 'nada', candidatos: r.candidatos, compartido: !!r.compartido });
     }).catch((e) => setNotion({ estado: 'error', error: String(e) }));
   }, [paso]);
 
@@ -83,12 +83,12 @@ export function Bienvenida({ persona, desdeConexiones, cerrar, toast }) {
         ${notion.estado === 'buscando' && html`<p class="bienv-sub"><span class="girando"></span> Buscando tu cuenta en el Notion de Spark…</p>`}
         ${notion.estado === 'ligado' && html`<p class="bienv-ok">${I('check')}Listo: tu cuenta de Notion está ligada${notion.tareas != null ? ` y ya trajimos tus tareas` : ''}.</p>`}
         ${(notion.estado === 'elegir' || notion.estado === 'ligando') && html`
-          <p class="bienv-sub">${notion.candidatos.length === 1 ? 'Encontramos tu cuenta. ¿Eres tú?' : 'Encontramos estas cuentas. ¿Cuál eres tú?'}</p>
+          <p class="bienv-sub">${notion.compartido ? 'Esta cuenta comparte el Notion de abajo. ¿Lo vinculas?' : notion.candidatos.length === 1 ? 'Encontramos tu cuenta. ¿Eres tú?' : 'Encontramos estas cuentas. ¿Cuál eres tú?'}</p>
           <div class="bienv-cuentas">
             ${notion.candidatos.map((c) => html`<button key=${c.id} class="bienv-cuenta" disabled=${notion.estado === 'ligando'} onClick=${() => ligar(c)}>
               ${c.foto ? html`<img src=${c.foto} alt="" />` : html`<span class="bienv-ini">${(c.nombre || '?').slice(0, 1)}</span>`}
               <span class="bienv-cuenta-t"><b>${c.nombre}</b>${c.email && html`<small>${c.email}</small>`}</span>
-              <span class="btn prim chico">${notion.estado === 'ligando' && notion.elegido?.id === c.id ? html`<span class="girando"></span>` : 'Sí, soy yo'}</span>
+              <span class="btn prim chico">${notion.estado === 'ligando' && notion.elegido?.id === c.id ? html`<span class="girando"></span>` : notion.compartido ? 'Vincular' : 'Sí, soy yo'}</span>
             </button>`)}
           </div>
           ${notion.error && html`<p class="bienv-error">${I('alerta')}${notion.error}</p>`}`}

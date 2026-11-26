@@ -7,7 +7,7 @@
 import { crearBase, calcularVista, nuevoId, iso, fecha, hoy0, estadosOrden, IDX, type Base, type Fila } from "./demoData";
 import { rolDemo, guardarRolDemo, DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA, DEMO_DISENADOR_ID } from "./demoState";
 
-const CLAVE_BASE = "ssam-demo-base-v4"; // v4: Paco con sus clientes asignados
+const CLAVE_BASE = "ssam-demo-base-v5"; // v5: Paco con sus clientes asignados
 
 function cargar(): Base {
   try {
@@ -34,6 +34,7 @@ function guardar() {
 export function reiniciarDemo() {
   try {
     localStorage.removeItem(CLAVE_BASE);
+    localStorage.removeItem(CLAVE_ARCHIVOS);
   } catch {
     /* nada */
   }
@@ -290,8 +291,43 @@ function rpc(nombre: string, p: Fila): Res {
   return { data: true, error: null };
 }
 
-// ── Archivos: lo que se sube vive en memoria; lo de fábrica es una muestra ──
-const subidos = new Map<string, string>();
+// ── Archivos: lo que se sube se guarda en este navegador; lo de fábrica es una muestra ──
+const CLAVE_ARCHIVOS = "ssam-demo-archivos-v1";
+// ruta → archivo (data URL) guardado en el navegador; en uso se sirve como blob URL.
+const guardados = new Map<string, string>(
+  (() => {
+    try {
+      return Object.entries(JSON.parse(localStorage.getItem(CLAVE_ARCHIVOS) || "{}")) as [string, string][];
+    } catch {
+      return [];
+    }
+  })(),
+);
+function aBlobUrl(dato: string) {
+  try {
+    const [cab, b64] = dato.split(",");
+    const tipo = cab.match(/data:([^;]+)/)?.[1] ?? "application/octet-stream";
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([bytes], { type: tipo }));
+  } catch {
+    return dato;
+  }
+}
+const subidos = new Map<string, string>([...guardados.entries()].map(([k, v]) => [k, aBlobUrl(v)]));
+function guardarArchivos() {
+  const lista = [...guardados.entries()];
+  // Si no cabe todo, se quitan los más viejos hasta que quepa.
+  for (let desde = 0; desde <= lista.length; desde++) {
+    try {
+      localStorage.setItem(CLAVE_ARCHIVOS, JSON.stringify(Object.fromEntries(lista.slice(desde))));
+      return;
+    } catch {
+      /* lleno: probar con menos */
+    }
+  }
+}
 function muestra(ruta: string) {
   const nombre = ruta.split("/").pop() ?? "archivo";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#F5C245"/><stop offset="1" stop-color="#E47739"/></linearGradient></defs><rect width="1200" height="800" fill="#F8F9FA"/><rect x="0" y="0" width="1200" height="14" fill="url(#g)"/><text x="600" y="380" font-family="Inter,Arial" font-size="44" font-weight="700" fill="#4E5964" text-anchor="middle">Material de muestra</text><text x="600" y="440" font-family="Inter,Arial" font-size="26" fill="#8894A0" text-anchor="middle">${nombre} · datos ficticios</text></svg>`;
@@ -345,6 +381,21 @@ const storage = {
     return {
       async upload(ruta: string, archivo: Blob) {
         subidos.set(ruta, URL.createObjectURL(archivo));
+        // Se guarda en el navegador (si cabe) para que siga ahí al cambiar de rol.
+        if (archivo.size < 1_500_000) {
+          try {
+            const dato: string = await new Promise((ok, mal) => {
+              const lector = new FileReader();
+              lector.onload = () => ok(String(lector.result));
+              lector.onerror = mal;
+              lector.readAsDataURL(archivo);
+            });
+            guardados.set(ruta, dato);
+            guardarArchivos();
+          } catch {
+            /* se queda solo en memoria */
+          }
+        }
         return { data: { path: ruta }, error: null };
       },
       async createSignedUrl(ruta: string) {

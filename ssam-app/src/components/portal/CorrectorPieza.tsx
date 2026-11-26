@@ -331,34 +331,39 @@ export function CorrectorPieza({
 
   return createPortal(
     <div className="ssam-ficha fixed inset-0 z-[70] flex flex-col bg-[#EEF0F2]" role="dialog" aria-label="Corregir sobre la pieza">
-      {/* Barra de herramientas */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#E3E6EA] bg-white px-3 py-2.5 sm:px-4">
-        <div className="mr-auto min-w-0">
-          <p className="truncate text-sm font-bold text-[#0E1E2A]">Corregir sobre la pieza</p>
-          <p className="truncate text-[11px] text-[#7A8590]">
-            {nombre}
-            {version ? ` · versión ${version}` : ""} · {ayuda}
-          </p>
+      {/* Encabezado fijo + barra de herramientas en su propia fila (no se mueve) */}
+      <div className="border-b border-[#E3E6EA] bg-white">
+        <div className="flex items-center gap-3 px-3 pt-2.5 sm:px-4">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-[#0E1E2A]">Corregir sobre la pieza</p>
+            <p className="truncate text-[11px] text-[#7A8590]">
+              {nombre}
+              {version ? ` · versión ${version}` : ""}
+            </p>
+          </div>
+          <button type="button" onClick={onCerrar} title="Cerrar sin guardar" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#4E5964] hover:bg-[#F3F4F6]"><X className="h-4 w-4" /> Cerrar</button>
         </div>
-        <div className="flex flex-wrap rounded-xl bg-[#F3F4F6] p-1" role="toolbar" aria-label="Herramientas">
-          {HERRAMIENTAS.map(({ id, nombre: t, Ico }) => (
-            <button key={id} type="button" onClick={() => setHerr(id)} aria-pressed={herr === id} title={t} className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors", herr === id ? "bg-[#0E1E2A] text-white" : "text-[#4E5964] hover:bg-white")}>
-              <Ico className="h-3.5 w-3.5" /> <span className="hidden md:inline">{t}</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1" aria-label="Color">
-          {COLORES.map((c) => (
-            <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Color ${c}`} aria-pressed={color === c} disabled={herr === "resaltar"} className={cn("h-6 w-6 rounded-full border-2 transition-transform disabled:opacity-30", color === c ? "scale-110 border-[#0E1E2A]" : "border-white")} style={{ background: c }} />
-          ))}
-        </div>
-        <div className="flex items-center gap-0.5">
-          <button type="button" onClick={deshacer} disabled={!trazosPag.length} title="Deshacer" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6] disabled:opacity-30"><Undo2 className="h-4 w-4" /></button>
-          <button type="button" onClick={limpiarPagina} disabled={!trazosPag.length} title="Borrar marcas de esta página" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6] disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
-          <button type="button" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} title="Alejar" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6]"><ZoomOut className="h-4 w-4" /></button>
-          <span className="w-10 text-center text-[11px] tabular-nums text-[#7A8590]">{Math.round(zoom * 100)}%</span>
-          <button type="button" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} title="Acercar" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6]"><ZoomIn className="h-4 w-4" /></button>
-          <button type="button" onClick={onCerrar} title="Cerrar sin guardar" className="ml-1 rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6]"><X className="h-4 w-4" /></button>
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 sm:px-4">
+          <div className="flex flex-wrap rounded-xl bg-[#F3F4F6] p-1" role="toolbar" aria-label="Herramientas">
+            {HERRAMIENTAS.map(({ id, nombre: t, Ico }) => (
+              <button key={id} type="button" onClick={() => setHerr(id)} aria-pressed={herr === id} title={t} className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors", herr === id ? "bg-[#0E1E2A] text-white" : "text-[#4E5964] hover:bg-white")}>
+                <Ico className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1" aria-label="Color">
+            {COLORES.map((c) => (
+              <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Color ${c}`} aria-pressed={color === c} disabled={herr === "resaltar"} className={cn("h-6 w-6 rounded-full border-2 transition-transform disabled:opacity-30", color === c ? "scale-110 border-[#0E1E2A]" : "border-white")} style={{ background: c }} />
+            ))}
+          </div>
+          <div className="flex items-center gap-0.5">
+            <button type="button" onClick={deshacer} disabled={!trazosPag.length} title="Deshacer" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6] disabled:opacity-30"><Undo2 className="h-4 w-4" /></button>
+            <button type="button" onClick={limpiarPagina} disabled={!trazosPag.length} title="Borrar marcas de esta página" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6] disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
+            <button type="button" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} title="Alejar" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6]"><ZoomOut className="h-4 w-4" /></button>
+            <span className="w-10 text-center text-[11px] tabular-nums text-[#7A8590]">{Math.round(zoom * 100)}%</span>
+            <button type="button" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} title="Acercar" className="rounded-lg p-2 text-[#4E5964] hover:bg-[#F3F4F6]"><ZoomIn className="h-4 w-4" /></button>
+          </div>
+          <p className="ml-auto hidden text-[11px] text-[#7A8590] lg:block">{ayuda}</p>
         </div>
       </div>
 

@@ -95,7 +95,7 @@ export function crearBase(): Base {
   // ── Personas ficticias ──
   const perfiles: Fila[] = [
     { id: DEMO_ADMIN_ID, nombre: "Admin demo", email: "admin@demo.spark225.mx", rol: "admin", cliente_id: null },
-    { id: DEMO_DISENADOR_ID, nombre: "Paco (demo)", email: "paco@demo.spark225.mx", rol: "creativo", cliente_id: null },
+    { id: DEMO_DISENADOR_ID, nombre: "Paco", email: "paco@demo.spark225.mx", rol: "creativo", cliente_id: null },
     { id: DEMO_CLIENTE_ID, nombre: "Cliente demo (Aurora)", email: "cliente@aurora-demo.mx", rol: "cliente", cliente_id: DEMO_CLIENTE_EMPRESA },
     { id: "e1000000-0000-4000-8000-000000000003", nombre: "Dra. Valeria Ríos", email: "medico@demo.spark225.mx", rol: "medical", cliente_id: null },
     { id: "e1000000-0000-4000-8000-000000000004", nombre: "Diego Montes", email: "diseno@demo.spark225.mx", rol: "creativo", cliente_id: null },

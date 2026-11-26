@@ -59,7 +59,7 @@ export const ETAPAS_CLIENTE = [
   { id: 'activo', nombre: 'Activos', uno: 'Activo', ayuda: 'Ya trabajamos con él' },
   { id: 'propuesta', nombre: 'En propuesta', uno: 'En propuesta', ayuda: 'Le estamos cotizando' },
   { id: 'prospecto', nombre: 'Prospectos', uno: 'Prospecto', ayuda: 'Aún no hay propuesta' },
-  { id: 'interna', nombre: 'Cuentas internas', uno: 'Cuenta interna', ayuda: 'Spark, marca personal y proyectos propios' },
+  { id: 'interna', nombre: 'Cuentas internas', uno: 'Cuenta interna', ayuda: 'Spark225, marca personal y proyectos propios' },
 ];
 // Proyectos: mismas fases que Master Proyectos de Notion, en español.
 export const FASES_PROYECTO = [
@@ -160,7 +160,7 @@ export function semilla() {
 
   const clientes = [
     { id: 'carnot', nombre: 'Carnot', color: '#8B7CF6' },
-    { id: 'interno', nombre: 'Spark', color: '#8A96A3' },
+    { id: 'interno', nombre: 'Spark225', color: '#8A96A3' },
     { id: 'solumed', nombre: 'Solumed', color: '#2BB59A' },
     { id: 'endodx', nombre: 'Endodx', color: '#4A9BE8' },
     { id: 'novartis', nombre: 'Novartis', color: '#E0628E' },
@@ -222,7 +222,7 @@ export function semilla() {
   const personal = {
     adan: {
       archivos: [
-        { id: 'f1', titulo: 'Drive Spark', url: 'https://drive.google.com/' },
+        { id: 'f1', titulo: 'Drive Spark225', url: 'https://drive.google.com/' },
         { id: 'f2', titulo: 'Master Entregables', url: 'https://www.notion.so/' },
         { id: 'f3', titulo: 'Tablero de KPIs', url: 'https://drive.google.com/' },
       ],

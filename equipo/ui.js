@@ -1,6 +1,6 @@
-// Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark, avatares y formato de fechas.
+// Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark225, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611270400';
+import { hoyISO } from './datos.js?v=202611270430';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
@@ -80,7 +80,7 @@ export function Anillo({ estatus }) {
   return html`<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r=${r} fill="none" stroke="currentColor" stroke-width="1.6" /></svg>`;
 }
 
-// Chispa de cuatro puntas del isotipo de Spark: marca el «ahora» en la mecha.
+// Chispa de cuatro puntas del isotipo de Spark225: marca el «ahora» en la mecha.
 export function Estrella() {
   return html`<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="g-chispa" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5C245" /><stop offset="1" stop-color="#E47739" /></linearGradient></defs><path d="M12 1.5c.9 5.6 4.9 9.6 10.5 10.5-5.6.9-9.6 4.9-10.5 10.5-.9-5.6-4.9-9.6-10.5-10.5C7.1 11.1 11.1 7.1 12 1.5z" fill="url(#g-chispa)" /></svg>`;
 }

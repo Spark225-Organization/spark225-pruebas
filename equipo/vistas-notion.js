@@ -2,9 +2,9 @@
 // con sus mismos nombres, y el Portal recuerda la última que usó cada persona.
 // Aquí viven las piezas que comparten: el selector de vistas, el Board, el Calendario y el Chart.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { sumarDias } from './datos.js?v=202611270400';
-import { prefsDe, guardarPrefs } from './store.js?v=202611270400';
-import { I } from './ui.js?v=202611270400';
+import { sumarDias } from './datos.js?v=202611270430';
+import { prefsDe, guardarPrefs } from './store.js?v=202611270430';
+import { I } from './ui.js?v=202611270430';
 
 const ICONO_TIPO = { tabla: 'lista', board: 'columnas', calendario: 'calendario', grafica: 'grafica', lista: 'lista' };
 

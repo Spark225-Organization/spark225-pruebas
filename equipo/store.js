@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270400';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270430';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -51,7 +51,8 @@ function reparar(e) {
     responsable: personas.has(a.responsable) ? a.responsable : e.personas[0].id,
     fecha: /^\d{4}-\d{2}-\d{2}$/.test(a.fecha || '') ? a.fecha : hoyISO(),
   }));
-  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; if (!c.etapa) c.etapa = c.id === 'interno' ? 'interna' : 'activo'; });
+  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; if (!c.etapa) c.etapa = c.id === 'interno' ? 'interna' : 'activo';
+    if (c.id === 'interno' && c.nombre === 'Spark') c.nombre = 'Spark225'; }); // nombre completo de la marca
   e.minutas.forEach((m) => { if (!Array.isArray(m.acuerdos)) m.acuerdos = []; });
   return e;
 }
@@ -135,7 +136,7 @@ export function validar(a) {
   if (!a.titulo || !a.titulo.trim()) e.titulo = 'Escribe un título.';
   if (!a.responsable) e.responsable = 'Elige quién la hace.';
   if (!a.fecha) e.fecha = 'Pon la fecha límite.';
-  if (!a.cliente) e.cliente = 'Elige un cliente o «Interno Spark».';
+  if (!a.cliente) e.cliente = 'Elige un cliente o «Interno Spark225».';
   if (!a.proyecto) e.proyecto = 'Elige un proyecto.';
   if (!a.esfuerzo) e.esfuerzo = 'Elige el tamaño.';
   if (a.bloque && !a.bloque.inicio) e.bloque = 'Pon la hora de inicio o quita el bloque.';
@@ -425,7 +426,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270400';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270430';
 
 const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos']);
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos'];

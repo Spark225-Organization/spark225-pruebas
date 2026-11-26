@@ -1,6 +1,6 @@
 // Google: correo (solo lectura) y agenda de hoy, con el permiso que da Google al entrar.
 // Las transcripciones de juntas (notas de Gemini, Plaud, etc.) se vuelven minuta para todo el equipo.
-import { obtenerTokenGoogle } from './nube.js?v=202611270400';
+import { obtenerTokenGoogle } from './nube.js?v=202611270430';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const ES_TRANSCRIPCION = /(notas?\b.*(reuni|junta|meeting)|transcrip|minuta|meeting notes|notes by gemini|resumen de la reuni)/i;

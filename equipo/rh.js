@@ -1,8 +1,8 @@
-// Recursos Humanos: cómo está organizado Spark (organigrama por área, con «Tú estás aquí»),
+// Recursos Humanos: cómo está organizado Spark225 (organigrama por área, con «Tú estás aquí»),
 // los documentos de la compañía y la lista del equipo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { areasVigentes, guardarAreas, guardarDocumento, quitarDocumento, esAdmin, nube } from './store.js?v=202611270400';
-import { I, Avatar, haceCuanto } from './ui.js?v=202611270400';
+import { areasVigentes, guardarAreas, guardarDocumento, quitarDocumento, esAdmin, nube } from './store.js?v=202611270430';
+import { I, Avatar, haceCuanto } from './ui.js?v=202611270430';
 
 export const CATEGORIAS_DOCS = [
   { id: 'cultura', nombre: 'Misión, visión y valores', ayuda: 'Quiénes somos y cómo trabajamos.' },
@@ -16,7 +16,7 @@ export const CATEGORIAS_DOCS = [
 export const areaDe = (uId) => areasVigentes().find((a) => (a.personas || []).includes(uId));
 
 export function RecursosHumanos({ ctx, pestana, Personas }) {
-  const tabs = [['spark', 'Cómo es Spark', 'organigrama'], ['documentos', 'Documentos', 'documento'], ['personas', 'Personas', 'equipo']];
+  const tabs = [['spark', 'Cómo es Spark225', 'organigrama'], ['documentos', 'Documentos', 'documento'], ['personas', 'Personas', 'equipo']];
   return html`<div class="rh">
     <header class="cab-inicio">
       <div class="cab-dia"><h1>Recursos Humanos</h1></div>
@@ -68,7 +68,7 @@ function Organigrama({ ctx }) {
 
   return html`
     <div class="og-intro">
-      <p>${miArea ? html`Así está organizado Spark. Tú estás en <b>${miArea.nombre}</b>.` : 'Así está organizado Spark.'}</p>
+      <p>${miArea ? html`Así está organizado Spark225. Tú estás en <b>${miArea.nombre}</b>.` : 'Así está organizado Spark225.'}</p>
       ${admin && (edit
         ? html`<span class="og-acc"><button class="btn" onClick=${agregar}>${I('mas')}Área</button><button class="btn fantasma" onClick=${() => setEdit(null)}>Cancelar</button><button class="btn prim" onClick=${guardar}>Guardar</button></span>`
         : html`<button class="btn" onClick=${() => setEdit(areas.map((a) => ({ ...a, personas: [...(a.personas || [])] })))}>${I('ajustes')}Editar organigrama</button>`)}

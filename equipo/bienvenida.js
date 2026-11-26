@@ -2,8 +2,8 @@
 // los menos clics posibles y explica en una línea qué pasa en cada paso.
 // Se abre sola la primera vez; después, desde Perfil › Conexiones.
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I } from './ui.js?v=202611270400';
-import { googleConectado, entrarConGoogle, buscarNotion, confirmarNotion, terminarBienvenida } from './nube.js?v=202611270400';
+import { I } from './ui.js?v=202611270430';
+import { googleConectado, entrarConGoogle, buscarNotion, confirmarNotion, terminarBienvenida } from './nube.js?v=202611270430';
 
 const CLAVE_PASO = 'ssam-bienvenida-paso';
 
@@ -80,7 +80,7 @@ export function Bienvenida({ persona, desdeConexiones, cerrar, toast }) {
       ${paso === 2 && html`<div class="bienv-cuerpo" key="p2">
         <div class="bienv-ico notion">N</div>
         <h2>Notion</h2>
-        ${notion.estado === 'buscando' && html`<p class="bienv-sub"><span class="girando"></span> Buscando tu cuenta en el Notion de Spark…</p>`}
+        ${notion.estado === 'buscando' && html`<p class="bienv-sub"><span class="girando"></span> Buscando tu cuenta en el Notion de Spark225…</p>`}
         ${notion.estado === 'ligado' && html`<p class="bienv-ok">${I('check')}Listo: tu cuenta de Notion está ligada${notion.tareas != null ? ` y ya trajimos tus tareas` : ''}.</p>`}
         ${(notion.estado === 'elegir' || notion.estado === 'ligando') && html`
           <p class="bienv-sub">${notion.compartido ? 'Esta cuenta comparte el Notion de abajo. ¿Lo vinculas?' : notion.candidatos.length === 1 ? 'Encontramos tu cuenta. ¿Eres tú?' : 'Encontramos estas cuentas. ¿Cuál eres tú?'}</p>
@@ -92,7 +92,7 @@ export function Bienvenida({ persona, desdeConexiones, cerrar, toast }) {
             </button>`)}
           </div>
           ${notion.error && html`<p class="bienv-error">${I('alerta')}${notion.error}</p>`}`}
-        ${notion.estado === 'nada' && html`<p class="bienv-sub">No encontramos tu cuenta en el Notion de Spark. Pídele a un admin que te invite y vuelve a este paso desde Perfil › Conexiones.</p>`}
+        ${notion.estado === 'nada' && html`<p class="bienv-sub">No encontramos tu cuenta en el Notion de Spark225. Pídele a un admin que te invite y vuelve a este paso desde Perfil › Conexiones.</p>`}
         ${notion.estado === 'error' && html`<p class="bienv-error">${I('alerta')}No pudimos consultar Notion (${notion.error}). Puedes intentarlo después desde Perfil › Conexiones.</p>`}
         <ul class="bienv-lista tenue">
           <li>${I('repetir')}<span>Tus tareas de la Master Task Database aparecen aquí y <b>lo que cambies regresa a Notion</b> en segundos.</span></li>

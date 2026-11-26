@@ -1,12 +1,12 @@
-// Tablero «Cómo va Spark»: entrega a tiempo de toda la agencia, semáforo de clientes,
+// Tablero «Cómo va Spark225»: entrega a tiempo de toda la agencia, semáforo de clientes,
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270400';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270400';
-import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270400';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270430';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270430';
+import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270430';
 const T_ENTREGA = 'Porcentaje de tareas que se cerraron en su fecha compromiso, de las que vencieron en el periodo. Una tarea Alta pesa 3, una Media 2 y una Baja 1. Si la fecha la movió el cliente o algo externo, cuenta la nueva; si la movimos nosotros, cuenta la original. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %.';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270400';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270430';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
@@ -17,13 +17,13 @@ export function Tablero({ ctx, pestana = 'enfoque' }) {
   if (pestana === 'enfoque') {
     const tema = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
     return html`<div class="tablero tb-fm">
-      <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1></div>${pestanas}</header>
-      <iframe class="fm-marco" src=${`./focusmap/?v=202611270400&tema=${tema}${ctx.enNube ? '' : '&demo=1'}`} title="Focus Map"></iframe>
+      <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark225</h1></div>${pestanas}</header>
+      <iframe class="fm-marco" src=${`./focusmap/?v=202611270430&tema=${tema}${ctx.enNube ? '' : '&demo=1'}`} title="Focus Map"></iframe>
       <a class="fm-abrir" href=${`./focusmap/?tema=${tema}${ctx.enNube ? '' : '&demo=1'}`} target="_blank" rel="noopener">${I('externo')}Abrir el Focus Map en pantalla completa</a>
     </div>`;
   }
   if (pestana === 'orden') return html`<div class="tablero">
-    <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Lo que hay que acomodar</span></div>${pestanas}</header>
+    <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark225</h1><span class="sub">Lo que hay que acomodar</span></div>${pestanas}</header>
     <${OrdenLimpieza} ctx=${ctx} /></div>`;
   return html`<${TableroEntregas} ctx=${ctx} pestanas=${pestanas} />`;
 }
@@ -44,7 +44,7 @@ function TableroEntregas({ ctx, pestanas }) {
 
   return html`<div class="tablero">
     <header class="cab-inicio">
-      <div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Entrega a tiempo, ponderada por prioridad</span></div>
+      <div class="cab-dia"><h1>Cómo va Spark225</h1><span class="sub">Entrega a tiempo, ponderada por prioridad</span></div>
       ${pestanas}
     </header>
     <div class="tb-periodo">
@@ -53,7 +53,7 @@ function TableroEntregas({ ctx, pestanas }) {
 
     <section class=${'tb-hero s-' + (total.salud || 'nada')}>
       <div class="tb-num">
-        <span class="tb-etq">Entrega a tiempo de Spark <${Info} t=${T_ENTREGA} /></span>
+        <span class="tb-etq">Entrega a tiempo de Spark225 <${Info} t=${T_ENTREGA} /></span>
         <b class="num">${total.pct === null ? '—' : total.pct}<small>${total.pct === null ? '' : '%'}</small></b>
         ${total.salud ? html`<span class=${'sema s-' + total.salud}><i></i>${NOMBRE_SALUD[total.salud]}</span>` : html`<span class="sema s-nada"><i></i>Sin entregas en el periodo</span>`}
       </div>
@@ -167,7 +167,7 @@ function PorPrioridad({ abiertas, hoy }) {
     <b class="num">${f.n}</b>${f.venc ? html`<em class="num rojo">${f.venc} vencida${f.venc === 1 ? '' : 's'}</em>` : html`<em></em>`}</li>`)}</ul>`;
 }
 
-// ---------- Highlights de Spark en el Inicio ----------
+// ---------- Highlights de Spark225 en el Inicio ----------
 // Una franja corta: cómo va la agencia, lo que se cerró esta semana, los clientes y la próxima entrega.
 export function HighlightsSpark({ ctx }) {
   const { db, yo } = ctx;
@@ -184,9 +184,9 @@ export function HighlightsSpark({ ctx }) {
   const cliProx = proxima && db.clientes.find((c) => c.id === proxima.cliente);
   const fmtRel = (iso) => { const d = Math.round((new Date(iso + 'T12:00:00') - new Date(hoy + 'T12:00:00')) / 864e5); return d === 0 ? 'hoy' : d === 1 ? 'mañana' : `en ${d} días`; };
 
-  return html`<section class="hl" aria-label="Highlights de Spark">
+  return html`<section class="hl" aria-label="Highlights de Spark225">
     <a href="#/tablero/entregas" class=${'hl-it hl-main s-' + (total.salud || 'nada')}>
-      <span class="hl-etq">Spark · entrega a tiempo <${Info} t=${T_ENTREGA} /></span>
+      <span class="hl-etq">Spark225 · entrega a tiempo <${Info} t=${T_ENTREGA} /></span>
       <b class="num">${total.pct === null ? '—' : total.pct + ' %'}</b>
       <span class="hl-sub">${total.salud ? html`<span class=${'sema s-' + total.salud}><i></i>${NOMBRE_SALUD[total.salud]}</span>` : 'Sin entregas en 30 días'}</span>
     </a>

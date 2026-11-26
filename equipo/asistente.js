@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611270400';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611270400';
-import { I, Avatar, LogoCliente, Carita, fechaRelativa, fechaCorta } from './ui.js?v=202611270400';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611270430';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611270430';
+import { I, Avatar, LogoCliente, Carita, fechaRelativa, fechaCorta } from './ui.js?v=202611270430';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {
@@ -137,7 +137,7 @@ export function AsistenteTarea({ ctx, inicial = {}, cerrar }) {
   const pasos = [
     { id: 'titulo', tipo: 'texto', corto: 'Tarea', pregunta: '¿Qué hay que hacer?', ayuda: 'Empieza con un verbo, así se entiende sola.', placeholder: 'Ej. Enviar el reporte de noviembre',
       sugerencias: ['Enviar', 'Revisar', 'Llamar a', 'Preparar'], falta: 'Escribe qué hay que hacer.', resumen: (x) => x?.trim() },
-    { id: 'cliente', tipo: 'opciones', corto: 'Cliente', pregunta: '¿Para qué cliente?', opciones: opsCliente, falta: 'Elige un cliente (o Spark si es interno).',
+    { id: 'cliente', tipo: 'opciones', corto: 'Cliente', pregunta: '¿Para qué cliente?', opciones: opsCliente, falta: 'Elige un cliente (o Spark225 si es interno).',
       resumen: (x) => db.clientes.find((c) => c.id === x)?.nombre },
     { id: 'proyecto', tipo: 'opciones', corto: 'Proyecto', pregunta: '¿De qué proyecto?', si: (v) => proyectosDe(v.cliente).length > 1,
       ayuda: 'Toda tarea va ligada a su proyecto para que no se pierda si alguien deja el equipo.',

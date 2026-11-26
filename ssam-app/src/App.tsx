@@ -214,10 +214,23 @@ const AppRoutes = () => {
   );
 };
 
+// El portal del cliente está diseñado solo en claro y no tiene selector de
+// tema; si en ese navegador alguien dejó el modo oscuro del admin, se mezclaban
+// los dos. Para un cliente el tema queda fijo en claro.
+const TemaSegunRol = ({ children }: { children: React.ReactNode }) => {
+  const { user, can } = useAuth();
+  const cliente = !!user && can("clientPortal") && !can("dashboard");
+  return (
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme={cliente ? "light" : undefined}>
+      {children}
+    </ThemeProvider>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <AuthProvider>
+    <AuthProvider>
+      <TemaSegunRol>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -234,8 +247,8 @@ const App = () => (
             <DemoBanner />
           </BrowserRouter>
         </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </TemaSegunRol>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

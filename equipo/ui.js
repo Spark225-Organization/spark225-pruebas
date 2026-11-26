@@ -1,6 +1,6 @@
 // Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611270330';
+import { hoyISO } from './datos.js?v=202611270400';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
@@ -38,6 +38,7 @@ const P = {
   cadena: 'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1',
   tema: 'M12 3a9 9 0 100 18V3z M12 3a9 9 0 010 18',
   flecha: 'M15 6l-6 6 6 6',
+  adelante: 'M9 6l6 6-6 6',
   menu: 'M5 12h.01M12 12h.01M19 12h.01',
   reset: 'M4 4v6h6M20 20v-6h-6M5.6 15A8 8 0 0019 14M18.4 9A8 8 0 005 10',
   drive: 'M8 3h8l6 11-4 7H6l-4-7z M8 3l6 11M2 14h12M16 3L10 14',

@@ -1,8 +1,8 @@
 // Personaliza tu perfil: foto (subida, de Google o de Notion), color, nombre corto y puesto,
 // y cómo se ve tu Portal (tema, color de acento, tamaño y los highlights del Inicio).
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { cambiarMiPerfil, prefsDe, guardarPrefs, esAdmin } from './store.js?v=202611270330';
-import { I, Avatar } from './ui.js?v=202611270330';
+import { cambiarMiPerfil, prefsDe, guardarPrefs, esAdmin } from './store.js?v=202611270400';
+import { I, Avatar } from './ui.js?v=202611270400';
 
 export const ACENTOS = [
   { id: 'spark', nombre: 'Spark', color: '#E47739' },
@@ -61,7 +61,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
   };
   const deGoogle = async () => {
     setOcupado('google');
-    const { fotoDeGoogle } = await import('./nube.js?v=202611270330');
+    const { fotoDeGoogle } = await import('./nube.js?v=202611270400');
     const url = await fotoDeGoogle().catch(() => null);
     setOcupado('');
     if (!url) return toast('Tu cuenta de Google no tiene foto');
@@ -69,7 +69,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
   };
   const deNotion = async (todos) => {
     setOcupado(todos ? 'equipo' : 'notion');
-    const { fotosNotion } = await import('./nube.js?v=202611270330');
+    const { fotosNotion } = await import('./nube.js?v=202611270400');
     const r = await fotosNotion(todos).catch((e) => ({ ok: false, error: e.message }));
     setOcupado('');
     if (!r?.ok) return toast(r?.error || 'No pude traer la foto de Notion');
@@ -122,7 +122,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
           <div class="segmentado chico">${[['normal', 'Normal'], ['grande', 'Grande']].map(([k, t]) => html`<button key=${k} aria-pressed=${(prefs.letra || 'normal') === k} onClick=${() => pref({ letra: k })}>${t}</button>`)}</div></div>
         <div class="pe-fila"><span>Espacio</span>
           <div class="segmentado chico">${[['comoda', 'Cómodo'], ['compacta', 'Compacto']].map(([k, t]) => html`<button key=${k} aria-pressed=${(prefs.densidad || 'comoda') === k} onClick=${() => pref({ densidad: k })}>${t}</button>`)}</div></div>
-        <label class="pe-fila"><span>Bases de Spark en el Inicio</span>
+        <label class="pe-fila"><span>Spark225 Home en el Inicio</span>
           <input type="checkbox" class="interruptor" checked=${prefs.bases !== false} onChange=${() => pref({ bases: prefs.bases === false })} /></label>
         <label class="pe-fila"><span>Highlights de Spark en el Inicio</span>
           <input type="checkbox" class="interruptor" checked=${prefs.highlights !== false} onChange=${() => pref({ highlights: prefs.highlights === false })} /></label>

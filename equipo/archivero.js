@@ -1,10 +1,10 @@
 // Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
 // Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611270330';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611270330';
-import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto } from './ui.js?v=202611270330';
-import { NavClientes } from './proyectos.js?v=202611270330';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611270400';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611270400';
+import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto } from './ui.js?v=202611270400';
+import { NavClientes } from './proyectos.js?v=202611270400';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
 export const NOMBRE_SALUD = { bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' };
@@ -32,7 +32,7 @@ export function Archivero({ ctx }) {
 
   return html`
     <header class="cab-inicio">
-      <div class="cab-dia"><h1>Clientes</h1><span class="sub num">${visibles.length} en total</span></div>
+      <div class="cab-dia"><h1>Clients</h1><span class="sub num">${visibles.length} en total</span></div>
       <${NavClientes} actual="clientes" />
     </header>
     <div class="ls-barra"><label class="ls-hechas"><input type="checkbox" checked=${solo} onChange=${() => setSolo(!solo)} />Solo los que llevo</label></div>

@@ -1,13 +1,13 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270330';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270330';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270330';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270330';
-import { Widgets } from './widgets.js?v=202611270330';
-import { HighlightsSpark } from './tablero.js?v=202611270330';
-import { BasesSpark } from './bases.js?v=202611270330';
-import { useArrastre } from './arrastre.js?v=202611270330';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270400';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270400';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270400';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270400';
+import { Widgets } from './widgets.js?v=202611270400';
+import { HighlightsSpark } from './tablero.js?v=202611270400';
+import { BasesSpark } from './bases.js?v=202611270400';
+import { useArrastre } from './arrastre.js?v=202611270400';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -195,18 +195,22 @@ const PRI = Object.fromEntries(PRIORIDADES.map((p) => [p.id, p]));
 const SIG_PRI = { alta: 'media', media: 'baja', baja: null, null: 'alta' };
 const diasEntre = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
 
-export function Lista({ ctx, hoy, equipo }) {
+// Las vistas de Master Task Database usan esta misma lista: «filtro» decide qué tareas entran (incluidas las hechas),
+// «porFijo» fija la agrupación, «soloMias» la limita a ti y «ordenInicial» cambia el orden de arranque.
+export function Lista({ ctx, hoy, equipo, filtro, porFijo, soloMias, ordenInicial }) {
   const { db, yo, persona } = ctx;
   const prefs = prefsDe(yo);
-  const por = prefs.listaPor || 'semana';
-  const alcance = equipo ? 'equipo' : prefs.listaAlcance || 'mias';
-  const [orden, setOrden] = useState({ col: 'fecha', dir: 1 });
+  const por = porFijo || prefs.listaPor || 'semana';
+  const alcance = equipo ? 'equipo' : soloMias ? 'mias' : prefs.listaAlcance || 'mias';
+  const [orden, setOrden] = useState(ordenInicial || { col: 'fecha', dir: 1 });
   const [hechas, setHechas] = useState(false);
   const [soloVencidas, setSoloVencidas] = useState(false);
 
   const vencida = (a) => a.estatus !== 'hecho' && !a.sinFecha && a.fecha < hoy;
-  const base = (alcance === 'equipo' ? vigentes().filter((a) => visiblePara(a, yo) && enFiltroInicio(a, yo)) : misActs(ctx))
-    .filter((a) => a.estatus !== 'hecho' || (hechas && (a.cerrada || '').slice(0, 10) >= sumarDias(hoy, -14)));
+  const base = filtro
+    ? (alcance === 'equipo' ? vigentes().filter((a) => visiblePara(a, yo)) : misActs(ctx)).filter(filtro)
+    : (alcance === 'equipo' ? vigentes().filter((a) => visiblePara(a, yo) && enFiltroInicio(a, yo)) : misActs(ctx))
+      .filter((a) => a.estatus !== 'hecho' || (hechas && (a.cerrada || '').slice(0, 10) >= sumarDias(hoy, -14)));
   const nVencidas = base.filter(vencida).length;
   const acts = soloVencidas ? base.filter(vencida) : base;
 
@@ -218,6 +222,7 @@ export function Lista({ ctx, hoy, equipo }) {
     cliente: (a) => (cli(a)?.nombre || '').toLowerCase(),
     responsable: (a) => (per(a.responsable)?.corto || '').toLowerCase(),
     fecha: (a) => a.fecha || '9999',
+    entrega: (a) => a.entregaReal || (a.cerrada || '').slice(0, 10) || a.fecha || '',
     prioridad: (a) => PRI[a.prioridad]?.orden ?? 9,
   };
   const ordenar = (lista) => [...lista].sort((x, y) => {
@@ -247,10 +252,10 @@ export function Lista({ ctx, hoy, equipo }) {
 
   return html`
     <div class="ls-barra">
-      ${!equipo && html`<div class="segmentado chico" aria-label="De quién">${[['mias', quien], ['equipo', 'Equipo']].map(([k, t]) => opcion(k, t, alcance, (v) => guardarPrefs(yo, { listaAlcance: v })))}</div>`}
-      <div class="segmentado chico" aria-label="Agrupar por">${[['semana', 'Mi semana'], ['estatus', 'Estatus'], ['cliente', 'Cliente'], ['persona', 'Persona'], ['nada', 'Sin agrupar']].map(([k, t]) => opcion(k, t, por, (v) => guardarPrefs(yo, { listaPor: v })))}</div>
+      ${!equipo && !soloMias && html`<div class="segmentado chico" aria-label="De quién">${[['mias', quien], ['equipo', 'Equipo']].map(([k, t]) => opcion(k, t, alcance, (v) => guardarPrefs(yo, { listaAlcance: v })))}</div>`}
+      ${!porFijo && html`<div class="segmentado chico" aria-label="Agrupar por">${[['semana', 'Mi semana'], ['estatus', 'Estatus'], ['cliente', 'Cliente'], ['persona', 'Persona'], ['nada', 'Sin agrupar']].map(([k, t]) => opcion(k, t, por, (v) => guardarPrefs(yo, { listaPor: v })))}</div>`}
       ${nVencidas > 0 && html`<button class=${'ls-vencidas' + (soloVencidas ? ' on' : '')} aria-pressed=${soloVencidas} onClick=${() => setSoloVencidas(!soloVencidas)}>${I('alerta')}${nVencidas} ${nVencidas === 1 ? 'vencida' : 'vencidas'}</button>`}
-      <label class="ls-hechas"><input type="checkbox" checked=${hechas} onChange=${() => setHechas(!hechas)} />Ver hechas</label>
+      ${!filtro && html`<label class="ls-hechas"><input type="checkbox" checked=${hechas} onChange=${() => setHechas(!hechas)} />Ver hechas</label>`}
     </div>
     ${!acts.length ? html`<div class="ls-vacia"><p>${soloVencidas ? 'Nada vencido.' : 'No hay tareas con este filtro.'}</p><button class="btn prim" onClick=${() => ctx.nueva()}>Nueva tarea</button></div>` : html`
     <div class="ls-marco">
@@ -274,7 +279,7 @@ export function Lista({ ctx, hoy, equipo }) {
                 <span><span class="ls-tit">${a.titulo}</span>${proy(a) && proy(a).nombre !== 'General' && html`<small>${proy(a).nombre}</small>`}</span></div></td>
               <td class="c-cli">${c && html`<span class="ls-cli" style=${`--c:${c.color}`}><i></i>${c.nombre}</span>`}</td>
               <td class="c-resp">${r && html`<span class="ls-per"><${Avatar} p=${r} />${r.corto}</span>`}</td>
-              <td class="c-fecha">${a.sinFecha ? html`<span class="tenue">Sin fecha</span>` : v ? html`<span class="ls-atraso">${atraso} ${atraso === 1 ? 'día' : 'días'} tarde</span>` : fechaRelativa(a.fecha)}</td>
+              <td class="c-fecha">${a.estatus === 'hecho' && a.entregaReal ? html`<span title="Fecha Entrega REAL">Entregada ${fechaRelativa(a.entregaReal)}</span>` : a.sinFecha ? html`<span class="tenue">Sin fecha</span>` : v ? html`<span class="ls-atraso">${atraso} ${atraso === 1 ? 'día' : 'días'} tarde</span>` : fechaRelativa(a.fecha)}</td>
               <td class="c-pri"><button class=${'ls-pri pri-' + (a.prioridad || 'nada')} onClick=${(e) => cambiarPri(e, a)} title="Cambiar prioridad" aria-label=${`Prioridad: ${pri?.nombre || 'sin prioridad'}. Cambiar`}>${pri ? html`<i></i>${pri.nombre}` : '—'}</button></td>
             </tr>`;
           })}

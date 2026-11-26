@@ -1981,3 +1981,63 @@ button.fmx-chip[data-tip]:hover::after, button.fmx-chip[data-tip]:focus-visible:
 .fm-abrir { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 110px; font-size: 13px; color: var(--tinta-2); }
 .fm-abrir .i { width: 15px; height: 15px; }
 @media (max-width: 640px) { .fm-marco { height: calc(100dvh - 200px); } }
+
+/* Atrás y adelante (barra superior) */
+.nav-hist { display: flex; gap: 2px; margin-left: -4px; }
+.nav-hist .icon-btn { width: 36px; height: 36px; }
+.nav-hist .icon-btn:disabled { opacity: .3; cursor: default; background: none; }
+@media (max-width: 560px) { .nav-hist .icon-btn { width: 32px; } }
+
+/* Vistas como en Notion (bases Master) */
+.vn-barra { display: flex; flex-direction: column; gap: 6px; margin: 0 0 12px; min-width: 0; }
+.vistas-notion { max-width: 100%; overflow-x: auto; scrollbar-width: none; align-self: flex-start; }
+.vistas-notion::-webkit-scrollbar { display: none; }
+.vistas-notion button { white-space: nowrap; flex: none; }
+.vn-ayuda { margin: 0 2px; font-size: 13px; color: var(--tinta-3); }
+.vn-kanban { grid-template-columns: repeat(var(--n, 4), minmax(232px, 1fr)); }
+.vn-kanban .pipe-col h3 .sp { gap: 0; }
+.vn-col-t { margin: 0 !important; color: inherit !important; font-weight: 600 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vn-card { text-align: left; border: 0; color: inherit; text-decoration: none; font: inherit; cursor: pointer; width: 100%; }
+.vn-card:focus-visible { outline: 2px solid var(--chispa); outline-offset: 2px; }
+.vn-nota { font-size: 12px; color: var(--tinta-3); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.vn-pie { flex-wrap: wrap; }
+.vn-pie .sp { font-size: 11px; }
+.vn-chip { font-size: 11px; font-weight: 600; color: var(--tinta-2); background: var(--grafito); border-radius: 6px; padding: 2px 6px; }
+.vn-avs { display: inline-flex; }
+.vn-avs > * + * { margin-left: -6px; }
+.vn-cal-cab { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.vn-cal-cab b { font: 600 16px Sora, sans-serif; min-width: 150px; text-align: center; }
+.vn-cal-cab b::first-letter { text-transform: uppercase; }
+.vn-mes .mes-dia { cursor: default; min-height: 96px; }
+.vn-mes .mes-dia:hover { background: var(--carbon); }
+.vn-mes .mes-dia.abierto { box-shadow: inset 0 0 0 2px var(--chispa); }
+button.mes-mas { border: 0; background: none; text-align: left; cursor: pointer; }
+button.mes-mas:hover { color: var(--tinta); }
+.vn-ev { display: block; width: 100%; border: 0; text-align: left; font-size: 11px; line-height: 1.3; padding: 3px 6px; border-radius: 6px; cursor: pointer;
+  color: var(--tinta); background: color-mix(in srgb, var(--c) 18%, var(--grafito)); box-shadow: inset 2px 0 0 var(--c);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vn-ev:hover { background: color-mix(in srgb, var(--c) 28%, var(--grafito)); }
+.vn-ev.hecha { opacity: .55; text-decoration: line-through; }
+.vn-dia { margin-top: 12px; padding: 12px; border-radius: var(--r-panel); background: var(--carbon); box-shadow: var(--anillo); }
+.vn-dia h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 14px; }
+.vn-dia h3::first-letter { text-transform: uppercase; }
+.vn-dia h3 .num { color: var(--tinta-3); font-weight: 500; }
+.vn-dia h3 .icon-btn { margin-left: auto; width: 32px; height: 32px; }
+.vn-dia-l { display: grid; gap: 4px; }
+.vn-dia-l .vn-ev { font-size: 13px; padding: 6px 8px; white-space: normal; }
+.vn-graf { max-width: 760px; }
+.vn-graf h3 { display: flex; align-items: baseline; gap: 8px; }
+.vn-graf h3 small { color: var(--tinta-3); font-weight: 500; }
+.vn-gf-l { display: grid; gap: 2px; margin-top: 8px; }
+.vn-gf { display: grid; grid-template-columns: minmax(120px, 220px) 1fr 40px; align-items: center; gap: 12px; padding: 6px 4px; border-radius: 8px; }
+.vn-gf:hover { background: var(--grafito); }
+.vn-gf-n { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; }
+.vn-gf-n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vn-gf-b { height: 10px; }
+.vn-gf-b i { display: block; height: 100%; min-width: 4px; border-radius: 0 4px 4px 0; background: var(--chispa); }
+.vn-gf b { text-align: right; font-size: 13px; color: var(--tinta-2); }
+@media (max-width: 560px) {
+  .vn-gf { grid-template-columns: minmax(90px, 130px) 1fr 32px; gap: 8px; }
+  .vn-mes .mes-dia { min-height: 64px; padding: 3px; }
+  .vn-mes .vn-ev { font-size: 10px; padding: 2px 4px; }
+}

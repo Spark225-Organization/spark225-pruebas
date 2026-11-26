@@ -50,7 +50,8 @@
       // GitHub Pages: el 404.html del sitio manda /ssam/?/ruta; aquí se restaura la ruta real.
       (function (l) {
         if (l.search[1] === "/") {
-          var d = l.search.slice(1).split("&").map(function (s) { return s.replace(/~and~/g, "&"); }).join("?");
+          // «_v» solo sirve para saltar la caché del navegador; no forma parte de la ruta.
+          var d = l.search.slice(1).split("&").filter(function (s) { return !/^_v=/.test(s); }).map(function (s) { return s.replace(/~and~/g, "&"); }).join("?");
           window.history.replaceState(null, null, l.pathname.slice(0, -1) + d + l.hash);
         }
       })(window.location);

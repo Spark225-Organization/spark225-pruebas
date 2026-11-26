@@ -2,11 +2,11 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611261900';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611261900';
-import { I, Avatar, LogoCliente } from './ui.js?v=202611261900';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611261900';
-import { MapaEnfoque } from './enfoque.js?v=202611261900';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611262100';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611262100';
+import { I, Avatar, LogoCliente } from './ui.js?v=202611262100';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611262100';
+import { MapaEnfoque } from './enfoque.js?v=202611262100';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');

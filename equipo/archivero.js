@@ -1,9 +1,10 @@
 // Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
 // Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611261900';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611261900';
-import { I, Anillo, Avatar, LogoCliente, fechaRelativa, haceCuanto } from './ui.js?v=202611261900';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611262100';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611262100';
+import { I, Anillo, Avatar, LogoCliente, fechaRelativa, haceCuanto } from './ui.js?v=202611262100';
+import { NavClientes } from './proyectos.js?v=202611262100';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
 export const NOMBRE_SALUD = { bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' };
@@ -32,11 +33,9 @@ export function Archivero({ ctx }) {
   return html`
     <header class="cab-inicio">
       <div class="cab-dia"><h1>Clientes</h1><span class="sub num">${visibles.length} en total</span></div>
-      <div class="segmentado" role="tablist">
-        <button aria-pressed=${!solo} onClick=${() => setSolo(false)}>Todos</button>
-        <button aria-pressed=${solo} onClick=${() => setSolo(true)}>Los que llevo</button>
-      </div>
+      <${NavClientes} actual="clientes" />
     </header>
+    <div class="ls-barra"><label class="ls-hechas"><input type="checkbox" checked=${solo} onChange=${() => setSolo(!solo)} />Solo los que llevo</label></div>
     <div class="cli-etapas" role="tablist" aria-label="Etapa">
       ${ETAPAS_CLIENTE.map((e) => html`<button key=${e.id} role="tab" aria-selected=${etapa === e.id} onClick=${() => elegirEtapa(e.id)}>${e.nombre}<span class="num">${porEtapa(e.id).length}</span></button>`)}
     </div>
@@ -194,7 +193,7 @@ export function DetalleCliente({ id, ctx }) {
           const av = avanceProyecto(p.id);
           const rp = db.personas.find((x) => x.id === p.responsable);
           return html`<li key=${p.id}>
-            <div class="cp-t"><b>${p.nombre}</b><small>${p.entrega ? `Entrega ${fechaRelativa(p.entrega)}` : 'Sin fecha de entrega'}</small></div>
+            <a class="cp-t" href=${'#/proyecto/' + p.id}><b>${p.nombre}</b><small>${p.entrega ? `Entrega ${fechaRelativa(p.entrega)}` : 'Sin fecha de entrega'}</small></a>
             <span class="cp-barra" title=${`${av.hechas} de ${av.total}`}><i style=${`width:${av.total ? (av.hechas / av.total) * 100 : 0}%`}></i></span>
             <span class="cp-n num">${av.hechas}/${av.total}</span>
             <${Avatar} p=${rp} />

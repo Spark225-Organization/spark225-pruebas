@@ -1,28 +1,29 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261900';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611262100';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261900';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261900';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261900';
-import { AltaRapida } from './mecha.js?v=202611261900';
-import { Inicio } from './vistas.js?v=202611261900';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261900';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611261900';
-import { Tablero } from './tablero.js?v=202611261900';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611261900';
-import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611261900';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261900';
-import { Chat } from './chat.js?v=202611261900';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261900';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261900';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261900';
-import { Instalar } from './instalar.js?v=202611261900';
-import { notificar, activarPush } from './avisos.js?v=202611261900';
-import { Bienvenida, Recorrido } from './tour.js?v=202611261900';
-import { useArrastre } from './arrastre.js?v=202611261900';
-import { Galeria } from './widgets.js?v=202611261900';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611262100';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611262100';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611262100';
+import { AltaRapida } from './mecha.js?v=202611262100';
+import { Inicio } from './vistas.js?v=202611262100';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611262100';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611262100';
+import { Tablero } from './tablero.js?v=202611262100';
+import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611262100';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611262100';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611262100';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611262100';
+import { Chat } from './chat.js?v=202611262100';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611262100';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611262100';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611262100';
+import { Instalar } from './instalar.js?v=202611262100';
+import { notificar, activarPush } from './avisos.js?v=202611262100';
+import { Bienvenida, Recorrido } from './tour.js?v=202611262100';
+import { useArrastre } from './arrastre.js?v=202611262100';
+import { Galeria } from './widgets.js?v=202611262100';
 
 function useStore() {
   const [, set] = useState(0);
@@ -142,8 +143,9 @@ function App() {
 
   const persona = ruta.startsWith('/persona/') && db.personas.some((p) => p.id === ruta.split('/')[2]) ? ruta.split('/')[2] : yo;
   const clienteRuta = ruta.startsWith('/cliente/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
+  const proyectoRuta = ruta.startsWith('/proyecto/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
   const rhRuta = ruta === '/equipo' ? 'personas' : ruta.startsWith('/rh') ? (['documentos', 'personas'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'spark') : null;
-  const vista = clienteRuta ? 'cliente' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes' }[ruta] || 'dia';
+  const vista = clienteRuta ? 'cliente' : proyectoRuta ? 'proyecto' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/proyectos': 'proyectos' }[ruta] || 'dia';
   const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
@@ -228,11 +230,13 @@ function App() {
 
       <main class="principal">
         ${errorGuardado && html`<div class="aviso-guardado" role="alert">${I('alerta')}No se pudo guardar en este navegador. Descarga un respaldo desde tu perfil.</div>`}
-        <${Protegido} key=${vista + (clienteRuta || '')}>
+        <${Protegido} key=${vista + (clienteRuta || '') + (proyectoRuta || '')}>
           ${vista === 'dia' && html`<${Inicio} ...${ctx} />`}
           ${vista === 'pipeline' && html`<${Pipeline} ctx=${ctx} />`}
           ${vista === 'clientes' && html`<${Archivero} ctx=${ctx} />`}
           ${vista === 'cliente' && html`<${DetalleCliente} id=${clienteRuta} ctx=${ctx} />`}
+          ${vista === 'proyectos' && html`<${Portafolio} ctx=${ctx} />`}
+          ${vista === 'proyecto' && html`<${DetalleProyecto} id=${proyectoRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
           ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} pestana=${ruta.split('/')[2] === 'entregas' ? 'entregas' : 'enfoque'} />`}
           ${vista === 'rh' && html`<${RecursosHumanos} ctx=${ctx} pestana=${rhRuta} Personas=${html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`} />`}
@@ -249,7 +253,7 @@ function App() {
             <a href="#/tablero" class="dock-it" aria-current=${vista === 'tablero' ? 'page' : null}>${I('grafica')}<span>Tablero</span></a>
             <span class="rel"><button class="dock-mas" onClick=${() => setMenuCrear((v) => !v)} aria-label="Crear" aria-expanded=${menuCrear} data-tour="mas">${I('mas')}</button>
               ${menuCrear && html`<${MenuCrear} elegir=${(t) => ctx.crear(t, t === 'tarea' ? {} : clienteRuta && db.clientes.some((c) => c.id === clienteRuta) ? { cliente: clienteRuta } : {})} cerrar=${() => setMenuCrear(false)} />`}</span>
-            <a href="#/clientes" class="dock-it" aria-current=${vista === 'clientes' || vista === 'cliente' ? 'page' : null} data-tour="clientes">${I('clientes')}<span>Clientes</span></a>
+            <a href="#/clientes" class="dock-it" aria-current=${['clientes', 'cliente', 'proyectos', 'proyecto'].includes(vista) ? 'page' : null} data-tour="clientes">${I('clientes')}<span>Clientes</span></a>
             <a href="#/rh" class="dock-it" aria-current=${vista === 'rh' || persona !== yo ? 'page' : null}>${I('rh')}<span>RH</span></a>`}
       </nav>
 
@@ -319,7 +323,7 @@ function Equipo({ db, yo, enNube, toast }) {
         const h = vigentes().filter((a) => a.responsable === p.id && a.estatus !== 'hecho' && a.fecha <= dom).reduce((s, a) => s + horasEstimadas(a), 0);
         return html`
           <a class="persona-card" key=${p.id} href=${p.id === yo ? '#/' : '#/persona/' + p.id}>
-            <span class="pc-av" style=${`--av:${p.color}`}>${p.nombre.split(' ').map((s) => s[0]).slice(0, 2).join('')}</span>
+            <span class="pc-av" style=${`--av:${p.color}`}>${p.foto ? html`<img src=${p.foto} alt="" referrerpolicy="no-referrer" />` : p.nombre.split(' ').map((s) => s[0]).slice(0, 2).join('')}</span>
             <span class="pc-n">${p.corto}</span>
             <span class="pc-p">${p.puesto}</span>
             <span class="pc-num num">${abiertas.length}${venc ? html`<em>${venc}</em>` : null}</span>
@@ -327,7 +331,29 @@ function Equipo({ db, yo, enNube, toast }) {
           </a>`;
       })}
     </div>
+    ${admin && html`<${Reasignar} db=${db} yo=${yo} toast=${toast} />`}
     ${enNube && admin && html`<${Accesos} db=${db} toast=${toast} />`}`;
+}
+
+// Si alguien deja el equipo o cambia de cuenta, sus tareas abiertas pasan a otra persona y siguen en su proyecto.
+function Reasignar({ db, yo, toast }) {
+  const [de, setDe] = useState('');
+  const [a, setA] = useState('');
+  const n = de ? vigentes().filter((x) => x.responsable === de && x.estatus !== 'hecho').length : 0;
+  const hacer = () => {
+    if (!de || !a || de === a) return toast('Elige de quién y a quién');
+    if (!confirm(`¿Pasar ${n} tareas abiertas de ${db.personas.find((p) => p.id === de)?.corto} a ${db.personas.find((p) => p.id === a)?.corto}? A quien las recibe le llega un aviso por cada una.`)) return;
+    toast(`Listo: ${reasignarTareas(de, a, yo)} tareas reasignadas`); setDe(''); setA('');
+  };
+  return html`<section class="tb-panel reasignar">
+    <h2>${I('repetir')}Reasignar tareas</h2>
+    <p class="tb-sub">Pasa todas las tareas abiertas de una persona a otra. Se quedan en su mismo proyecto y cliente.</p>
+    <div class="og-acc">
+      <select class="control chico" value=${de} onChange=${(e) => setDe(e.target.value)} aria-label="De quién"><option value="">De…</option>${db.personas.map((p) => html`<option key=${p.id} value=${p.id}>${p.corto}</option>`)}</select>
+      <select class="control chico" value=${a} onChange=${(e) => setA(e.target.value)} aria-label="A quién"><option value="">A…</option>${db.personas.filter((p) => p.id !== de).map((p) => html`<option key=${p.id} value=${p.id}>${p.corto}</option>`)}</select>
+      <button class="btn prim chico" disabled=${!de || !a || !n} onClick=${hacer}>${de ? `Reasignar ${n}` : 'Reasignar'}</button>
+    </div>
+  </section>`;
 }
 
 // ---------- Accesos (solo admin): aprobar a quien se registró y dar de alta correos ----------
@@ -511,6 +537,7 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
     { t: 'Nuevo proyecto', ico: 'proyectos', f: () => ctx.crear('proyecto') },
     { t: 'Pipeline', ico: 'columnas', f: () => { location.hash = '#/pipeline'; } },
     { t: 'Clientes', ico: 'clientes', f: () => { location.hash = '#/clientes'; } },
+    { t: 'Proyectos (portafolio)', ico: 'foco', f: () => { location.hash = '#/proyectos'; } },
     { t: 'Mapa de enfoque (prioridades del trimestre)', ico: 'foco', f: () => { location.hash = '#/tablero/enfoque'; } },
     { t: 'Entregas a tiempo (tablero)', ico: 'grafica', f: () => { location.hash = '#/tablero/entregas'; } },
     { t: 'Organigrama de Spark', ico: 'organigrama', f: () => { location.hash = '#/rh/spark'; } },

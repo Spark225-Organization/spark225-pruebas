@@ -58,7 +58,26 @@ export const ETAPAS_CLIENTE = [
   { id: 'activo', nombre: 'Activos', uno: 'Activo', ayuda: 'Ya trabajamos con él' },
   { id: 'propuesta', nombre: 'En propuesta', uno: 'En propuesta', ayuda: 'Le estamos cotizando' },
   { id: 'prospecto', nombre: 'Prospectos', uno: 'Prospecto', ayuda: 'Aún no hay propuesta' },
+  { id: 'interna', nombre: 'Cuentas internas', uno: 'Cuenta interna', ayuda: 'Spark, marca personal y proyectos propios' },
 ];
+// Proyectos: mismas fases que Master Proyectos de Notion, en español.
+export const FASES_PROYECTO = [
+  { id: 'por_iniciar', nombre: 'Por iniciar' },
+  { id: 'en_curso', nombre: 'En curso' },
+  { id: 'en_pausa', nombre: 'En pausa' },
+  { id: 'terminado', nombre: 'Terminado' },
+];
+// Salud del proyecto: la regla vigente en Notion («Operaciones de Clientes»).
+export const SALUD_PROYECTO = {
+  en_riesgo: { nombre: 'En riesgo', orden: 0 },
+  atencion: { nombre: 'Atención', orden: 1 },
+  en_control: { nombre: 'En control', orden: 2 },
+  programa: { nombre: 'Programa', orden: 3 },
+  sin_evaluar: { nombre: 'Sin evaluar', orden: 4 },
+};
+export const ESTADO_HITO = { pendiente: 'Pendiente', en_curso: 'En curso', cumplido: 'Cumplido' };
+export const SALUD_HITO = { en_control: 'En control', atencion: 'Atención', en_riesgo: 'En riesgo', sin_evaluar: 'Sin evaluar' };
+export const ESTADO_RIESGO = { abierto: 'Abierto', en_atencion: 'En atención', resuelto: 'Resuelto' };
 // Prioridad: mismas tres opciones que «Priority» en Notion (HIGH, Medium, Low).
 export const PRIORIDADES = [
   { id: 'alta', nombre: 'Alta', notion: 'HIGH', orden: 0 },

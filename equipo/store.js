@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261900';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611262100';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -38,7 +38,7 @@ function migrar(e) {
 function reparar(e) {
   const base = semilla();
   ['personas', 'clientes', 'proyectos', 'actividades', 'avisos', 'correos', 'minutas', 'eventos'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = base[k]; });
-  ['areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
+  ['hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'].forEach((k) => { if (!Array.isArray(e[k])) e[k] = []; });
   ['personal', 'layouts', 'prefs'].forEach((k) => { if (!e[k] || typeof e[k] !== 'object') e[k] = {}; });
   if (!e.chat || !Array.isArray(e.chat.mensajes)) e.chat = base.chat;
   if (!e.personas.length) e.personas = base.personas;
@@ -51,7 +51,7 @@ function reparar(e) {
     responsable: personas.has(a.responsable) ? a.responsable : e.personas[0].id,
     fecha: /^\d{4}-\d{2}-\d{2}$/.test(a.fecha || '') ? a.fecha : hoyISO(),
   }));
-  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; if (!c.etapa) c.etapa = 'activo'; });
+  e.clientes.forEach((c) => { if (!Array.isArray(c.satisfaccion)) c.satisfaccion = []; if (!c.salud) c.salud = 'bien'; if (!c.etapa) c.etapa = c.id === 'interno' ? 'interna' : 'activo'; });
   e.minutas.forEach((m) => { if (!Array.isArray(m.acuerdos)) m.acuerdos = []; });
   return e;
 }
@@ -422,10 +422,10 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611261900';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611262100';
 
-const COLECCIONES_RH = new Set(['areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas']);
-const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'];
+const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas']);
+const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube
 export const nube = { activa: false, yo: null, estado: 'listo', pendientes: 0, ultimoError: '' };
 const oyentesNube = new Set();
@@ -472,7 +472,7 @@ export async function conectarNube(perfil) {
     pendientes: perfiles.filter((p) => p.permiso === 'pendiente'),
     clientes: por('clientes'), proyectos: por('proyectos'), actividades: por('actividades'), minutas: por('minutas').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
     avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
-    correos: [], areas: por('areas'), documentos: por('documentos'),
+    correos: [], areas: por('areas'), documentos: por('documentos'), hitos: por('hitos'), riesgos: por('riesgos'),
     fm_ajustes: por('fm_ajustes'), fm_trimestres: por('fm_trimestres'), fm_prioridades: por('fm_prioridades'), fm_reportes: por('fm_reportes'), fm_fichas: por('fm_fichas'),
     chat: { canales: por('canales'), mensajes: por('mensajes').sort((a, b) => a.cuando.localeCompare(b.cuando)), leidos: ajustes.leidos ? { [y]: ajustes.leidos } : {} },
     layouts: ajustes.layout ? { [y]: ajustes.layout } : {},
@@ -682,7 +682,7 @@ export async function cambiarMiPerfil(uId, cambios) {
 
 // ---------- Mapa de enfoque (Focus Map) ----------
 // Los datos llegan de la base; el código público no trae ninguno.
-import { AJUSTES_BASE } from './enfoque-datos.js?v=202611261900';
+import { AJUSTES_BASE } from './enfoque-datos.js?v=202611262100';
 export function datosEnfoque() {
   return { ajustes: estado.fm_ajustes?.[0] || AJUSTES_BASE, trimestres: estado.fm_trimestres || [], prioridades: estado.fm_prioridades || [],
     reportes: estado.fm_reportes || [], fichas: estado.fm_fichas || [] };
@@ -697,4 +697,45 @@ export function borrarEnfoque(col, id, uId, texto) {
   estado[col] = (estado[col] || []).filter((x) => x.id !== id);
   if (texto) evento(uId, texto);
   guardar();
+}
+
+// ---------- Proyectos: salud con la regla de Notion y reasignación ----------
+// Rojo: 6+ tareas vencidas o más de 35 días sin actualización ejecutiva (sin fecha = sin señal).
+// Amarillo: 3 a 5 vencidas, más de 21 días sin señal, sin responsable, con decisión requerida o sin tareas vivas.
+// Sin evaluar: por iniciar o terminado. Programa: agrupa a otros proyectos (la salud es de sus unidades).
+export function saludProyecto(p, hoy = hoyISO()) {
+  const tareas = estado.actividades.filter((a) => !a.archivada && a.proyecto === p.id);
+  const vivas = tareas.filter((a) => a.estatus !== 'hecho');
+  const vencidas = vivas.filter((a) => a.fecha < hoy);
+  // Los proyectos que no vienen de Notion usan su última actividad como señal.
+  let senal = p.fechaActualizacion || null;
+  if (!p.deNotion) {
+    const movs = tareas.flatMap((a) => [(a.creada || '').slice(0, 10), ...(a.historial || []).map((h) => (h.cuando || '').slice(0, 10))]).filter(Boolean);
+    senal = [senal, ...movs].filter(Boolean).sort().pop() || null;
+  }
+  const dias = senal ? Math.round((new Date(hoy + 'T12:00:00') - new Date(senal + 'T12:00:00')) / DIA_MS) : null;
+  const base = { vivas: vivas.length, vencidas: vencidas.length, dias, razones: [] };
+  if (p.unidades > 0 || estado.proyectos.some((x) => x.programa === p.id)) return { ...base, salud: 'programa', razones: ['Agrupa a sus unidades; cada una tiene su salud'] };
+  const fase = p.fase || 'en_curso';
+  if (fase === 'terminado' || fase === 'por_iniciar') return { ...base, salud: 'sin_evaluar', razones: [fase === 'terminado' ? 'Proyecto terminado' : 'Aún no arranca'] };
+  const rojo = [], amarillo = [];
+  if (vencidas.length >= 6) rojo.push(`${vencidas.length} tareas vencidas`);
+  if (dias === null) rojo.push('Sin actualización ejecutiva');
+  else if (dias > 35) rojo.push(`${dias} días sin actualización`);
+  if (vencidas.length >= 3 && vencidas.length <= 5) amarillo.push(`${vencidas.length} tareas vencidas`);
+  if (dias !== null && dias > 21 && dias <= 35) amarillo.push(`${dias} días sin actualización`);
+  if (!p.responsable) amarillo.push('Sin responsable');
+  if (p.decision) amarillo.push('Hay una decisión requerida');
+  if (!vivas.length) amarillo.push('Sin tareas vivas');
+  if (rojo.length) return { ...base, salud: 'en_riesgo', razones: [...rojo, ...amarillo] };
+  if (amarillo.length) return { ...base, salud: 'atencion', razones: amarillo };
+  return { ...base, salud: 'en_control', razones: ['Todo al día'] };
+}
+// Cuando alguien deja el equipo o cambia de cuenta: sus tareas abiertas pasan a otra persona (se quedan en su proyecto).
+export function reasignarTareas(de, a, uId) {
+  const abiertas = estado.actividades.filter((x) => !x.archivada && x.estatus !== 'hecho' && x.responsable === de);
+  abiertas.forEach((x) => actualizar(x.id, { responsable: a, colaboradores: (x.colaboradores || []).filter((c) => c !== a) }, uId));
+  evento(uId, `reasignó ${abiertas.length} tareas de ${persona(de)?.corto} a ${persona(a)?.corto}`);
+  guardar();
+  return abiertas.length;
 }

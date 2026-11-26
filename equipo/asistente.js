@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611261900';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611261900';
-import { I, Avatar, LogoCliente, fechaRelativa, fechaCorta } from './ui.js?v=202611261900';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611262100';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611262100';
+import { I, Avatar, LogoCliente, fechaRelativa, fechaCorta } from './ui.js?v=202611262100';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {
@@ -140,7 +140,9 @@ export function AsistenteTarea({ ctx, inicial = {}, cerrar }) {
     { id: 'cliente', tipo: 'opciones', corto: 'Cliente', pregunta: '¿Para qué cliente?', opciones: opsCliente, falta: 'Elige un cliente (o Spark si es interno).',
       resumen: (x) => db.clientes.find((c) => c.id === x)?.nombre },
     { id: 'proyecto', tipo: 'opciones', corto: 'Proyecto', pregunta: '¿De qué proyecto?', si: (v) => proyectosDe(v.cliente).length > 1,
-      opciones: (v) => proyectosDe(v.cliente).map((p) => ({ id: p.id, nombre: p.nombre })), resumen: (x) => db.proyectos.find((p) => p.id === x)?.nombre },
+      ayuda: 'Toda tarea va ligada a su proyecto para que no se pierda si alguien deja el equipo.',
+      opciones: (v) => proyectosDe(v.cliente).filter((p) => p.fase !== 'terminado').sort((a, b) => a.id.startsWith('g-') - b.id.startsWith('g-')).map((p) => ({ id: p.id, nombre: p.id.startsWith('g-') ? 'General (aún sin proyecto)' : p.nombre })),
+      resumen: (x) => db.proyectos.find((p) => p.id === x)?.nombre },
     { id: 'responsable', tipo: 'opciones', corto: 'Quién', pregunta: '¿Quién la hace?', ayuda: 'Le llega un aviso si no eres tú.',
       opciones: db.personas.map((p) => ({ id: p.id, nombre: p.id === yo ? 'Yo' : p.corto, sub: p.puesto, persona: p })), resumen: (x) => (x === yo ? 'Yo' : nombreP(x)) },
     { id: 'fecha', tipo: 'fecha', corto: 'Para cuándo', pregunta: '¿Para cuándo?', falta: 'Elige una fecha.', resumen: (x) => fechaRelativa(x) },

@@ -34,6 +34,7 @@ import { StageStrip, DependenciaBadge } from "@/components/material/StageStrip";
 import { CommitmentHistory } from "@/components/material/CommitmentHistory";
 import { RevisionClienteCard } from "@/components/material/RevisionClienteCard";
 import { CorreccionesClienteCard } from "@/components/material/CorreccionesClienteCard";
+import { EnviarAlCliente } from "@/components/material/EnviarAlCliente";
 import {
   useOperacion,
   mutateCreateComment,
@@ -191,12 +192,13 @@ const MaterialDetail = () => {
           </div>
         </div>
         {can("advanceStage") && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" className="gap-2" asChild>
               <Link to="/kanban">
                 <History className="h-4 w-4" /> Ir a Kanban
               </Link>
             </Button>
+            <EnviarAlCliente material={material} onDone={data.reload} />
             <AdvanceStageButton
               material={material}
               client={client}
@@ -210,7 +212,7 @@ const MaterialDetail = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <CorreccionesClienteCard material={material} />
+          <CorreccionesClienteCard material={material} onCambio={data.reload} />
           <FechaComprometidaCard material={material} onDone={data.reload} />
           {can("captureFechaRequerida") && (
             <FechaRequeridaClienteCard

@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Gantt } from "@/components/Gantt";
 import { MaterialFicha } from "@/components/portal/MaterialFicha";
+import { MensajesSpark } from "@/components/portal/MensajesSpark";
 import { useOperacion } from "@/data/operacion";
 import { useAuth } from "@/lib/auth";
 import type { Material, ClientTimelineRow, MaterialMetric, MaterialForecast } from "@/lib/api-types";
@@ -260,6 +261,8 @@ const ClientPortal = () => {
           })}
         </section>
       )}
+
+      <MensajesSpark materiales={mios} abrir={setAbierto} />
 
       {/* Etapas en orden cronológico; cada una filtra la tabla */}
       <section aria-label="Materiales por etapa">

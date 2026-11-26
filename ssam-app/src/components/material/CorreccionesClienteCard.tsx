@@ -2,7 +2,12 @@
 // del rechazo, lo que escribió (lista numerada de notas) y las páginas que
 // marcó sobre la pieza. Es lo primero que ve Paco al abrir el material.
 import { useEffect, useState } from "react";
-import { XCircle, CheckCircle2, ExternalLink, ImageIcon } from "lucide-react";
+import { XCircle, CheckCircle2, ExternalLink, ImageIcon, Upload, Send, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { mutateCreateComment } from "@/data/operacion";
+import { useAuth } from "@/lib/auth";
+import { SubirVersion } from "@/components/material/SubirVersion";
+import { EnviarAlCliente } from "@/components/material/EnviarAlCliente";
 import { approvalsApi } from "@/lib/approvalsApi";
 import { StorageService, type StoredFile } from "@/lib/storage";
 import { nombreMotivo } from "@/lib/portalModelo";
@@ -13,7 +18,14 @@ const EN_DESARROLLO = ["desarrollo_medico", "desarrollo_grafico"];
 const esEvidencia = (f: StoredFile) => f.stage === "cambios_cliente" || /^Correcciones_|^Cambio_cliente_|^Marcas_/.test(f.name);
 const esImagen = (f: StoredFile) => f.category === "image" || /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name);
 
-export function CorreccionesClienteCard({ material }: { material: Material }) {
+const RESPUESTAS = ["Recibido, ya trabajamos en las correcciones.", "Gracias, te enviamos la nueva versión hoy.", "¿Nos confirmas a qué referencia te refieres?"];
+
+export function CorreccionesClienteCard({ material, onCambio }: { material: Material; onCambio?: () => void }) {
+  const { user } = useAuth();
+  const [respuesta, setRespuesta] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [subir, setSubir] = useState(false);
+  const [recarga, setRecarga] = useState(0);
   const [ultima, setUltima] = useState<any | null>(null);
   const [archivos, setArchivos] = useState<StoredFile[]>([]);
 
@@ -33,7 +45,7 @@ export function CorreccionesClienteCard({ material }: { material: Material }) {
     return () => {
       vivo = false;
     };
-  }, [material.id, material.status]);
+  }, [material.id, material.status, recarga]);
 
   if (!ultima) return null;
   const rechazo = ultima.decision === "cambios";
@@ -93,11 +105,46 @@ export function CorreccionesClienteCard({ material }: { material: Material }) {
           </ul>
         </div>
       )}
+      {/* Responder al cliente sin salir de aquí */}
+      <div className="mt-4 rounded-xl border border-border bg-card p-3">
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">Responder al cliente</p>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {RESPUESTAS.map((r) => (
+            <button key={r} type="button" onClick={() => setRespuesta(r)} className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:border-[#E37439] hover:text-[#E37439]">{r}</button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input value={respuesta} onChange={(e) => setRespuesta(e.target.value)} placeholder="Escribe un mensaje que verá el cliente" className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
+          <button
+            type="button"
+            disabled={!respuesta.trim() || enviando || !user}
+            onClick={async () => {
+              if (!user) return;
+              setEnviando(true);
+              const r = await mutateCreateComment({ material_id: material.id, author_id: user.id, author_name: user.name, body: respuesta.trim(), interno: false });
+              setEnviando(false);
+              if (r.error) return toast.error(r.error);
+              setRespuesta("");
+              toast.success("Mensaje enviado al cliente.");
+              onCambio?.();
+            }}
+            className="inline-flex items-center gap-1 rounded-lg bg-foreground px-3 text-xs font-semibold text-background disabled:opacity-40"
+          >
+            {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Enviar
+          </button>
+        </div>
+      </div>
+
       {rechazo && (
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Corrige, sube la nueva versión en «Archivos» y vuelve a enviarla al cliente con el botón de avanzar etapa.
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => setSubir(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:border-[#E37439] hover:text-[#E37439]">
+            <Upload className="h-4 w-4" /> Subir versión corregida
+          </button>
+          <EnviarAlCliente material={material} onDone={() => onCambio?.()} />
+          <span className="text-[11px] text-muted-foreground">Corrige, sube la versión y envíala de nuevo al cliente.</span>
+        </div>
       )}
+      {subir && <SubirVersion material={material} onCerrar={() => setSubir(false)} onListo={() => { setRecarga((n) => n + 1); onCambio?.(); }} />}
     </section>
   );
 }

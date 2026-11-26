@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { NuevoMaterial } from "@/components/material/NuevoMaterial";
 import { SubirVersion } from "@/components/material/SubirVersion";
+import { EnviarAlCliente } from "@/components/material/EnviarAlCliente";
 import { supabase } from "@/lib/supabase";
 import { useOperacion } from "@/data/operacion";
 import { useAuth } from "@/lib/auth";
@@ -312,6 +313,7 @@ export default function MisClientes() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="inline-flex items-center gap-2">
+                          <EnviarAlCliente material={m} onDone={data.reload} compacto />
                           <button type="button" onClick={(e) => { e.stopPropagation(); setSubirPara(m); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground hover:border-[#E37439] hover:text-[#E37439]">
                             <Upload className="h-3.5 w-3.5" /> Subir versión
                           </button>

@@ -1,7 +1,7 @@
 // Reportes: de dónde sale cada número. Cada «fuente» lee los datos del Portal para un área y un periodo
 // y devuelve indicadores, una serie para graficar, una tabla y un resumen escrito. Nada de aquí modifica datos.
-import { hoyISO, sumarDias } from './datos.js?v=202611270530';
-import { store, vigentes, evaluarEntrega, saludProyecto, areasVigentes, datosFocusMap } from './store.js?v=202611270530';
+import { hoyISO, sumarDias } from './datos.js?v=202611270600';
+import { store, vigentes, evaluarEntrega, saludProyecto, areasVigentes, datosFocusMap } from './store.js?v=202611270600';
 
 // ---------- Periodos ----------
 const lunes = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -34,7 +34,7 @@ const mayus = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
 const enRango = (iso, r) => !!iso && iso >= r.desde && iso <= r.hasta;
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
-const seEntrego = (n) => (n === 1 ? 'se entregó 1 tarea' : `se entregaron ${n} tareas`);
+const seEntrego = (n) => (n === 0 ? 'no se entregó ninguna tarea' : n === 1 ? 'se entregó 1 tarea' : `se entregaron ${n} tareas`);
 
 // ---------- Áreas ----------
 export const AREAS_REPORTE = [
@@ -171,7 +171,7 @@ export const FUENTES = {
       return {
         serie: { unidad: '%', max: 100, meta: 95, puntos: puntos.map((p) => ({ etq: p.etq, valor: p.valor })) },
         tabla: { cols: ['Semana del', 'Tareas que vencían', 'A tiempo', '% ponderado'], filas: puntos.map((p) => [p.etq, p.n, p.ok, p.valor === null ? '—' : `${p.valor} %`]) },
-        resumen: ult ? `La semana más reciente cerró en ${ult.valor} % a tiempo${prev ? ` (${ult.valor >= prev.valor ? 'sube' : 'baja'} desde ${prev.valor} %)` : ''}. La meta es 95 %.` : 'Aún no hay semanas con tareas que medir.',
+        resumen: ult ? `La semana más reciente cerró en ${ult.valor} % a tiempo${prev ? (ult.valor === prev.valor ? ' (igual que la semana anterior)' : ` (${ult.valor > prev.valor ? 'sube' : 'baja'} desde ${prev.valor} %)`) : ''}. La meta es 95 %.` : 'Aún no hay semanas con tareas que medir.',
       };
     },
   },

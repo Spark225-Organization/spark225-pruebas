@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270530';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270600';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -426,7 +426,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270530';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270600';
 
 // Colecciones que la base acepta solo después de su SQL; si aún no, se quedan en este navegador sin frenar lo demás.
 const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos', 'reportes']);
@@ -470,6 +470,7 @@ function tomarFoto() {
 export async function conectarNube(perfil) {
   const { perfiles, docs, ajustes } = await cargarTodo();
   const por = (col) => docs.filter((d) => d.coleccion === col).map((d) => d.datos);
+  const conId = (col) => docs.filter((d) => d.coleccion === col).map((d) => ({ ...d.datos, id: d.id }));
   const y = perfil.id;
   const e = {
     version: 5, creado: hoyISO(), papeleraDias: 30, nube: true,
@@ -479,7 +480,8 @@ export async function conectarNube(perfil) {
     avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
     correos: [], areas: por('areas'), documentos: por('documentos'), hitos: por('hitos'), riesgos: por('riesgos'), reportes: por('reportes'),
     // Focus Map: solo lectura, para los reportes (se edita en su propia app).
-    focusmap: { trimestres: por('fm_trimestres'), prioridades: por('fm_prioridades'), reportes: por('fm_reportes'), ajustes: por('fm_ajustes')[0] || null },
+    // (sus documentos guardan el id fuera de «datos», igual que la app original)
+    focusmap: { trimestres: conId('fm_trimestres'), prioridades: conId('fm_prioridades'), reportes: conId('fm_reportes'), ajustes: conId('fm_ajustes')[0] || null },
     chat: { canales: por('canales'), mensajes: por('mensajes').sort((a, b) => a.cuando.localeCompare(b.cuando)), leidos: ajustes.leidos ? { [y]: ajustes.leidos } : {} },
     layouts: ajustes.layout ? { [y]: ajustes.layout } : {},
     personal: ajustes.personal ? { [y]: ajustes.personal } : {},

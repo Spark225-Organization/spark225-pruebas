@@ -1,8 +1,8 @@
 // Entrada real con Supabase: correo @spark225.com + contraseña, o Google.
 // La demo con datos ficticios sigue disponible para enseñar el sistema sin cuenta.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611262330';
-import { entrar, registrar, recuperar, nuevaClave, entrarConGoogle, conexionSegura, salirNube } from './nube.js?v=202611262330';
+import { I, Estrella } from './ui.js?v=202611270010';
+import { entrar, registrar, recuperar, nuevaClave, entrarConGoogle, conexionSegura, salirNube } from './nube.js?v=202611270010';
 
 const traducir = (m = '') => {
   if (/invalid login/i.test(m)) return 'Correo o contraseña incorrectos.';

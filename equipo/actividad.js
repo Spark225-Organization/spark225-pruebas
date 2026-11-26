@@ -1,8 +1,8 @@
 // Panel de una actividad: lo esencial arriba, el resto en «Más».
 import { html, useState, useEffect, useRef, useMemo } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, PRIORIDADES, hoyISO, sumarDias } from './datos.js?v=202611262330';
-import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611262330';
-import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611262330';
+import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, PRIORIDADES, hoyISO, sumarDias } from './datos.js?v=202611270010';
+import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611270010';
+import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611270010';
 
 const copia = (x) => JSON.parse(JSON.stringify(x));
 const uid = () => Math.random().toString(36).slice(2, 9);

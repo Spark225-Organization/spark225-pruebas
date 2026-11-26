@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611262330';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270010';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -424,7 +424,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611262330';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270010';
 
 const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas']);
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'];
@@ -616,6 +616,7 @@ export function evaluarEntrega(a, hoy = hoyISO()) {
   // La fecha real de entrega (Notion «Fecha Entrega REAL») manda; si no hay, cuenta cuándo se cerró.
   const cerrada = a.estatus === 'hecho' ? (a.entregaReal || (a.cerrada || '').slice(0, 10) || null) : null;
   if (!cerrada && limite >= hoy) return null; // aún no vence: no cuenta
+  if (a.estatus === 'hecho' && a.cerradaAprox && !a.entregaReal) return null; // llegó terminada de Notion sin fecha real: «Sin fecha real», no cuenta
   return { aTiempo: !!cerrada && cerrada <= limite, limite, cerrada, peso: PESO_PRIORIDAD[a.prioridad] || 2, diasTarde: cerrada ? Math.max(0, diasEntreISO(limite, cerrada)) : diasEntreISO(limite, hoy) };
 }
 function diasEntreISO(a, b) { return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / DIA_MS); }
@@ -685,7 +686,7 @@ export async function cambiarMiPerfil(uId, cambios) {
 
 // ---------- Mapa de enfoque (Focus Map) ----------
 // Los datos llegan de la base; el código público no trae ninguno.
-import { AJUSTES_BASE } from './enfoque-datos.js?v=202611262330';
+import { AJUSTES_BASE } from './enfoque-datos.js?v=202611270010';
 export function datosEnfoque() {
   return { ajustes: estado.fm_ajustes?.[0] || AJUSTES_BASE, trimestres: estado.fm_trimestres || [], prioridades: estado.fm_prioridades || [],
     reportes: estado.fm_reportes || [], fichas: estado.fm_fichas || [] };

@@ -41,9 +41,9 @@ const LISTO_PARA_ENVIAR: Record<string, string> = {
 const ES_RECHAZO = new Set(["cambios", "changes_requested", "rejected"]);
 
 const TIPO = {
-  corregir: { nombre: "Correcciones del cliente", Ico: XCircle, color: "#D64545", fondo: "bg-[#FFF5F5]", borde: "border-[#D64545]/25" },
-  enviar: { nombre: "Listos para enviar", Ico: Send, color: "#E37439", fondo: "bg-[#FFF7F2]", borde: "border-[#E37439]/25" },
-  vencido: { nombre: "Fecha comprometida vencida", Ico: AlarmClock, color: "#8A6200", fondo: "bg-[#FFFAEE]", borde: "border-[#D99A12]/30" },
+  corregir: { nombre: "Correcciones del cliente", Ico: XCircle, color: "#D64545", fondo: "bg-[#D64545]/[0.07]", borde: "border-[#D64545]/25" },
+  enviar: { nombre: "Listos para enviar", Ico: Send, color: "#E37439", fondo: "bg-[#E37439]/[0.07]", borde: "border-[#E37439]/25" },
+  vencido: { nombre: "Fecha comprometida vencida", Ico: AlarmClock, color: "#C08A0E", fondo: "bg-[#F5C245]/[0.10]", borde: "border-[#D99A12]/30" },
 } as const;
 
 export default function MisClientes() {
@@ -136,13 +136,13 @@ export default function MisClientes() {
     return (
       <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div>
-          <button type="button" onClick={() => { setParams({}); setMomentoSel(""); setBuscar(""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-[#7A8590] hover:text-[#E37439]">
+          <button type="button" onClick={() => { setParams({}); setMomentoSel(""); setBuscar(""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-[#E37439]">
             <ArrowLeft className="h-3.5 w-3.5" /> Mis clientes
           </button>
-          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold tracking-tight text-[#0E1E2A]">
+          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold tracking-tight text-foreground">
             <FolderOpen className="h-7 w-7 text-[#E37439]" /> {carpeta.nombre}
           </h1>
-          <p className="text-sm text-[#4E5964]">
+          <p className="text-sm text-muted-foreground">
             {carpeta.materiales.length} materiales · {[...carpeta.productos].join(" · ") || "sin producto"}
           </p>
         </div>
@@ -156,28 +156,28 @@ export default function MisClientes() {
             const n = carpeta.materiales.filter((m) => momento(m) === x.id).length;
             const on = momentoSel === x.id;
             return (
-              <button key={x.id} type="button" aria-pressed={on} onClick={() => setMomentoSel(on ? "" : x.id)} className={cn("rounded-2xl border bg-white px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-md", on ? "border-[#0E1E2A]" : "border-[#E3E6EA]")}>
-                <span className="flex items-center gap-1.5 text-xs text-[#4E5964]">
-                  <span className="text-[10px] font-bold text-[#9AA4B2]">{i + 1}</span>
+              <button key={x.id} type="button" aria-pressed={on} onClick={() => setMomentoSel(on ? "" : x.id)} className={cn("rounded-2xl border bg-card px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-md", on ? "border-foreground" : "border-border")}>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="text-[10px] font-bold text-muted-foreground/70">{i + 1}</span>
                   <span className="h-2 w-2 rounded-full" style={{ background: x.color }} /> {x.nombre}
                 </span>
-                <span className="mt-1 block text-2xl font-bold tabular-nums text-[#0E1E2A]">{n}</span>
+                <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{n}</span>
               </button>
             );
           })}
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-[#E3E6EA] bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F2] px-4 py-3">
-            <h2 className="text-sm font-bold text-[#0E1E2A]">Materiales de {carpeta.nombre} <span className="font-normal text-[#7A8590]">({lista.length})</span></h2>
+        <section className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+            <h2 className="text-sm font-bold text-foreground">Materiales de {carpeta.nombre} <span className="font-normal text-muted-foreground">({lista.length})</span></h2>
             <div className="relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A8590]" />
-              <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar material o #folio" className="h-9 w-full rounded-xl border border-[#E3E6EA] pl-9 pr-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar material o #folio" className="h-9 w-full rounded-xl border border-border pl-9 pr-3 text-sm outline-none bg-background focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#F8F9FA] text-left text-[11px] font-semibold text-[#7A8590]">
+              <thead className="bg-muted/50 text-left text-[11px] font-semibold text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5">Material</th>
                   <th className="px-4 py-2.5">Etapa interna</th>
@@ -187,47 +187,47 @@ export default function MisClientes() {
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EEF0F2]">
+              <tbody className="divide-y divide-border">
                 {lista.map((m) => {
                   const mom = MOMENTOS.find((x) => x.id === momento(m))!;
                   const vencida = isFechaVencida(m.fecha_comprometida, m.status) && mom.id !== "entregado";
                   const msgs = data.comentariosCliente[m.id]?.count ?? 0;
                   const corregir = pendientes.some((p) => p.m.id === m.id && p.tipo === "corregir");
                   return (
-                    <tr key={m.id} onClick={() => navigate(`/materials/${m.id}`)} className="group cursor-pointer hover:bg-[#FAFBFC]">
+                    <tr key={m.id} onClick={() => navigate(`/materials/${m.id}`)} className="group cursor-pointer hover:bg-muted/40">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-[#0E1E2A]">
-                          {m.folio != null && <span className="mr-1.5 font-mono text-[11px] font-normal text-[#9AA4B2]">#{m.folio}</span>}
+                        <p className="font-semibold text-foreground">
+                          {m.folio != null && <span className="mr-1.5 font-mono text-[11px] font-normal text-muted-foreground/70">#{m.folio}</span>}
                           {m.name}
                         </p>
-                        <p className="text-xs text-[#7A8590]">{m.product_name ?? "—"}{m.indication_name ? ` · ${m.indication_name}` : ""}</p>
+                        <p className="text-xs text-muted-foreground">{m.product_name ?? "—"}{m.indication_name ? ` · ${m.indication_name}` : ""}</p>
                       </td>
-                      <td className="px-4 py-3 text-xs text-[#4E5964]">
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
                         {statusLabel(m.status as MaterialStatus)}
                         {corregir && <span className="ml-1.5 rounded-full bg-[#D64545] px-1.5 py-0.5 text-[10px] font-semibold text-white">corregir</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-[#4E5964]">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                           <span className="h-2 w-2 rounded-full" style={{ background: mom.color }} /> {mom.nombre}
                         </span>
                       </td>
-                      <td className={cn("whitespace-nowrap px-4 py-3 text-xs", vencida ? "font-semibold text-[#B23A3A]" : "text-[#4E5964]")}>
+                      <td className={cn("whitespace-nowrap px-4 py-3 text-xs", vencida ? "font-semibold text-[#B23A3A] dark:text-[#F08A8A]" : "text-muted-foreground")}>
                         {formatDate(m.fecha_comprometida)}{vencida ? " · vencida" : ""}
                       </td>
                       <td className="px-4 py-3 text-xs">
                         <span className="flex items-center gap-2">
-                          {m.visible_para_cliente === false && <span title="No visible para el cliente" className="inline-flex items-center gap-1 text-[#9AA4B2]"><EyeOff className="h-3.5 w-3.5" /> oculto</span>}
-                          {msgs > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#1E3A5F]/10 px-1.5 py-0.5 font-semibold text-[#1E3A5F]"><MessageSquare className="h-3 w-3" /> {msgs}</span>}
+                          {m.visible_para_cliente === false && <span title="No visible para el cliente" className="inline-flex items-center gap-1 text-muted-foreground/70"><EyeOff className="h-3.5 w-3.5" /> oculto</span>}
+                          {msgs > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 font-semibold text-sky-800 dark:text-sky-300"><MessageSquare className="h-3 w-3" /> {msgs}</span>}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#4E5964] group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
+                        <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-muted-foreground group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
                       </td>
                     </tr>
                   );
                 })}
                 {lista.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-[#7A8590]">Ningún material coincide.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">Ningún material coincide.</td></tr>
                 )}
               </tbody>
             </table>
@@ -242,11 +242,11 @@ export default function MisClientes() {
   return (
     <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <p className="text-sm text-[#7A8590] first-letter:uppercase">
+        <p className="text-sm text-muted-foreground first-letter:uppercase">
           {new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
         </p>
-        <h1 className="text-3xl font-bold tracking-tight text-[#0E1E2A]">Hola{nombre ? `, ${nombre}` : ""}</h1>
-        <p className="text-[#4E5964]">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Hola{nombre ? `, ${nombre}` : ""}</h1>
+        <p className="text-muted-foreground">
           {esAdmin ? "Todos los clientes" : `Tus ${carpetas.length} ${carpetas.length === 1 ? "cliente" : "clientes"}`} · {totalActivos} materiales activos
         </p>
       </div>
@@ -256,9 +256,9 @@ export default function MisClientes() {
       <Pendientes pendientes={pendientes} abrir={(id) => navigate(`/materials/${id}`)} mostrarCliente />
 
       <section aria-label="Carpetas de clientes">
-        <h2 className="mb-3 text-sm font-bold text-[#0E1E2A]">Clientes</h2>
+        <h2 className="mb-3 text-sm font-bold text-foreground">Clientes</h2>
         {carpetas.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-[#DBDBDB] bg-white p-8 text-center text-sm text-[#7A8590]">
+          <p className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
             Aún no tienes materiales asignados.
           </p>
         ) : (
@@ -268,15 +268,15 @@ export default function MisClientes() {
               const n = (t: Pendiente["tipo"]) => ps.filter((p) => p.tipo === t).length;
               const msgs = c.materiales.reduce((s, m) => s + (data.comentariosCliente[m.id]?.count ?? 0), 0);
               return (
-                <Link key={c.id} to={`/mis-clientes?cliente=${c.id}`} className="ssam-carpeta block border border-[#E3E6EA] bg-white p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]">
+                <Link key={c.id} to={`/mis-clientes?cliente=${c.id}`} className="ssam-carpeta block border border-border bg-card p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="flex items-center gap-2 text-lg font-bold text-[#0E1E2A]">
+                    <p className="flex items-center gap-2 text-lg font-bold text-foreground">
                       <FolderOpen className="h-5 w-5 text-[#E37439]" /> {c.nombre}
                     </p>
-                    <span className="text-xs tabular-nums text-[#7A8590]">{c.materiales.length}</span>
+                    <span className="text-xs tabular-nums text-muted-foreground">{c.materiales.length}</span>
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-[#7A8590]">{[...c.productos].join(" · ") || "Sin producto"}</p>
-                  <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-[#EEF0F2]">
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{[...c.productos].join(" · ") || "Sin producto"}</p>
+                  <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-muted">
                     {MOMENTOS.map((x) => {
                       const k = c.materiales.filter((m) => momento(m) === x.id).length;
                       return k ? <span key={x.id} title={`${x.nombre}: ${k}`} style={{ width: `${(k / c.materiales.length) * 100}%`, background: x.color }} /> : null;
@@ -284,10 +284,10 @@ export default function MisClientes() {
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-semibold">
                     {n("corregir") > 0 && <span className="rounded-full bg-[#D64545] px-2 py-0.5 text-white">{n("corregir")} por corregir</span>}
-                    {n("enviar") > 0 && <span className="rounded-full bg-[#E37439]/12 px-2 py-0.5 text-[#C45B24]">{n("enviar")} por enviar</span>}
-                    {n("vencido") > 0 && <span className="rounded-full bg-[#F5C245]/25 px-2 py-0.5 text-[#8A6200]">{n("vencido")} vencidos</span>}
-                    {msgs > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#1E3A5F]/10 px-2 py-0.5 text-[#1E3A5F]"><MessageSquare className="h-3 w-3" /> {msgs}</span>}
-                    {!ps.length && !msgs && <span className="text-[#2E9E5B]">Todo al día</span>}
+                    {n("enviar") > 0 && <span className="rounded-full bg-[#E37439]/15 px-2 py-0.5 text-[#C45B24] dark:text-[#F0A070]">{n("enviar")} por enviar</span>}
+                    {n("vencido") > 0 && <span className="rounded-full bg-[#F5C245]/20 px-2 py-0.5 text-[#9A6E00] dark:text-[#F5C245]">{n("vencido")} vencidos</span>}
+                    {msgs > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-800 dark:text-sky-300"><MessageSquare className="h-3 w-3" /> {msgs}</span>}
+                    {!ps.length && !msgs && <span className="text-[#2E9E5B] dark:text-[#5CCB8A]">Todo al día</span>}
                   </div>
                 </Link>
               );
@@ -312,18 +312,18 @@ function Pendientes({ pendientes, abrir, mostrarCliente }: { pendientes: Pendien
               <span className="text-xl tabular-nums">{items.length}</span>
             </p>
             {items.length === 0 ? (
-              <p className="mt-2 text-xs text-[#7A8590]">Nada pendiente.</p>
+              <p className="mt-2 text-xs text-muted-foreground">Nada pendiente.</p>
             ) : (
               <ul className="mt-2 space-y-1">
                 {items.slice(0, 4).map((p) => (
                   <li key={p.m.id + t}>
-                    <button type="button" onClick={() => abrir(p.m.id)} className="w-full rounded-lg bg-white/70 px-2.5 py-1.5 text-left hover:bg-white">
-                      <span className="block truncate text-xs font-semibold text-[#0E1E2A]">{p.m.name}</span>
-                      <span className="block truncate text-[11px] text-[#4E5964]">{mostrarCliente && p.m.client_name ? `${p.m.client_name} · ` : ""}{p.detalle}</span>
+                    <button type="button" onClick={() => abrir(p.m.id)} className="w-full rounded-lg bg-card/80 px-2.5 py-1.5 text-left hover:bg-card">
+                      <span className="block truncate text-xs font-semibold text-foreground">{p.m.name}</span>
+                      <span className="block truncate text-[11px] text-muted-foreground">{mostrarCliente && p.m.client_name ? `${p.m.client_name} · ` : ""}{p.detalle}</span>
                     </button>
                   </li>
                 ))}
-                {items.length > 4 && <li className="px-2.5 text-[11px] text-[#7A8590]">y {items.length - 4} más</li>}
+                {items.length > 4 && <li className="px-2.5 text-[11px] text-muted-foreground">y {items.length - 4} más</li>}
               </ul>
             )}
           </div>
@@ -335,7 +335,7 @@ function Pendientes({ pendientes, abrir, mostrarCliente }: { pendientes: Pendien
 
 function AvisoProbarCliente() {
   return (
-    <p className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E3E6EA] bg-white px-3 py-2 text-xs text-[#4E5964]">
+    <p className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
       <Repeat className="h-3.5 w-3.5 text-[#E37439]" />
       Para ver lo que ve el cliente, usa <b>Cambiar rol</b> abajo a la izquierda y entra como cliente (Laboratorios Aurora). Los cambios se ven en ambos lados.
     </p>

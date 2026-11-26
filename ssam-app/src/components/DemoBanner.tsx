@@ -8,14 +8,14 @@ const DemoBanner = () => {
   const rol = rolDemo() === "client" ? "cliente" : rolDemo() === "disenador" ? "Paco (diseño)" : "administrador";
   return (
     // z-40: queda debajo de paneles y diálogos (z-50) para no tapar sus botones.
-    <div className="fixed bottom-10 left-4 z-40 flex items-center gap-3 rounded-full border border-[#DBDBDB] bg-white/95 py-1.5 pl-4 pr-1.5 text-xs shadow-card backdrop-blur">
-      <span className="text-[#4E5964]">
-        Demo como <b className="text-[#0E1E2A]">{rol}</b> · datos ficticios
+    <div className="fixed bottom-10 left-4 z-40 flex items-center gap-3 rounded-full border border-border bg-card/95 py-1.5 pl-4 pr-1.5 text-xs shadow-card backdrop-blur">
+      <span className="text-muted-foreground">
+        Demo como <b className="text-foreground">{rol}</b> · datos ficticios
       </span>
       <button
         type="button"
         onClick={salirDemo}
-        className="inline-flex items-center gap-1 rounded-full bg-[#0E1E2A] px-3 py-1 font-semibold text-white hover:bg-[#E37439] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]"
+        className="inline-flex items-center gap-1 rounded-full bg-[#E37439] px-3 py-1 font-semibold text-white hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]"
       >
         <Repeat className="h-3.5 w-3.5" />
         Cambiar rol

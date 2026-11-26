@@ -46,15 +46,15 @@ export function CorreccionesClienteCard({ material }: { material: Material }) {
   return (
     <section
       aria-label="Correcciones del cliente"
-      className={rechazo ? "rounded-2xl border border-[#D64545]/30 bg-[#FFF5F5] p-5" : "rounded-2xl border border-[#2E9E5B]/30 bg-[#F2FBF6] p-5"}
+      className={rechazo ? "rounded-2xl border border-[#D64545]/35 bg-[#D64545]/[0.07] p-5" : "rounded-2xl border border-[#2E9E5B]/35 bg-[#2E9E5B]/[0.07] p-5"}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className={rechazo ? "flex items-center gap-1.5 text-sm font-bold text-[#B23A3A]" : "flex items-center gap-1.5 text-sm font-bold text-[#1E7D47]"}>
+          <p className={rechazo ? "flex items-center gap-1.5 text-sm font-bold text-[#B23A3A] dark:text-[#F08A8A]" : "flex items-center gap-1.5 text-sm font-bold text-[#1E7D47] dark:text-[#5CCB8A]"}>
             {rechazo ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
             {rechazo ? "El cliente rechazó esta versión" : "El cliente aprobó con comentarios"}
           </p>
-          <p className="mt-0.5 text-xs text-[#4E5964]">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {ultima.usuario_name ? `${ultima.usuario_name} · ` : ""}
             {formatDate(ultima.created_at)}
             {rechazo ? ` · ${ultima.stage === "aprobacion_cliente_medico" ? "contenido médico" : "diseño"}` : ""}
@@ -66,24 +66,24 @@ export function CorreccionesClienteCard({ material }: { material: Material }) {
       </div>
 
       {ultima.comentario && (
-        <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-white p-3 font-sans text-sm leading-relaxed text-[#0E1E2A]">{ultima.comentario}</pre>
+        <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-border bg-card p-3 font-sans text-sm leading-relaxed text-foreground">{ultima.comentario}</pre>
       )}
 
       {archivos.length > 0 && (
         <div className="mt-3">
-          <p className="mb-2 text-xs font-semibold text-[#4E5964]">Marcas sobre la pieza</p>
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">Marcas sobre la pieza</p>
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {archivos.map((f) => {
               const url = StorageService.getUrl(f);
               return (
                 <li key={f.id}>
-                  <a href={url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-xl border border-[#E3E6EA] bg-white">
+                  <a href={url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-xl border border-border bg-card">
                     {esImagen(f) ? (
                       <img src={url} alt={f.name} className="h-24 w-full object-cover transition-transform group-hover:scale-105" />
                     ) : (
-                      <span className="flex h-24 items-center justify-center text-[#9AA4B2]"><ImageIcon className="h-6 w-6" /></span>
+                      <span className="flex h-24 items-center justify-center text-muted-foreground/70"><ImageIcon className="h-6 w-6" /></span>
                     )}
-                    <span className="flex items-center gap-1 truncate px-2 py-1 text-[10px] text-[#4E5964]">
+                    <span className="flex items-center gap-1 truncate px-2 py-1 text-[10px] text-muted-foreground">
                       <ExternalLink className="h-3 w-3 shrink-0" /> <span className="truncate">{f.name}</span>
                     </span>
                   </a>
@@ -94,7 +94,7 @@ export function CorreccionesClienteCard({ material }: { material: Material }) {
         </div>
       )}
       {rechazo && (
-        <p className="mt-3 text-[11px] text-[#7A8590]">
+        <p className="mt-3 text-[11px] text-muted-foreground">
           Corrige, sube la nueva versión en «Archivos» y vuelve a enviarla al cliente con el botón de avanzar etapa.
         </p>
       )}

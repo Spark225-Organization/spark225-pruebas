@@ -1,8 +1,8 @@
 // Personaliza tu perfil: foto (subida, de Google o de Notion), color, nombre corto y puesto,
 // y cómo se ve tu Portal (tema, color de acento, tamaño y los highlights del Inicio).
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { cambiarMiPerfil, prefsDe, guardarPrefs, esAdmin } from './store.js?v=202611270600';
-import { I, Avatar } from './ui.js?v=202611270600';
+import { cambiarMiPerfil, prefsDe, guardarPrefs, esAdmin } from './store.js?v=202611270700';
+import { I, Avatar } from './ui.js?v=202611270700';
 
 export const ACENTOS = [
   { id: 'spark', nombre: 'Spark225', color: '#E47739' },
@@ -61,7 +61,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
   };
   const deGoogle = async () => {
     setOcupado('google');
-    const { fotoDeGoogle } = await import('./nube.js?v=202611270600');
+    const { fotoDeGoogle } = await import('./nube.js?v=202611270700');
     const url = await fotoDeGoogle().catch(() => null);
     setOcupado('');
     if (!url) return toast('Tu cuenta de Google no tiene foto');
@@ -69,7 +69,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
   };
   const deNotion = async (todos) => {
     setOcupado(todos ? 'equipo' : 'notion');
-    const { fotosNotion } = await import('./nube.js?v=202611270600');
+    const { fotosNotion } = await import('./nube.js?v=202611270700');
     const r = await fotosNotion(todos).catch((e) => ({ ok: false, error: e.message }));
     setOcupado('');
     if (!r?.ok) return toast(r?.error || 'No pude traer la foto de Notion');

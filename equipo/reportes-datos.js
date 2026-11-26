@@ -1,7 +1,7 @@
 // Reportes: de dónde sale cada número. Cada «fuente» lee los datos del Portal para un área y un periodo
 // y devuelve indicadores, una serie para graficar, una tabla y un resumen escrito. Nada de aquí modifica datos.
-import { hoyISO, sumarDias } from './datos.js?v=202611270600';
-import { store, vigentes, evaluarEntrega, saludProyecto, areasVigentes, datosFocusMap } from './store.js?v=202611270600';
+import { hoyISO, sumarDias } from './datos.js?v=202611270700';
+import { store, vigentes, evaluarEntrega, saludProyecto, areasVigentes, datosFocusMap } from './store.js?v=202611270700';
 
 // ---------- Periodos ----------
 const lunes = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };

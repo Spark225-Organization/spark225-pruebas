@@ -3,12 +3,12 @@
 // los valores (estatus, salud, fases) van en español.
 // Mismo orden que Spark225 Home: Clients → Master Proyectos → Master Task Database → Master Minutas → Master Milestones → Master Riesgos y Decisiones.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270830';
-import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270830';
-import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270830';
-import { Lista } from './vistas.js?v=202611270830';
-import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270830';
-import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270830';
+import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270840';
+import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270840';
+import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270840';
+import { Lista } from './vistas.js?v=202611270840';
+import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270840';
+import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270840';
 
 const fmt = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso.slice(0, 10) + 'T12:00:00')).replace('.', '') : '—');
 const sinAcento = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');

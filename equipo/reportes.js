@@ -2,10 +2,10 @@
 // cada quien edita títulos, textos y gráficas, y lo presenta o lo descarga en PDF, PowerPoint o Excel.
 // Reglas: sin precios ni cotizaciones de Spark225, sin datos de pacientes, y armar un reporte nunca cambia datos.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611270830';
-import { reportesGuardados, crearReporte, actualizarReporte, quitarReporte, esAdmin, areasVigentes, nube } from './store.js?v=202611270830';
-import { I, Avatar, Info, haceCuanto } from './ui.js?v=202611270830';
-import { PERIODOS, rangoDe, textoPeriodo, AREAS_REPORTE, nombreArea, FUENTES, reporteNuevo, bloqueNuevo, calcularBloque, tituloBloque, graficaBloque } from './reportes-datos.js?v=202611270830';
+import { hoyISO } from './datos.js?v=202611270840';
+import { reportesGuardados, crearReporte, actualizarReporte, quitarReporte, esAdmin, areasVigentes, nube } from './store.js?v=202611270840';
+import { I, Avatar, Info, haceCuanto } from './ui.js?v=202611270840';
+import { PERIODOS, rangoDe, textoPeriodo, AREAS_REPORTE, nombreArea, FUENTES, reporteNuevo, bloqueNuevo, calcularBloque, tituloBloque, graficaBloque } from './reportes-datos.js?v=202611270840';
 
 // ---------- Colores (la hoja del reporte siempre es clara, como un documento) ----------
 const MARCA = '#E47739';

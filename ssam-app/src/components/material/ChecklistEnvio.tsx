@@ -44,7 +44,10 @@ export function ChecklistEnvio({
   destinoNombre,
   onEnviar,
   onCerrar,
+  incluir = [],
 }: {
+  /** Checklists adicionales (p. ej. el del diseñador al enviar directo desde diseño). */
+  incluir?: string[];
   material: Material;
   destino: string;
   destinoNombre: string;
@@ -66,7 +69,7 @@ export function ChecklistEnvio({
       const { data, error } = await (supabase as any)
         .from("checklist_templates")
         .select("id, item, detalle, orden, formatos, cliente_id, activo, tipo")
-        .eq("tipo", tipo)
+        .in("tipo", [...incluir, tipo])
         .order("orden");
       if (!vivo) return;
       if (error) {
@@ -74,13 +77,16 @@ export function ChecklistEnvio({
         setPuntos([]);
         return;
       }
-      const lista = (data ?? []).filter((p: any) => p.activo !== false && (!p.cliente_id || p.cliente_id === clienteId) && aplica(p, formato));
+      const orden = [...incluir, tipo];
+      const lista = (data ?? [])
+        .filter((p: any) => p.activo !== false && (!p.cliente_id || p.cliente_id === clienteId) && aplica(p, formato))
+        .sort((a: any, b: any) => orden.indexOf(a.tipo) - orden.indexOf(b.tipo) || a.orden - b.orden);
       setPuntos(lista);
     })();
     return () => {
       vivo = false;
     };
-  }, [tipo, formato, clienteId]);
+  }, [tipo, formato, clienteId, incluir.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
@@ -102,7 +108,7 @@ export function ChecklistEnvio({
     const ahora = new Date().toISOString();
     const filas = puntos.map((p) => ({
       material_id: material.id,
-      tipo,
+      tipo: (p as any).tipo ?? tipo,
       item: p.item,
       detalle: p.detalle,
       orden: p.orden,

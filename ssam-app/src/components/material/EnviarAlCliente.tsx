@@ -107,6 +107,7 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
         material={material}
         destino={destino}
         destinoNombre="cliente"
+        incluir={destino === "aprobacion_cliente_grafico" && material.status === "desarrollo_grafico" ? ["entrega_diseno"] : []}
         onCerrar={onCerrar}
         onEnviar={async () => {
           const r = await mutateChangeStatus(material.id, destino);

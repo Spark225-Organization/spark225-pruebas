@@ -1,6 +1,6 @@
 // Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark225, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611270700';
+import { hoyISO } from './datos.js?v=202611270745';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
@@ -149,4 +149,10 @@ export function haceCuanto(isoFechaHora) {
   if (s < 3600) return `hace ${Math.round(s / 60)} min`;
   if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
   const d = Math.round(s / 86400); return d === 1 ? 'ayer' : `hace ${d} días`;
+}
+
+// Ruta de navegación: «Clients › Cliente › Proyecto». Siempre sabes dónde estás y regresas con un toque.
+export function Migas({ partes }) {
+  return html`<nav class="migas" aria-label="Ruta">${partes.map((p, i) => html`${i > 0 && html`<span class="migas-sep" aria-hidden="true">›</span>`}${p.href && i < partes.length - 1
+    ? html`<a href=${p.href}>${p.t}</a>` : html`<span aria-current=${i === partes.length - 1 ? 'page' : null}>${p.t}</span>`}`)}</nav>`;
 }

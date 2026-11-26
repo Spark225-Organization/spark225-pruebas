@@ -3,12 +3,12 @@
 // los valores (estatus, salud, fases) van en español.
 // Mismo orden que Spark225 Home: Clients → Master Proyectos → Master Task Database → Master Minutas → Master Milestones → Master Riesgos y Decisiones.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270700';
-import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270700';
-import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270700';
-import { Lista } from './vistas.js?v=202611270700';
-import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270700';
-import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270700';
+import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270745';
+import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270745';
+import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270745';
+import { Lista } from './vistas.js?v=202611270745';
+import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270745';
+import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270745';
 
 const fmt = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso.slice(0, 10) + 'T12:00:00')).replace('.', '') : '—');
 const sinAcento = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -263,4 +263,11 @@ export function MaestroMinutas({ ctx }) {
       <${FiltroCliente} db=${db} valor=${cli} set=${setCli} ids=${new Set(todas.map((m) => m.cliente))} />
     </div>
     ${cuerpo}`;
+}
+
+// Accesos compactos de Spark225 Home (en «Mi trabajo»): una fila de botones en lugar de las tarjetas grandes.
+export function AccesosSpark() {
+  const items = [['#/clientes', 'clientes', 'Clients'], ['#/proyectos', 'foco', 'Master Proyectos'], ['#/tareas', 'lista', 'Master Task Database'], ['#/minutas', 'nota', 'Master Minutas'],
+    ['#/hitos', 'mapa', 'Master Milestones'], ['#/riesgos', 'alerta', 'Master Riesgos y Decisiones'], ['#/tablero/enfoque', 'grafica', 'Focus Map'], ['#/reportes', 'documento', 'Reportes']];
+  return html`<nav class="accesos" aria-label="Spark225 Home">${items.map(([href, ico, t]) => html`<a key=${href} href=${href}>${I(ico)}<span>${t}</span></a>`)}</nav>`;
 }

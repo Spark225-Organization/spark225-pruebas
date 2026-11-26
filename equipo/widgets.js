@@ -1,12 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611270700';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611270700';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611270700';
-import { hoyISO } from './datos.js?v=202611270700';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611270700';
-import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611270700';
-import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611270700';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611270745';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611270745';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611270745';
+import { hoyISO } from './datos.js?v=202611270745';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611270745';
+import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611270745';
+import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611270745';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -27,13 +27,17 @@ export function Widgets({ ctx, persona, editable, hoy, ancho }) {
 
   const suyas = vigentes().filter((a) => participa(a, persona) && visiblePara(a, ctx.yo) && enFiltroInicio(a, ctx.yo));
   const datos = { ctx, persona, hoy, suyas, editable };
+  // Para que el Inicio no se vea saturado: los primeros 4 a la vista y el resto con «Ver más» (se recuerda).
+  const MAX = 4;
+  const todos = editando || !editable || prefsDe(ctx.yo).widgetsTodos;
+  const vistos = todos ? lista : lista.slice(0, MAX);
 
   return html`
     <aside class=${'widgets' + (editando ? ' editando' : '') + (ancho ? ' ancho' : '')} aria-label="Widgets" data-tour="widgets">
       ${editable && html`<div class="w-barra">
         <button class=${'btn ' + (editando ? 'prim' : 'fantasma')} onClick=${() => setEditando(!editando)} aria-pressed=${editando} aria-label=${editando ? 'Terminar de editar' : 'Editar widgets'} title="Editar widgets">${editando ? 'Listo' : I('ajustes')}</button>
       </div>`}
-      ${lista.map((w) => {
+      ${vistos.map((w) => {
         const def = WIDGETS.find((x) => x.tipo === w.tipo);
         const sobre = arr?.destino?.tipo === 'widget' && arr.destino.wid === w.id && arr.datos.widget !== w.id;
         return html`
@@ -47,6 +51,7 @@ export function Widgets({ ctx, persona, editable, hoy, ancho }) {
             <${Widget} w=${w} ...${datos} />
           </div>`;
       })}
+      ${editable && !editando && lista.length > MAX && html`<button class="w-mas" onClick=${() => guardarPrefs(ctx.yo, { widgetsTodos: !prefsDe(ctx.yo).widgetsTodos })} aria-expanded=${!!todos}>${todos ? 'Ver menos widgets' : `Ver ${lista.length - MAX} widgets más`}</button>`}
       ${editando && html`<button class="w-celda t-s w-agregar" onClick=${() => ctx.abrirGaleria(agregar)} aria-label="Agregar widget">${I('mas')}</button>`}
     </aside>`;
 }

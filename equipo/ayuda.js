@@ -3,10 +3,10 @@
 // te lleva a la página, te enseña con una animación cómo se hace y te da un recorrido guiado en la pantalla real.
 // También contesta con datos del Portal («¿qué tengo vencido?», «¿cómo va» y el nombre de un cliente) usando solo lo que tú ya puedes ver.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias } from './datos.js?v=202611270700';
-import { vigentes, visiblePara, estatusVisible, saludProyecto, cumplimiento, areasVigentes } from './store.js?v=202611270700';
-import { I, fechaRelativa } from './ui.js?v=202611270700';
-import { TEMAS, CATEGORIAS, ESCENAS, RECORRIDOS, SUGERENCIAS, PAGINAS, SINONIMOS } from './ayuda-datos.js?v=202611270700';
+import { hoyISO, sumarDias } from './datos.js?v=202611270745';
+import { vigentes, visiblePara, estatusVisible, saludProyecto, cumplimiento, areasVigentes } from './store.js?v=202611270745';
+import { I, fechaRelativa } from './ui.js?v=202611270745';
+import { TEMAS, CATEGORIAS, ESCENAS, RECORRIDOS, SUGERENCIAS, PAGINAS, SINONIMOS } from './ayuda-datos.js?v=202611270745';
 
 // ---------- Texto: normalizar, quitar palabras vacías y comparar con tolerancia a errores ----------
 const VACIAS = new Set(('a al ante algo alguna alguien como con cual cuales cuando de del donde el ella en era es esa ese eso esta este esto estoy fue hay la las le les lo los me mi mis muy necesito no nos o oye para pero por porque puedo puede pueden que quiero quisiera se ser si sin sobre su sus te tengo tu tus un una uno unos unas y ya yo hola buenas buenos dias tardes favor ayuda ayudame dime explica explicame saber hacer hago hace hacemos podria poder seria tiene tienen hacerlo esto eso aqui alla bien mas menos cosa cosas tal vez igual entonces pues osea ok gracias')

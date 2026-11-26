@@ -2349,3 +2349,77 @@ button.mes-mas:hover { color: var(--tinta); }
   .ayuda-btn-ico { width: 26px; height: 26px; }
   .ayuda-btn-t { display: inline; font-size: 11px; }
 }
+
+/* ================= Organización: ruta, Inicio y cliente → proyectos → tareas ================= */
+.rot-90 { transform: rotate(90deg); }
+.migas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--tinta-3); margin-bottom: 8px; min-width: 0; }
+.migas a { color: var(--tinta-2); text-decoration: none; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
+.migas a:hover { color: var(--tinta); background: var(--grafito); }
+.migas [aria-current="page"] { color: var(--tinta); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch; }
+.migas-sep { color: var(--tinta-4, var(--tinta-3)); }
+.cajon-ruta { flex: 1; min-width: 0; padding: 0 6px; }
+.cajon-ruta .migas { margin: 0; font-size: 12px; flex-wrap: nowrap; overflow: hidden; }
+.cajon-ruta .migas > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Inicio */
+.ini-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: -4px 0 16px; }
+.resumen-hoy { display: flex; flex-wrap: wrap; gap: 8px; }
+.rh-chip { display: inline-flex; align-items: baseline; gap: 6px; border: 0; border-radius: 12px; padding: 8px 14px; font-size: 14px; color: var(--tinta-2); background: var(--carbon); box-shadow: var(--anillo); cursor: pointer; }
+.rh-chip b { font: 600 20px Sora, sans-serif; color: var(--tinta); }
+.rh-chip.r:not(.cero) { background: color-mix(in srgb, var(--brasa, #d03b3b) 12%, var(--carbon)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brasa, #d03b3b) 35%, transparent); }
+.rh-chip.r:not(.cero) b { color: var(--brasa, #d03b3b); }
+.rh-chip.cero { opacity: .7; }
+.rh-chip:hover { box-shadow: inset 0 0 0 1.5px var(--chispa); }
+.ini-pest button { display: inline-flex; align-items: center; gap: 6px; }
+.ini-pest .i { width: 15px; height: 15px; }
+.accesos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--trazo); }
+.accesos a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--tinta-2); text-decoration: none; background: var(--carbon); box-shadow: var(--anillo); }
+.accesos a:hover { color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--chispa); }
+.accesos .i { width: 15px; height: 15px; color: var(--chispa); }
+.w-mas { width: 100%; border: 1.5px dashed var(--trazo-fuerte, var(--trazo)); background: none; color: var(--tinta-2); border-radius: 14px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.w-mas:hover { color: var(--tinta); border-color: var(--chispa); }
+/* Clients: proyectos en la tarjeta */
+.cc-proy { font-size: 12px; color: var(--tinta-3); }
+.cc-proy em { font-style: normal; color: var(--brasa, #d03b3b); font-weight: 600; }
+/* Ficha del cliente: pestañas y árbol de proyectos */
+.fc-pest { margin: 4px 0 16px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.fc-pest::-webkit-scrollbar { display: none; }
+.fc-pest button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; height: 34px; }
+.fc-pest .i { width: 15px; height: 15px; }
+.ap-arbol { display: flex; flex-direction: column; gap: 10px; }
+.ap-barra { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.ap-barra .enlace + .enlace { margin-left: 12px; }
+.ap-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ap-proy { border-radius: var(--r-panel, 16px); background: var(--carbon); box-shadow: var(--anillo); overflow: hidden; }
+.ap-proy.abierto { box-shadow: var(--anillo), inset 3px 0 0 var(--c, var(--chispa)); }
+.ap-cab { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 8px; }
+.ap-toggle { flex: none; width: 32px; height: 32px; border-radius: 9px; border: 0; background: none; color: var(--tinta-3); display: grid; place-items: center; cursor: pointer; }
+.ap-toggle:hover { background: var(--grafito); color: var(--tinta); }
+.ap-toggle .i { width: 16px; height: 16px; transition: transform 160ms; }
+.ap-nombre { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; color: inherit; text-decoration: none; }
+.ap-nombre b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.ap-nombre:hover b { text-decoration: underline; text-decoration-color: var(--chispa); text-underline-offset: 3px; }
+.ap-nombre small { font-size: 12px; color: var(--tinta-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-n { flex: none; display: inline-flex; align-items: baseline; gap: 4px; border: 0; background: var(--grafito); color: var(--tinta); border-radius: 9px; padding: 5px 9px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.ap-n span { font-weight: 500; font-size: 12px; color: var(--tinta-3); }
+.ap-n em { font-style: normal; font-size: 11px; color: var(--brasa, #d03b3b); font-weight: 600; margin-left: 4px; }
+.ap-hijos { padding: 0 12px 12px 48px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.ap-hijos .ca-lista { width: 100%; }
+.ap-general .ap-nombre b { color: var(--tinta-2); }
+.ap-term { align-self: flex-start; }
+@media (max-width: 640px) {
+  .ap-cab { flex-wrap: wrap; gap: 8px; }
+  .ap-nombre { flex-basis: calc(100% - 44px); }
+  .ap-cab .sp { margin-left: 40px; }
+  .ap-hijos { padding-left: 14px; }
+  .ini-fila { flex-direction: column; align-items: stretch; }
+  .rh-chip { flex: 1; justify-content: center; padding: 8px 6px; font-size: 12px; flex-direction: column; align-items: center; gap: 0; }
+}
+/* La pestaña de Ayuda no tapa el contenido */
+@media (min-width: 641px) { .principal { padding-left: max(52px, env(safe-area-inset-left)); } }
+@media (min-width: 900px) { :root[data-menu="lado"] .principal { padding-left: 120px; } }
+@media (max-width: 640px) {
+  .ayuda-btn { top: auto; bottom: calc(92px + env(safe-area-inset-bottom)); transform: none; left: 12px; flex-direction: row; padding: 0; width: 44px; height: 44px; border-radius: 50%; justify-content: center; }
+  .ayuda-btn:hover { transform: none; }
+  .ayuda-btn-t { display: none; }
+  .ayuda-btn-ico { width: 34px; height: 34px; }
+}

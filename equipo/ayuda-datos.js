@@ -560,7 +560,9 @@ export const RECORRIDOS = {
   general: { titulo: 'Recorrido por el Portal', pasos: [
     { ruta: '#/', sel: '[data-tour="vistas"]', t: 'Tu día', d: 'Aquí eliges cómo ver tus tareas: Día, Semana, Mes, Tarjetas o Lista. El Portal recuerda tu elección.' },
     { ruta: '#/', sel: '.nav-hist', t: 'Atrás y adelante', d: 'Regresa o avanza entre las páginas que visitaste, como en el navegador.' },
-    { ruta: '#/', sel: '.bases', t: 'Spark225 Home', d: 'Las mismas bases de Notion: Clients, Master Proyectos, Master Task Database y las demás, con sus vistas.' },
+    { ruta: '#/', sel: '.resumen-hoy', t: 'Tu día en números', d: 'Vencidas, para hoy y en revisión. Toca uno para ver la lista.' },
+    { ruta: '#/', sel: '.ini-pest', t: 'Mi trabajo y Spark225', d: '«Mi trabajo» es tu día; «Spark225» muestra cómo va la empresa y las bases de Notion.' },
+    { ruta: '#/', sel: '.accesos, .bases', t: 'Spark225 Home', d: 'Las mismas bases de Notion: Clients, Master Proyectos, Master Task Database y las demás, con sus vistas.' },
     { ruta: '#/', sel: '[data-tour="mas"]', t: 'Crear', d: 'Tarea, proyecto o cliente: te pregunta una cosa a la vez. Atajo: N.', demo: 'crear-tarea' },
     { ruta: '#/', sel: '[data-tour="pipeline"]', t: 'Pipeline', d: 'Todo lo pendiente por estatus. Arrastra una tarjeta para cambiarla.' },
     { ruta: '#/', sel: 'a.dock-it[href="#/tablero"]', t: 'Tablero', d: 'Focus Map, Entregas a tiempo y Orden y limpieza: cómo va Spark225.' },
@@ -577,8 +579,9 @@ export const RECORRIDOS = {
   inicio: { titulo: 'Tu Inicio', pasos: [
     { ruta: '#/', sel: '[data-tour="vistas"]', t: 'Vistas', d: 'Día, Semana, Mes, Tarjetas o Lista.' },
     { ruta: '#/', sel: '[data-tour="acomodo"]', t: 'Acomodo', d: 'Widgets a la derecha, a la izquierda, arriba, solo calendario o solo widgets.' },
-    { ruta: '#/', sel: '.hl', t: 'Highlights', d: 'Cómo va Spark225 de un vistazo: entrega a tiempo, cerradas esta semana y clientes activos.' },
-    { ruta: '#/', sel: '.bases', t: 'Spark225 Home', d: 'Accesos a las bases Master, Focus Map y Reportes.' },
+    { ruta: '#/', sel: '.resumen-hoy', t: 'Tu día', d: 'Vencidas, para hoy y en revisión. Toca uno para ir a tu lista.' },
+    { ruta: '#/', sel: '.ini-pest', t: 'Spark225', d: 'En la pestaña «Spark225» ves cómo va la empresa (highlights) y Spark225 Home completo.' },
+    { ruta: '#/', sel: '.accesos, .bases', t: 'Accesos', d: 'Las bases Master, el Focus Map y Reportes a un toque.' },
     { ruta: '#/', sel: '[data-tour="widgets"]', t: 'Widgets', d: 'Agenda, Foco, Nota rápida y más. Edítalos con «Editar widgets».' },
   ] },
   reportes: { titulo: 'Cómo armar un reporte', pasos: [

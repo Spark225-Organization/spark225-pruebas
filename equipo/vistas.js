@@ -1,13 +1,13 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270700';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270700';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270700';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270700';
-import { Widgets } from './widgets.js?v=202611270700';
-import { HighlightsSpark } from './tablero.js?v=202611270700';
-import { BasesSpark } from './bases.js?v=202611270700';
-import { useArrastre } from './arrastre.js?v=202611270700';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270745';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270745';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270745';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270745';
+import { Widgets } from './widgets.js?v=202611270745';
+import { HighlightsSpark } from './tablero.js?v=202611270745';
+import { BasesSpark, AccesosSpark } from './bases.js?v=202611270745';
+import { useArrastre } from './arrastre.js?v=202611270745';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -32,7 +32,12 @@ export function Inicio(ctx) {
     titulo = 'Semana'; sub = `${fechaCorta(l)} – ${fechaCorta(sumarDias(l, 6))}`;
   } else if (vista === 'mes') {
     titulo = mayus(fmt({ month: 'long' }).format(new Date(fecha + 'T12:00:00'))); sub = fecha.slice(0, 4);
+  } else if (propia) {
+    // En Lista y Tarjetas el título es el día: siempre sabes dónde estás.
+    titulo = 'Hoy'; sub = fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(hoy + 'T12:00:00'));
   } else { titulo = vista === 'lista' ? 'Lista' : 'Tarjetas'; sub = ''; }
+  const mostrarSpark = propia && (prefs.highlights !== false || prefs.bases !== false);
+  const pest = mostrarSpark ? prefs.inicioPestana || 'trabajo' : 'trabajo';
 
   const paso = vista === 'semana' ? 7 : vista === 'mes' ? 30 : 1;
   const mover = (n) => {
@@ -67,13 +72,31 @@ export function Inicio(ctx) {
         </div>
       </div>
     </header>
-    ${propia && prefs.highlights !== false && html`<${HighlightsSpark} ctx=${ctx} />`}
-    ${propia && prefs.bases !== false && html`<${BasesSpark} ctx=${ctx} />`}
-    <${FiltroClientes} ctx=${ctx} />
-    <div class=${'inicio a-' + acomodo}>
-      ${acomodo !== 'widgets' && html`<section class="col-cal" data-tour="calendario">${cal}</section>`}
-      ${acomodo !== 'calendario' && widgets}
-    </div>`;
+    ${(propia || mostrarSpark) && html`<div class="ini-fila">
+      ${propia && html`<${ResumenHoy} ctx=${ctx} hoy=${hoy} />`}
+      ${mostrarSpark && html`<div class="segmentado ini-pest" role="tablist" aria-label="Inicio">${[['trabajo', 'Mi trabajo', 'lista'], ['spark', 'Spark225', 'grafica']].map(([k, t, ico]) => html`<button key=${k} role="tab" aria-selected=${pest === k} aria-pressed=${pest === k} onClick=${() => guardarPrefs(yo, { inicioPestana: k })}>${I(ico)}<span>${t}</span></button>`)}</div>`}
+    </div>`}
+    ${pest === 'spark' ? html`
+      ${prefs.highlights !== false && html`<${HighlightsSpark} ctx=${ctx} />`}
+      ${prefs.bases !== false && html`<${BasesSpark} ctx=${ctx} />`}` : html`
+      <${FiltroClientes} ctx=${ctx} />
+      <div class=${'inicio a-' + acomodo}>
+        ${acomodo !== 'widgets' && html`<section class="col-cal" data-tour="calendario">${cal}</section>`}
+        ${acomodo !== 'calendario' && widgets}
+      </div>
+      ${propia && prefs.bases !== false && html`<${AccesosSpark} />`}`}`;
+}
+
+// Los números del día, arriba de todo: lo primero que ves al entrar. Tocar uno te lleva a la lista.
+function ResumenHoy({ ctx, hoy }) {
+  const { yo } = ctx;
+  const mias = vigentes().filter((a) => participa(a, yo) && visiblePara(a, yo) && a.estatus !== 'hecho');
+  const venc = mias.filter((a) => !a.sinFecha && a.fecha < hoy).length;
+  const deHoy = mias.filter((a) => !a.sinFecha && a.fecha === hoy).length;
+  const rev = mias.filter((a) => estatusVisible(a) === 'esperando').length;
+  const ir = () => guardarPrefs(yo, { vista: 'lista', listaPor: 'semana', listaAlcance: 'mias', inicioPestana: 'trabajo' });
+  const chip = (n, uno, varios, clase) => html`<button class=${'rh-chip ' + clase + (n ? '' : ' cero')} onClick=${ir}><b class="num">${n}</b>${n === 1 ? uno : varios}</button>`;
+  return html`<div class="resumen-hoy" aria-label="Tu día">${chip(venc, 'vencida', 'vencidas', 'r')}${chip(deHoy, 'para hoy', 'para hoy', 'h')}${chip(rev, 'en revisión', 'en revisión', 'e')}</div>`;
 }
 
 // Filtro por cliente del Inicio: afecta calendario, tarjetas y widgets.

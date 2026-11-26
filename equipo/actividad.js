@@ -1,8 +1,8 @@
 // Panel de una actividad: lo esencial arriba, el resto en «Más».
 import { html, useState, useEffect, useRef, useMemo } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, PRIORIDADES, hoyISO, sumarDias } from './datos.js?v=202611270700';
-import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611270700';
-import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611270700';
+import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, PRIORIDADES, hoyISO, sumarDias } from './datos.js?v=202611270745';
+import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611270745';
+import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta, Migas } from './ui.js?v=202611270745';
 
 const copia = (x) => JSON.parse(JSON.stringify(x));
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -72,7 +72,7 @@ export function CajonActividad({ cajon, yo, db, toast, cerrar, pedirMotivo }) {
           if (n >= 3) return toast('Máximo 3 en foco');
           set('foco', hoy);
         }}>${I('foco')}</button>
-        <span style="flex:1"></span>
+        <span class="cajon-ruta">${cliente && html`<${Migas} partes=${[{ t: cliente.nombre, href: '#/cliente/' + cliente.id }, ...(b.proyecto && !b.proyecto.startsWith('g-') && db.proyectos.find((p) => p.id === b.proyecto) ? [{ t: db.proyectos.find((p) => p.id === b.proyecto).nombre, href: '#/proyecto/' + b.proyecto }] : [{ t: 'Sin proyecto' }])]} />`}</span>
         ${!esNueva && (original.archivada
           ? html`<button class="icon-btn" title="Restaurar" onClick=${() => { restaurar(original.id, yo); toast('Restaurada'); cerrar(); }}>${I('reset')}</button>`
           : html`<button class="icon-btn" title="Eliminar" aria-label="Eliminar" onClick=${() => { archivar(original.id, yo); toast('Eliminada', { texto: 'Deshacer', f: () => restaurar(original.id, yo) }); cerrar(); }}>${I('papelera')}</button>`)}

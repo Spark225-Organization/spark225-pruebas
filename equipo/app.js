@@ -1,27 +1,28 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261500';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611261700';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261500';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261500';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261500';
-import { AltaRapida } from './mecha.js?v=202611261500';
-import { Inicio } from './vistas.js?v=202611261500';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261500';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611261500';
-import { Tablero } from './tablero.js?v=202611261500';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611261500';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261500';
-import { Chat } from './chat.js?v=202611261500';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261500';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261500';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261500';
-import { Instalar } from './instalar.js?v=202611261500';
-import { notificar, activarPush } from './avisos.js?v=202611261500';
-import { Bienvenida, Recorrido } from './tour.js?v=202611261500';
-import { useArrastre } from './arrastre.js?v=202611261500';
-import { Galeria } from './widgets.js?v=202611261500';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio } from './store.js?v=202611261700';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611261700';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611261700';
+import { AltaRapida } from './mecha.js?v=202611261700';
+import { Inicio } from './vistas.js?v=202611261700';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611261700';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611261700';
+import { Tablero } from './tablero.js?v=202611261700';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611261700';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611261700';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611261700';
+import { Chat } from './chat.js?v=202611261700';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611261700';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611261700';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611261700';
+import { Instalar } from './instalar.js?v=202611261700';
+import { notificar, activarPush } from './avisos.js?v=202611261700';
+import { Bienvenida, Recorrido } from './tour.js?v=202611261700';
+import { useArrastre } from './arrastre.js?v=202611261700';
+import { Galeria } from './widgets.js?v=202611261700';
 
 function useStore() {
   const [, set] = useState(0);
@@ -73,6 +74,7 @@ function App() {
   const [instalar, setInstalar] = useState(false);
 
   useEffect(() => { document.documentElement.dataset.theme = tema; escribirLocal('ssam-equipo-tema', tema); }, [tema]);
+  const [editarPerfil, setEditarPerfil] = useState(false);
   useEffect(() => { escribirLocal('ssam-equipo-yo', yo); }, [yo]);
   useEffect(() => { setChat(null); setCajon(null); setMenuCrear(false); setMinuta(null); }, [ruta]);
 
@@ -202,6 +204,8 @@ function App() {
   const salir = () => { try { localStorage.removeItem('ssam-equipo-sesion'); } catch (_) { /* sin almacenamiento */ } setPerfil(false); setTour(null); if (enNube) salirNube(); else setFase('login'); };
 
   const yoP = db.personas.find((p) => p.id === yo);
+  const prefsYo = prefsDe(yo);
+  aplicarInterfaz(prefsYo); // barato e idempotente; aquí no puede ir un hook (hay returns antes)
   const misAvisos = db.avisos.filter((n) => n.para === yo);
   const sinLeer = misAvisos.filter((n) => !n.leido).length;
   const arrastrandoAlgo = !!arr && !arr.datos?.nodo;
@@ -259,7 +263,8 @@ function App() {
         if (!leerLocal('ssam-equipo-tour-' + yo, '')) { escribirLocal('ssam-equipo-tour-' + yo, '1'); setTimeout(() => setTour('pasos'), 400); }
       }} />`}
       ${instalar && html`<${Instalar} persona=${yo} toast=${toast} cerrar=${() => setInstalar(false)} />`}
-      ${perfil && html`<${Perfil} instalar=${() => { setPerfil(false); setInstalar(true); }} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
+      ${editarPerfil && html`<${EditarPerfil} db=${db} yo=${yo} tema=${tema} setTema=${setTema} enNube=${enNube} toast=${toast} cerrar=${() => setEditarPerfil(false)} />`}
+      ${perfil && html`<${Perfil} personalizar=${() => { setPerfil(false); setEditarPerfil(true); }} instalar=${() => { setPerfil(false); setInstalar(true); }} conexiones=${() => { setPerfil(false); setBienvenida('conexiones'); }} enNube=${enNube} db=${db} yo=${yo} setYo=${(v) => { setYo(v); location.hash = '#/'; }} tema=${tema} setTema=${setTema} cerrar=${() => setPerfil(false)} toast=${toast} recorrido=${() => { setPerfil(false); location.hash = '#/'; setTour('pasos'); }} salir=${salir} />`}
       ${paleta && html`<${Paleta} db=${db} yo=${yo} cerrar=${() => setPaleta(false)} ctx=${ctx} setTema=${() => setTema(tema === 'dark' ? 'light' : 'dark')} />`}
       ${avisos && html`<${Avisos} avisos=${misAvisos} yo=${yo} db=${db} abrir=${ctx.abrir} abrirMinuta=${ctx.abrirMinuta} conexiones=${() => setBienvenida('conexiones')} cerrar=${() => setAvisos(false)} toast=${toast} />`}
       ${chat && html`<${Chat} db=${db} yo=${yo} toast=${toast} cerrar=${() => setChat(null)} canalInicial=${chat.canal} />`}
@@ -448,13 +453,13 @@ function Protegido({ children }) {
   return children;
 }
 
-function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir, conexiones, instalar }) {
+function Perfil({ enNube, db, yo, setYo, tema, setTema, cerrar, toast, recorrido, salir, conexiones, instalar, personalizar }) {
   const p = db.personas.find((x) => x.id === yo);
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
     <div class="hoja" role="dialog" aria-modal="true" aria-label="Perfil">
       <div class="hoja-asa"></div>
-      <div class="perfil-cab"><${Avatar} p=${p} grande /><div><b>${p.nombre}</b><span>${p.puesto}</span></div></div>
+      <button class="perfil-cab perfil-cab-btn" onClick=${personalizar}><${Avatar} p=${p} grande /><div><b>${p.nombre}</b><span>${p.puesto}</span></div><span class="perfil-editar">${I('ajustes')}Personalizar</span></button>
       <div class="perfil-op">
         <button class="op" onClick=${() => setTema(tema === 'dark' ? 'light' : 'dark')}>${I(tema === 'dark' ? 'sol' : 'luna')}<span>${tema === 'dark' ? 'Claro' : 'Oscuro'}</span></button>
         <button class="op" onClick=${recorrido}>${I('brujula')}<span>Recorrido</span></button>

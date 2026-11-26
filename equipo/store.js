@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261500';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261700';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -422,7 +422,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611261500';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611261700';
 
 const COLECCIONES_RH = new Set(['areas', 'documentos']);
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'areas', 'documentos'];
@@ -468,7 +468,7 @@ export async function conectarNube(perfil) {
   const y = perfil.id;
   const e = {
     version: 5, creado: hoyISO(), papeleraDias: 30, nube: true,
-    personas: perfiles.filter((p) => p.permiso !== 'pendiente').map(({ id, nombre, corto, puesto, permiso, color, email }) => ({ id, nombre, corto, puesto, permiso, color, email })),
+    personas: perfiles.filter((p) => p.permiso !== 'pendiente').map(({ id, nombre, corto, puesto, permiso, color, email, foto }) => ({ id, nombre, corto, puesto, permiso, color, email, foto: foto || null })),
     pendientes: perfiles.filter((p) => p.permiso === 'pendiente'),
     clientes: por('clientes'), proyectos: por('proyectos'), actividades: por('actividades'), minutas: por('minutas').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
     avisos: por('avisos').sort((a, b) => b.cuando.localeCompare(a.cuando)), eventos: por('eventos').sort((a, b) => b.cuando.localeCompare(a.cuando)),
@@ -494,7 +494,7 @@ function detenerNube() {
   nube.activa = false; nube.yo = null; foto = new Map();
 }
 export function refrescarPersonas(perfiles) {
-  estado.personas = perfiles.filter((p) => p.permiso !== 'pendiente').map(({ id, nombre, corto, puesto, permiso, color, email }) => ({ id, nombre, corto, puesto, permiso, color, email }));
+  estado.personas = perfiles.filter((p) => p.permiso !== 'pendiente').map(({ id, nombre, corto, puesto, permiso, color, email, foto }) => ({ id, nombre, corto, puesto, permiso, color, email, foto: foto || null }));
   estado.pendientes = perfiles.filter((p) => p.permiso === 'pendiente');
   oyentes.forEach((f) => f(estado));
 }
@@ -663,4 +663,18 @@ export function quitarDocumento(id, uId) {
   estado.documentos = estado.documentos.filter((x) => x.id !== id);
   evento(uId, `quitó el documento «${d.titulo}»`);
   guardar();
+}
+
+// ---------- Perfil propio (foto, color, nombre corto, puesto) ----------
+export async function cambiarMiPerfil(uId, cambios) {
+  const antes = persona(uId); if (!antes) return;
+  estado.personas = estado.personas.map((p) => (p.id === uId ? { ...p, ...cambios } : p));
+  oyentes.forEach((f) => f(estado));
+  if (!nube.activa) { guardar(); return; }
+  try { await actualizarMiPerfil(uId, cambios); }
+  catch (err) {
+    estado.personas = estado.personas.map((p) => (p.id === uId ? antes : p));
+    oyentes.forEach((f) => f(estado));
+    throw new Error(/foto/.test(String(err?.message)) ? 'Falta activar las fotos en la base (un paso de una vez).' : 'No se pudo guardar tu perfil.');
+  }
 }

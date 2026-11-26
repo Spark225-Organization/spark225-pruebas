@@ -2,10 +2,10 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611261500';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611261500';
-import { I, Avatar, LogoCliente } from './ui.js?v=202611261500';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611261500';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611261700';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611261700';
+import { I, Avatar, LogoCliente } from './ui.js?v=202611261700';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611261700';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
@@ -144,4 +144,45 @@ function PorPrioridad({ abiertas, hoy }) {
     <span class="tb-cn"><i></i>${f.nombre}</span>
     <span class="tb-barra" aria-hidden="true"><i style=${`width:${(f.n / max) * 100}%`}></i></span>
     <b class="num">${f.n}</b>${f.venc ? html`<em class="num rojo">${f.venc} vencida${f.venc === 1 ? '' : 's'}</em>` : html`<em></em>`}</li>`)}</ul>`;
+}
+
+// ---------- Highlights de Spark en el Inicio ----------
+// Una franja corta: cómo va la agencia, lo que se cerró esta semana, los clientes y la próxima entrega.
+export function HighlightsSpark({ ctx }) {
+  const { db, yo } = ctx;
+  const hoy = hoyISO();
+  const total = cumplimiento(() => true, hoy, VENTANA_DIAS);
+  const lunes = lunesDe(hoy);
+  const visibles = vigentes().filter((a) => visiblePara(a, yo) && a.cliente !== 'personal');
+  const cerradas = visibles.filter((a) => a.estatus === 'hecho' && (a.cerrada || '').slice(0, 10) >= lunes)
+    .sort((a, b) => (b.cerrada || '').localeCompare(a.cerrada || ''));
+  const activos = db.clientes.filter((c) => !c.privado && (c.etapa || 'activo') === 'activo' && c.id !== 'interno');
+  const salud = { bien: 0, atencion: 0, riesgo: 0 };
+  activos.forEach((c) => { const s = cumplimiento((a) => a.cliente === c.id, hoy).salud; if (s) salud[s]++; });
+  const proxima = db.proyectos.filter((p) => p.entrega && p.entrega >= hoy).sort((a, b) => a.entrega.localeCompare(b.entrega))[0];
+  const cliProx = proxima && db.clientes.find((c) => c.id === proxima.cliente);
+  const fmtRel = (iso) => { const d = Math.round((new Date(iso + 'T12:00:00') - new Date(hoy + 'T12:00:00')) / 864e5); return d === 0 ? 'hoy' : d === 1 ? 'mañana' : `en ${d} días`; };
+
+  return html`<section class="hl" aria-label="Highlights de Spark">
+    <a href="#/tablero" class=${'hl-it hl-main s-' + (total.salud || 'nada')}>
+      <span class="hl-etq">Spark · entrega a tiempo</span>
+      <b class="num">${total.pct === null ? '—' : total.pct + ' %'}</b>
+      <span class="hl-sub">${total.salud ? html`<span class=${'sema s-' + total.salud}><i></i>${NOMBRE_SALUD[total.salud]}</span>` : 'Sin entregas en 30 días'}</span>
+    </a>
+    <a href="#/tablero" class="hl-it">
+      <span class="hl-etq">Cerradas esta semana</span>
+      <b class="num">${cerradas.length}</b>
+      <span class="hl-sub hl-caras">${cerradas.slice(0, 4).map((a) => html`<${Avatar} key=${a.id} p=${db.personas.find((p) => p.id === a.responsable)} />`)}${cerradas[0] ? html`<span class="hl-ult">${cerradas[0].titulo}</span>` : 'Aún nada'}</span>
+    </a>
+    <a href="#/clientes" class="hl-it">
+      <span class="hl-etq">Clientes activos</span>
+      <b class="num">${activos.length}</b>
+      <span class="hl-sub hl-semas"><span class="sema s-bien"><i></i>${salud.bien}</span><span class="sema s-atencion"><i></i>${salud.atencion}</span><span class="sema s-riesgo"><i></i>${salud.riesgo}</span></span>
+    </a>
+    ${proxima && html`<a href=${'#/cliente/' + proxima.cliente} class="hl-it">
+      <span class="hl-etq">Próxima entrega</span>
+      <b class="hl-proy">${cliProx && html`<${LogoCliente} c=${cliProx} tam="s" />`}${proxima.nombre}</b>
+      <span class="hl-sub">${cliProx?.nombre} · ${fmtRel(proxima.entrega)}</span>
+    </a>`}
+  </section>`;
 }

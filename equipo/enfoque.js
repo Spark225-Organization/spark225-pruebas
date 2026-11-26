@@ -1,9 +1,9 @@
 // Mapa de enfoque: prioridades del trimestre y sus KPI, con captura semanal (cierra el lunes 9:00).
 // Mapa (cómo va cada prioridad) · Captura de la semana · Semana a semana · Estructura (solo Dirección).
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { datosEnfoque, guardarEnfoque, borrarEnfoque, esAdmin, nube } from './store.js?v=202611262100';
-import { COLOR, TIPOS, colorKPI, colorPrioridad, validarCriterio, leerValor, cierreSemana, inicioSemana, semanaDeCarga } from './enfoque-datos.js?v=202611262100';
-import { I, Avatar } from './ui.js?v=202611262100';
+import { datosEnfoque, guardarEnfoque, borrarEnfoque, esAdmin, nube } from './store.js?v=202611262300';
+import { COLOR, TIPOS, colorKPI, colorPrioridad, validarCriterio, leerValor, cierreSemana, inicioSemana, semanaDeCarga } from './enfoque-datos.js?v=202611262300';
+import { I, Avatar, Info } from './ui.js?v=202611262300';
 
 const fmtCorta = (d) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(d).replace('.', '');
 const fmtCierre = (d) => new Intl.DateTimeFormat('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(d).replace(/\./g, '');
@@ -98,7 +98,7 @@ function Mapa_({ ctx, fm, trim, aj, admin }) {
         ${aj.metas?.[0] && html`<p class="fm-meta">${I('foco')}Empuja la meta del año: <b>${aj.metas[0].nombre}</b></p>`}
       </div>
       <div class="fm-carga">
-        <span class="fm-etq">Carga de la semana ${wCarga}</span>
+        <span class="fm-etq">Carga de la semana ${wCarga} <${Info} t="Cada semana se captura el valor real de cada KPI; la captura cierra el lunes siguiente a las 9:00. Lo que se captura después del cierre queda marcado como tarde." /></span>
         <b class="num">${reportadas}<small> de ${todosKpi.length}</small></b>
         <span class="fm-sub">${reportadas === todosKpi.length ? 'Todo capturado' : `Faltan ${todosKpi.length - reportadas}`} · cierra ${fmtCierre(cierre)}</span>
         <button class="btn prim" onClick=${() => setPest('captura')}>Capturar semana ${wCarga}</button>
@@ -127,7 +127,7 @@ function Mapa({ c, w, setW }) {
       <span><b>Semana ${w}</b> · del ${fmtCorta(inicioSemana(trim, w))}</span>
       <button class="icon-btn" disabled=${w >= wCarga} onClick=${() => setW(w + 1)} aria-label="Semana siguiente">${I('flecha', 'rot-180')}</button>
     </div>
-    <div class="fm-leyenda">${['S', 'V', 'A', 'R', 'N'].map((k) => html`<span key=${k}><${Ficha} c=${k} chico />${COLOR[k].nombre}</span>`)}</div>
+    <div class="fm-leyenda">${['S', 'V', 'A', 'R', 'N'].map((k) => html`<span key=${k}><${Ficha} c=${k} chico />${COLOR[k].nombre}</span>`)}<${Info} t="Cada KPI tiene tres umbrales: súper verde, verde y rojo; entre verde y rojo es amarillo. La prioridad toma el promedio de sus KPI (súper verde 4, verde 3, amarillo 2, rojo 1); si alguno está en rojo, queda como máximo en amarillo." /></div>
     <div class="fm-mapa">${empresas.map((e, i) => {
       const kpis = kpisDe(e.id);
       const colores = kpis.map((k) => colorKPI(k.criterio, rep(k.id, w)?.valor));

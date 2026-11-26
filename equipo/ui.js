@@ -1,6 +1,6 @@
 // Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611262100';
+import { hoyISO } from './datos.js?v=202611262300';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
@@ -86,6 +86,11 @@ export function LogoCliente({ c, tam = 'm' }) {
   return c.logo
     ? html`<span class=${'logo-cli t-' + tam + ' con-img'} style=${`--c:${c.color}`}><img src=${c.logo} alt=${`Logo de ${c.nombre}`} /></span>`
     : html`<span class=${'logo-cli t-' + tam} style=${`--c:${c.color}`} aria-hidden="true">${ini}</span>`;
+}
+
+// Botón ⓘ que explica en palabras simples qué mide un indicador y cómo se calcula.
+export function Info({ t }) {
+  return html`<details class="info" onClick=${(e) => e.stopPropagation()}><summary aria-label="¿Qué mide esto?" title="¿Qué mide esto?">i</summary><span class="info-pop" role="note">${t}</span></details>`;
 }
 
 export function Avatar({ p, grande }) {

@@ -1748,3 +1748,25 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
   .ls.pf .c-hito { display: none; }
   .pp-resumen { grid-template-columns: 1fr; }
 }
+
+/* ===== Botón ⓘ ===== */
+.info { position: relative; display: inline-block; vertical-align: middle; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.info summary { list-style: none; cursor: pointer; display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; box-shadow: inset 0 0 0 1.3px var(--tinta-3); color: var(--tinta-3); font: italic 700 10px Georgia, serif; }
+.info summary::-webkit-details-marker { display: none; }
+.info summary:hover, .info[open] summary { color: var(--tinta); box-shadow: inset 0 0 0 1.3px var(--tinta); }
+.info summary:focus-visible { outline: 2px solid var(--chispa); outline-offset: 2px; }
+.info-pop { position: absolute; z-index: 20; top: calc(100% + 8px); left: -12px; width: min(300px, 78vw); padding: 12px 14px; border-radius: 12px; background: var(--grafito); box-shadow: var(--sombra-pop); color: var(--tinta); font: 400 13px/1.5 Inter, sans-serif; white-space: normal; text-align: left; }
+@media (max-width: 520px) { .info-pop { left: auto; right: -12px; } }
+
+/* ===== Menú a un lado (preferencia de cada quien; en teléfono siempre abajo) ===== */
+@media (min-width: 900px) {
+  :root[data-menu="lado"] .dock { left: max(16px, env(safe-area-inset-left)); top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; padding: 8px 6px; gap: 6px; }
+  :root[data-menu="lado"] .dock-mas { margin: 4px 0; order: -1; }
+  :root[data-menu="lado"] .dock .rel { order: -1; }
+  :root[data-menu="lado"] .principal { padding-left: 120px; padding-bottom: 48px; }
+  :root[data-menu="lado"] .top { padding-left: 120px; }
+}
+.pe-nota { display: block; font-size: 11px; color: var(--tinta-3); }
+.ol-n { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--tinta-3); padding: 2px 9px; border-radius: 10px; background: var(--grafito); }
+.ol-n.hay { color: var(--ambar); background: color-mix(in srgb, var(--ambar) 14%, transparent); }
+.ca-lista small.tenue { font-size: 11px; white-space: nowrap; }

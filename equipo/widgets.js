@@ -1,12 +1,12 @@
 // Inicio personalizable: cada persona agrega, quita y reordena sus widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611262100';
-import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611262100';
-import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611262100';
-import { hoyISO } from './datos.js?v=202611262100';
-import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611262100';
-import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611262100';
-import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611262100';
+import { WIDGETS, CAPACIDAD_SEMANA, sumarDias } from './datos.js?v=202611262300';
+import { vigentes, participa, estatusVisible, horasEstimadas, layoutDe, guardarLayout, personalDe, guardarPersonal, visiblePara, historialGlobal, marcarCorreo, correoAActividad, sinLeerChat, prefsDe, guardarPrefs, simularTranscripcion, ponerCorreos, minutaDeCorreo, crear, nuevaVacia, enFiltroInicio, avisoImportante } from './store.js?v=202611262300';
+import { I, Avatar, fechaRelativa, diasEntre, minutos, hhmm, duracion, haceCuanto } from './ui.js?v=202611262300';
+import { hoyISO } from './datos.js?v=202611262300';
+import { iniciarArrastre, useArrastre } from './arrastre.js?v=202611262300';
+import { correosRecientes, leerTranscripcion, agendaDeHoy, juntasPorAceptar } from './google.js?v=202611262300';
+import { googleConectado as tokenGoogle, entrarConGoogle } from './nube.js?v=202611262300';
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -122,7 +122,7 @@ function WCliente({ w, ctx, suyas, hoy }) {
 }
 
 function diasEsperando(a) {
-  const h = [...(a.historial || [])].reverse().find((x) => x.que.includes('Esperando'));
+  const h = [...(a.historial || [])].reverse().find((x) => /Esperando|En revisión/.test(x.que));
   const desde = (h ? h.cuando : a.creada || '').slice(0, 10);
   return desde ? Math.max(0, diasEntre(desde, hoyISO())) : 0;
 }
@@ -130,7 +130,7 @@ function diasEsperando(a) {
 function WEsperando({ ctx, suyas }) {
   const l = suyas.filter((a) => a.estatus === 'esperando').map((a) => ({ a, d: diasEsperando(a) })).sort((x, y) => y.d - x.d);
   return html`<div class="w">
-    ${cab('espera', 'Esperando')}
+    ${cab('espera', 'En revisión')}
     <div class="w-grande num">${l.length}</div>
     <ul class="lista-w">${l.slice(0, 3).map(({ a, d }) => html`<li key=${a.id}><button onClick=${() => ctx.abrir(a.id)}><span class="lw-t">${a.titulo}</span><span class=${'lw-m num' + (d >= 3 ? ' alerta' : '')}>${d}d</span></button></li>`)}</ul>
   </div>`;

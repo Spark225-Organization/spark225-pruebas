@@ -1,8 +1,8 @@
 // Personaliza tu perfil: foto (subida, de Google o de Notion), color, nombre corto y puesto,
 // y cómo se ve tu Portal (tema, color de acento, tamaño y los highlights del Inicio).
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { cambiarMiPerfil, prefsDe, guardarPrefs, esAdmin } from './store.js?v=202611262100';
-import { I, Avatar } from './ui.js?v=202611262100';
+import { cambiarMiPerfil, prefsDe, guardarPrefs, esAdmin } from './store.js?v=202611262300';
+import { I, Avatar } from './ui.js?v=202611262300';
 
 export const ACENTOS = [
   { id: 'spark', nombre: 'Spark', color: '#E47739' },
@@ -22,6 +22,7 @@ export function aplicarInterfaz(prefs) {
   r.style.setProperty('--brasa-fondo', `color-mix(in srgb, ${ac.color} 14%, transparent)`);
   r.dataset.letra = prefs.letra || 'normal';
   r.dataset.densidad = prefs.densidad || 'comoda';
+  r.dataset.menu = prefs.menu || 'abajo';
 }
 
 function reducirFoto(archivo) {
@@ -60,7 +61,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
   };
   const deGoogle = async () => {
     setOcupado('google');
-    const { fotoDeGoogle } = await import('./nube.js?v=202611262100');
+    const { fotoDeGoogle } = await import('./nube.js?v=202611262300');
     const url = await fotoDeGoogle().catch(() => null);
     setOcupado('');
     if (!url) return toast('Tu cuenta de Google no tiene foto');
@@ -68,7 +69,7 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
   };
   const deNotion = async (todos) => {
     setOcupado(todos ? 'equipo' : 'notion');
-    const { fotosNotion } = await import('./nube.js?v=202611262100');
+    const { fotosNotion } = await import('./nube.js?v=202611262300');
     const r = await fotosNotion(todos).catch((e) => ({ ok: false, error: e.message }));
     setOcupado('');
     if (!r?.ok) return toast(r?.error || 'No pude traer la foto de Notion');
@@ -115,6 +116,8 @@ export function EditarPerfil({ db, yo, tema, setTema, cerrar, toast, enNube }) {
           <div class="segmentado chico">${[['dark', 'Oscuro'], ['light', 'Claro']].map(([k, t]) => html`<button key=${k} aria-pressed=${tema === k} onClick=${() => setTema(k)}>${t}</button>`)}</div></div>
         <div class="pe-fila"><span>Color de acento</span>
           <div class="pe-colores chicos" role="radiogroup" aria-label="Color de acento">${ACENTOS.map((a) => html`<button key=${a.id} role="radio" aria-checked=${(prefs.acento || 'spark') === a.id} title=${a.nombre} aria-label=${a.nombre} style=${`--c:${a.color}`} onClick=${() => pref({ acento: a.id })}></button>`)}</div></div>
+        <div class="pe-fila"><span>Menú principal<small class="pe-nota">En el teléfono siempre va abajo</small></span>
+          <div class="segmentado chico">${[['abajo', 'Abajo'], ['lado', 'A un lado']].map(([k, t]) => html`<button key=${k} aria-pressed=${(prefs.menu || 'abajo') === k} onClick=${() => pref({ menu: k })}>${t}</button>`)}</div></div>
         <div class="pe-fila"><span>Tamaño de letra</span>
           <div class="segmentado chico">${[['normal', 'Normal'], ['grande', 'Grande']].map(([k, t]) => html`<button key=${k} aria-pressed=${(prefs.letra || 'normal') === k} onClick=${() => pref({ letra: k })}>${t}</button>`)}</div></div>
         <div class="pe-fila"><span>Espacio</span>

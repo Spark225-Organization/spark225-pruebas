@@ -1,10 +1,10 @@
 // Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
 // Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611262100';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611262100';
-import { I, Anillo, Avatar, LogoCliente, fechaRelativa, haceCuanto } from './ui.js?v=202611262100';
-import { NavClientes } from './proyectos.js?v=202611262100';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611262300';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611262300';
+import { I, Anillo, Avatar, LogoCliente, Info, fechaRelativa, haceCuanto } from './ui.js?v=202611262300';
+import { NavClientes } from './proyectos.js?v=202611262300';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
 export const NOMBRE_SALUD = { bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' };
@@ -134,7 +134,7 @@ export function DetalleCliente({ id, ctx }) {
 
     <div class="ca-resumen">
       <section class=${'ca-panel fc-entrega s-' + (cu.salud || 'nada')}>
-        <h3>Entrega a tiempo<small>últimos ${VENTANA_DIAS} días</small></h3>
+        <h3>Entrega a tiempo<small>últimos ${VENTANA_DIAS} días</small> <${Info} t="De las tareas de este cliente que vencieron en los últimos 30 días, cuántas se cerraron a tiempo. Alta pesa 3, Media 2, Baja 1. Si la fecha la movió el cliente, cuenta la nueva. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %." /></h3>
         <div class="fc-pct">
           <b class="num">${cu.pct === null ? '—' : cu.pct + ' %'}</b>
           ${cu.salud && html`<span class=${'sema s-' + cu.salud}><i></i>${NOMBRE_SALUD[cu.salud]}</span>`}

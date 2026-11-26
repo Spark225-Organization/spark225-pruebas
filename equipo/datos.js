@@ -6,11 +6,12 @@ export const CAPACIDAD_SEMANA = 30; // Horas planeables por persona a la semana 
 export const JORNADA = { inicio: '08:00', fin: '20:00' };
 
 export const ESTATUS = [
-  { id: 'pendiente', nombre: 'Pendiente', tecla: '1' },
+  // Mismos estados que Notion, en español: Not started · In progress · Under review · On Hold · Done.
+  { id: 'pendiente', nombre: 'Por iniciar', tecla: '1' },
   { id: 'en_curso', nombre: 'En curso', tecla: '2' },
-  { id: 'esperando', nombre: 'Esperando cliente', tecla: '3' },
-  { id: 'bloqueado', nombre: 'Bloqueado', tecla: '4' },
-  { id: 'hecho', nombre: 'Hecho', tecla: '5' },
+  { id: 'esperando', nombre: 'En revisión', tecla: '3' },
+  { id: 'bloqueado', nombre: 'En pausa', tecla: '4' },
+  { id: 'hecho', nombre: 'Terminada', tecla: '5' },
 ];
 
 export const MOTIVOS_FECHA = ['Lo pidió el cliente', 'Dependencia externa', 'Carga del equipo', 'Error de captura', 'Otro'];
@@ -27,7 +28,7 @@ export const REPETICION = [
 export const WIDGETS = [
   { tipo: 'foco', nombre: 'Foco de hoy', tam: 'm', icono: 'foco' },
   { tipo: 'cliente', nombre: 'Cliente', tam: 's', icono: 'clientes', porCliente: true },
-  { tipo: 'esperando', nombre: 'Esperando cliente', tam: 's', icono: 'espera' },
+  { tipo: 'esperando', nombre: 'En revisión', tam: 's', icono: 'espera' },
   { tipo: 'carga', nombre: 'Carga del equipo', tam: 'm', icono: 'equipo' },
   { tipo: 'sigue', nombre: 'Lo que sigue', tam: 'm', icono: 'semana' },
   { tipo: 'archivos', nombre: 'Mis archivos', tam: 'm', icono: 'carpeta' },

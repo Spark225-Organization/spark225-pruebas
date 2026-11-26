@@ -1,29 +1,29 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611262100';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611262300';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611262100';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611262100';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611262100';
-import { AltaRapida } from './mecha.js?v=202611262100';
-import { Inicio } from './vistas.js?v=202611262100';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611262100';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611262100';
-import { Tablero } from './tablero.js?v=202611262100';
-import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611262100';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611262100';
-import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611262100';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611262100';
-import { Chat } from './chat.js?v=202611262100';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611262100';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611262100';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611262100';
-import { Instalar } from './instalar.js?v=202611262100';
-import { notificar, activarPush } from './avisos.js?v=202611262100';
-import { Bienvenida, Recorrido } from './tour.js?v=202611262100';
-import { useArrastre } from './arrastre.js?v=202611262100';
-import { Galeria } from './widgets.js?v=202611262100';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611262300';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611262300';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611262300';
+import { AltaRapida } from './mecha.js?v=202611262300';
+import { Inicio } from './vistas.js?v=202611262300';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611262300';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611262300';
+import { Tablero } from './tablero.js?v=202611262300';
+import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611262300';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611262300';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611262300';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611262300';
+import { Chat } from './chat.js?v=202611262300';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611262300';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611262300';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611262300';
+import { Instalar } from './instalar.js?v=202611262300';
+import { notificar, activarPush } from './avisos.js?v=202611262300';
+import { Bienvenida, Recorrido } from './tour.js?v=202611262300';
+import { useArrastre } from './arrastre.js?v=202611262300';
+import { Galeria } from './widgets.js?v=202611262300';
 
 function useStore() {
   const [, set] = useState(0);
@@ -165,7 +165,7 @@ function App() {
       const de = a.estatus;
       const r = cambiarEstatus(a.id, siguienteEstatus(a.estatus), yo);
       if (!r.ok) return toast(r.motivo);
-      if (siguienteEstatus(de) === 'hecho') toast(r.repite ? 'Hecho · ya quedó la siguiente' : 'Hecho', { texto: 'Deshacer', f: () => cambiarEstatus(a.id, de, yo) });
+      if (siguienteEstatus(de) === 'hecho') toast(r.repite ? 'Terminada · ya quedó la siguiente' : 'Terminada', { texto: 'Deshacer', f: () => cambiarEstatus(a.id, de, yo) });
     },
     foco: (a) => { const r = alternarFoco(a.id, yo); if (!r.ok) toast('Máximo 3 en foco'); },
     abrirMenu: (ev, a) => {
@@ -207,7 +207,7 @@ function App() {
 
   const yoP = db.personas.find((p) => p.id === yo);
   const prefsYo = prefsDe(yo);
-  aplicarInterfaz(prefsYo); // barato e idempotente; aquí no puede ir un hook (hay returns antes)
+  aplicarInterfaz(prefsYo); // barato e idempotente; aquí no puede ir un hook (hay returns antes). Incluye el menú abajo o a un lado.
   const misAvisos = db.avisos.filter((n) => n.para === yo);
   const sinLeer = misAvisos.filter((n) => !n.leido).length;
   const arrastrandoAlgo = !!arr && !arr.datos?.nodo;
@@ -238,7 +238,7 @@ function App() {
           ${vista === 'proyectos' && html`<${Portafolio} ctx=${ctx} />`}
           ${vista === 'proyecto' && html`<${DetalleProyecto} id=${proyectoRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
-          ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} pestana=${ruta.split('/')[2] === 'entregas' ? 'entregas' : 'enfoque'} />`}
+          ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} pestana=${['entregas', 'orden'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'enfoque'} />`}
           ${vista === 'rh' && html`<${RecursosHumanos} ctx=${ctx} pestana=${rhRuta} Personas=${html`<${Equipo} db=${db} yo=${yo} enNube=${enNube} toast=${toast} />`} />`}
           ${vista === 'papelera' && html`<${Papelera} db=${db} yo=${yo} toast=${toast} />`}
         <//>

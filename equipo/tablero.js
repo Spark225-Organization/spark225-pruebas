@@ -2,20 +2,24 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611262100';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS } from './store.js?v=202611262100';
-import { I, Avatar, LogoCliente } from './ui.js?v=202611262100';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611262100';
-import { MapaEnfoque } from './enfoque.js?v=202611262100';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611262300';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611262300';
+import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611262300';
+const T_ENTREGA = 'Porcentaje de tareas que se cerraron en su fecha compromiso, de las que vencieron en el periodo. Una tarea Alta pesa 3, una Media 2 y una Baja 1. Si la fecha la movió el cliente o algo externo, cuenta la nueva; si la movimos nosotros, cuenta la original. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %.';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611262300';
+import { MapaEnfoque } from './enfoque.js?v=202611262300';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
 
 export function Tablero({ ctx, pestana = 'enfoque' }) {
-  const pestanas = html`<nav class="segmentado tb-pest" aria-label="Tablero">${[['enfoque', 'Mapa de enfoque', 'foco'], ['entregas', 'Entregas a tiempo', 'grafica']].map(([k, t, ico]) => html`<a key=${k} href=${'#/tablero/' + k} role="button" aria-pressed=${pestana === k} class="seg-link">${I(ico)}<span>${t}</span></a>`)}</nav>`;
+  const pestanas = html`<nav class="segmentado tb-pest" aria-label="Tablero">${[['enfoque', 'Mapa de enfoque', 'foco'], ['entregas', 'Entregas a tiempo', 'grafica'], ['orden', 'Orden y limpieza', 'check']].map(([k, t, ico]) => html`<a key=${k} href=${'#/tablero/' + k} role="button" aria-pressed=${pestana === k} class="seg-link">${I(ico)}<span>${t}</span></a>`)}</nav>`;
   if (pestana === 'enfoque') return html`<div class="tablero">
     <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Prioridades del trimestre</span></div>${pestanas}</header>
     <${MapaEnfoque} ctx=${ctx} /></div>`;
+  if (pestana === 'orden') return html`<div class="tablero">
+    <header class="cab-inicio"><div class="cab-dia"><h1>Cómo va Spark</h1><span class="sub">Lo que hay que acomodar</span></div>${pestanas}</header>
+    <${OrdenLimpieza} ctx=${ctx} /></div>`;
   return html`<${TableroEntregas} ctx=${ctx} pestanas=${pestanas} />`;
 }
 
@@ -44,7 +48,7 @@ function TableroEntregas({ ctx, pestanas }) {
 
     <section class=${'tb-hero s-' + (total.salud || 'nada')}>
       <div class="tb-num">
-        <span class="tb-etq">Entrega a tiempo de Spark</span>
+        <span class="tb-etq">Entrega a tiempo de Spark <${Info} t=${T_ENTREGA} /></span>
         <b class="num">${total.pct === null ? '—' : total.pct}<small>${total.pct === null ? '' : '%'}</small></b>
         ${total.salud ? html`<span class=${'sema s-' + total.salud}><i></i>${NOMBRE_SALUD[total.salud]}</span>` : html`<span class="sema s-nada"><i></i>Sin entregas en el periodo</span>`}
       </div>
@@ -59,13 +63,13 @@ function TableroEntregas({ ctx, pestanas }) {
 
     <div class="tb-rejilla">
       <section class="tb-panel tb-ancho">
-        <h2>Entregas por semana</h2>
+        <h2>Entregas por semana <${Info} t="Cada barra es una semana: en verde, las tareas que vencían esa semana y se cerraron a tiempo; en rojo, las que se cerraron tarde o siguen abiertas. Arriba, el porcentaje a tiempo de esa semana." /></h2>
         <p class="tb-sub">Tareas que vencían cada semana: cuántas se cerraron a tiempo y cuántas tarde o siguen abiertas.</p>
         <${Semanas} hoy=${hoy} yo=${yo} />
       </section>
 
       <section class="tb-panel">
-        <h2>Clientes activos</h2>
+        <h2>Clientes activos <${Info} t="La misma entrega a tiempo, solo con las tareas de cada cliente activo. La raya vertical marca la meta de 95 %. Toca un cliente para ver qué llegó tarde." /></h2>
         <p class="tb-sub">${conteo.bien} van bien · ${conteo.atencion} en atención · ${conteo.riesgo} en riesgo</p>
         ${porCliente.length === 0 ? html`<p class="ca-vacio">Aún no hay clientes activos.</p>` : html`<ul class="tb-clientes">${porCliente.map(({ c, cu }) => html`<li key=${c.id}>
           <a href=${'#/cliente/' + c.id} title=${cu.pct === null ? 'Sin entregas en el periodo' : `${cu.nATiempo} de ${cu.evaluadas.length} a tiempo · ${NOMBRE_SALUD[cu.salud]}`}>
@@ -75,7 +79,7 @@ function TableroEntregas({ ctx, pestanas }) {
       </section>
 
       <section class="tb-panel">
-        <h2>Por persona</h2>
+        <h2>Por persona <${Info} t="Entrega a tiempo de las tareas donde la persona es responsable, y cuántas tiene vencidas hoy." /></h2>
         <p class="tb-sub">Entrega a tiempo de lo que tiene a su cargo y lo que ya se le venció.</p>
         <ul class="tb-personas">${db.personas.map((p) => {
           const cu = cumplimiento((a) => a.responsable === p.id, hoy, ventana);
@@ -87,7 +91,7 @@ function TableroEntregas({ ctx, pestanas }) {
       </section>
 
       <section class="tb-panel">
-        <h2>Abierto por prioridad</h2>
+        <h2>Abierto por prioridad <${Info} t="Tareas abiertas de todo el equipo según su prioridad. En rojo, cuántas ya pasaron su fecha." /></h2>
         <p class="tb-sub">${abiertas.length} tareas abiertas en total.</p>
         <${PorPrioridad} abiertas=${abiertas} hoy=${hoy} />
       </section>
@@ -197,4 +201,36 @@ export function HighlightsSpark({ ctx }) {
       <span class="hl-sub">${cliProx?.nombre} · ${fmtRel(proxima.entrega)}</span>
     </a>`}
   </section>`;
+}
+
+// ---------- Orden y limpieza ----------
+// Lo que hace que se pierda información: tareas sin proyecto, estancadas o en revisión por mucho tiempo,
+// y proyectos sin responsable o sin actualización ejecutiva reciente (mismos criterios que el «Dashboard Operativo» de Notion).
+function OrdenLimpieza({ ctx }) {
+  const { db, yo } = ctx;
+  const hoy = hoyISO();
+  const dias = (iso) => Math.round((new Date(hoy + 'T12:00:00') - new Date(iso.slice(0, 10) + 'T12:00:00')) / 864e5);
+  const ultimoMov = (a) => [a.creada, ...(a.historial || []).map((h) => h.cuando)].filter(Boolean).sort().pop() || hoy;
+  const vivas = vigentes().filter((a) => a.estatus !== 'hecho' && visiblePara(a, yo) && a.cliente !== 'personal');
+  const sinProyecto = vivas.filter((a) => !a.proyecto || a.proyecto.startsWith('g-'));
+  const estancadas = vivas.filter((a) => a.estatus !== 'esperando' && dias(ultimoMov(a)) > 7).sort((a, b) => ultimoMov(a).localeCompare(ultimoMov(b)));
+  const revision = vivas.filter((a) => a.estatus === 'esperando' && dias(ultimoMov(a)) > 7);
+  const activos = db.proyectos.filter((p) => !p.id.startsWith('g-') && (p.fase || 'en_curso') !== 'terminado' && p.fase !== 'por_iniciar');
+  const sinResp = activos.filter((p) => !p.responsable);
+  const sinAct = activos.filter((p) => { const s = saludProyecto(p, hoy); return s.salud !== 'programa' && (s.dias === null || s.dias > 21); });
+  const per = (id) => db.personas.find((x) => x.id === id);
+  const cli = (id) => db.clientes.find((c) => c.id === id);
+  const filaTarea = (a, extra) => html`<li key=${a.id}><button onClick=${() => ctx.abrir(a.id)}><span class="cl-t">${a.titulo}</span><small class="tenue">${cli(a.cliente)?.nombre || ''}</small><${Avatar} p=${per(a.responsable)} /><span class="num cl-f">${extra}</span></button></li>`;
+  const filaProy = (p, extra) => html`<li key=${p.id}><a class="fila-enlace" href=${'#/proyecto/' + p.id}><span class="cl-t">${p.nombre}</span><small class="tenue">${cli(p.cliente)?.nombre || ''}</small><span class="num cl-f">${extra}</span></a></li>`;
+  const bloque = (titulo, ayuda, lista, fila, vacio) => html`<section class="tb-panel">
+    <h2>${titulo}<span class=${'ol-n num' + (lista.length ? ' hay' : '')}>${lista.length}</span></h2><p class="tb-sub">${ayuda}</p>
+    ${lista.length ? html`<ul class="ca-lista">${lista.slice(0, 12).map(fila)}</ul>${lista.length > 12 ? html`<p class="tb-sub">Y ${lista.length - 12} más.</p>` : ''}` : html`<p class="ca-vacio">${I('check')} ${vacio}</p>`}
+  </section>`;
+  return html`<div class="tb-rejilla">
+    ${bloque('Tareas sin proyecto', 'Están en «General» del cliente. Ligarlas a su proyecto evita que se pierdan si alguien sale del equipo.', sinProyecto, (a) => filaTarea(a, fechaCorta(a.fecha)), 'Todas las tareas tienen proyecto.')}
+    ${bloque('Tareas estancadas', 'Abiertas y sin ningún movimiento en más de 7 días.', estancadas, (a) => filaTarea(a, `${dias(ultimoMov(a))} d`), 'Nada estancado.')}
+    ${bloque('En revisión hace más de 7 días', 'Esperan respuesta (del cliente o de otra persona) desde hace más de una semana.', revision, (a) => filaTarea(a, `${dias(ultimoMov(a))} d`), 'Nada esperando de más.')}
+    ${bloque('Proyectos sin actualización ejecutiva', 'Activos y sin «Actualización ejecutiva» en más de 21 días (se actualiza en Notion).', sinAct, (p) => filaProy(p, saludProyecto(p, hoy).dias === null ? 'sin fecha' : `${saludProyecto(p, hoy).dias} d`), 'Todos al día.')}
+    ${bloque('Proyectos sin responsable', 'Activos y sin «Project Owner» en Notion.', sinResp, (p) => filaProy(p, ''), 'Todos tienen responsable.')}
+  </div>`;
 }

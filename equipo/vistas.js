@@ -1,12 +1,12 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611262100';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611262100';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611262100';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611262100';
-import { Widgets } from './widgets.js?v=202611262100';
-import { HighlightsSpark } from './tablero.js?v=202611262100';
-import { useArrastre } from './arrastre.js?v=202611262100';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611262300';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611262300';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611262300';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611262300';
+import { Widgets } from './widgets.js?v=202611262300';
+import { HighlightsSpark } from './tablero.js?v=202611262300';
+import { useArrastre } from './arrastre.js?v=202611262300';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -196,7 +196,7 @@ const diasEntre = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a +
 function Lista({ ctx, hoy }) {
   const { db, yo, persona } = ctx;
   const prefs = prefsDe(yo);
-  const por = prefs.listaPor || 'estatus';
+  const por = prefs.listaPor || 'semana';
   const alcance = prefs.listaAlcance || 'mias';
   const [orden, setOrden] = useState({ col: 'fecha', dir: 1 });
   const [hechas, setHechas] = useState(false);
@@ -224,7 +224,12 @@ function Lista({ ctx, hoy }) {
     return (a < b ? -1 : a > b ? 1 : 0) * orden.dir || (x.fecha < y.fecha ? -1 : 1);
   });
 
-  const grupos = por === 'estatus'
+  // Mi semana: cada tarea cae en un solo grupo (en revisión primero, luego por fecha).
+  const tramo = (a) => (a.estatus === 'hecho' ? 'terminadas' : a.estatus === 'esperando' ? 'revision' : a.fecha < hoy ? 'vencidas' : a.fecha === hoy ? 'hoy' : a.fecha <= sumarDias(hoy, 7) ? 'proximos' : 'despues');
+  const TRAMOS = [['vencidas', 'Vencidas', 'alerta'], ['hoy', 'Hoy', 'hoy'], ['proximos', 'Próximos 7 días', 'semana'], ['revision', 'En revisión', 'espera'], ['despues', 'Más adelante', 'flecha'], ['terminadas', 'Terminadas', 'check']];
+  const grupos = por === 'semana'
+    ? TRAMOS.map(([id, nombre, ico]) => ({ id, nombre, icono: I(ico, id === 'despues' ? 'rot-180' : ''), lista: acts.filter((a) => tramo(a) === id) }))
+    : por === 'estatus'
     ? ESTATUS.map((s) => ({ id: s.id, nombre: s.nombre, icono: html`<${Anillo} estatus=${s.id} />`, lista: acts.filter((a) => estatusVisible(a) === s.id) }))
     : por === 'cliente'
       ? db.clientes.map((c) => ({ id: c.id, nombre: c.nombre, color: c.color, lista: acts.filter((a) => a.cliente === c.id) }))
@@ -241,7 +246,7 @@ function Lista({ ctx, hoy }) {
   return html`
     <div class="ls-barra">
       <div class="segmentado chico" aria-label="De quién">${[['mias', quien], ['equipo', 'Equipo']].map(([k, t]) => opcion(k, t, alcance, (v) => guardarPrefs(yo, { listaAlcance: v })))}</div>
-      <div class="segmentado chico" aria-label="Agrupar por">${[['estatus', 'Estatus'], ['cliente', 'Cliente'], ['persona', 'Persona'], ['nada', 'Sin agrupar']].map(([k, t]) => opcion(k, t, por, (v) => guardarPrefs(yo, { listaPor: v })))}</div>
+      <div class="segmentado chico" aria-label="Agrupar por">${[['semana', 'Mi semana'], ['estatus', 'Estatus'], ['cliente', 'Cliente'], ['persona', 'Persona'], ['nada', 'Sin agrupar']].map(([k, t]) => opcion(k, t, por, (v) => guardarPrefs(yo, { listaPor: v })))}</div>
       ${nVencidas > 0 && html`<button class=${'ls-vencidas' + (soloVencidas ? ' on' : '')} aria-pressed=${soloVencidas} onClick=${() => setSoloVencidas(!soloVencidas)}>${I('alerta')}${nVencidas} ${nVencidas === 1 ? 'vencida' : 'vencidas'}</button>`}
       <label class="ls-hechas"><input type="checkbox" checked=${hechas} onChange=${() => setHechas(!hechas)} />Ver hechas</label>
     </div>

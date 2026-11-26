@@ -44,7 +44,6 @@ interface NavItem {
 const PRINCIPAL: NavItem[] = [
   { label: "Inicio", icon: LayoutDashboard, href: "/", permission: "dashboard" },
   { label: "Mis clientes", icon: FolderOpen, href: "/mis-clientes", permission: "misClientes" },
-  { label: "Nuevo material", icon: FilePlus2, href: "/mis-clientes?nuevo=1", permission: "misClientes" },
   { label: "Planeación", icon: CalendarRange, href: "/planeacion", permission: "planeacion" },
   { label: "Materiales", icon: Files, href: "/materials", permission: "materials", tambien: ["/kanban"] },
   { label: "En riesgo", icon: AlertTriangle, href: "/riesgo", permission: "risk" },
@@ -106,6 +105,15 @@ export const Sidebar = () => {
 
       {/* Navigation items: Navy background, white text, active state has left orange accent bar */}
       <ScrollArea className="flex-1 py-5 px-3">
+        {/* Acción principal de Paco: crear material, siempre a la vista */}
+        {can("misClientes") && (
+          <Link
+            to="/mis-clientes?nuevo=1"
+            className="mb-4 flex items-center justify-center gap-2 rounded-xl bg-[#E37439] px-4 py-3 text-sm font-bold text-white shadow-[0_6px_18px_rgba(227,116,57,0.35)] transition-colors hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            <FilePlus2 className="h-4 w-4" /> Nuevo material
+          </Link>
+        )}
         <nav className="space-y-1">
           {visibleItems.map((item) => {
             const isActive = activo(item);

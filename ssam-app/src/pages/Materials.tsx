@@ -9,7 +9,7 @@ import {
   User,
   MessageSquare,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ import {
 
 const Materials = () => {
   const data = useOperacion();
+  const navigate = useNavigate();
   const { state: filters } = useFilters();
   const [searchTerm, setSearchTerm] = useState("");
   const [agrupar, setAgrupar] = useState<"ninguno" | "cliente" | "producto">("ninguno");
@@ -152,7 +153,8 @@ const Materials = () => {
                     return (
                       <TableRow
                         key={material.id}
-                        className="hover:bg-muted/30 group"
+                        onClick={() => navigate(`/materials/${material.id}`)}
+                        className="group cursor-pointer hover:bg-muted/40"
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -160,7 +162,7 @@ const Materials = () => {
                               <FileText className="h-5 w-5" />
                             </div>
                             <div className="overflow-hidden">
-                              <p className="font-bold leading-none truncate">
+                              <p className="font-bold leading-none truncate underline-offset-2 group-hover:text-[#E37439] group-hover:underline">
                                 {material.name}
                               </p>
                               <div className="flex items-center gap-2 mt-1">

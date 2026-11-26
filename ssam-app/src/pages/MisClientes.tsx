@@ -231,8 +231,8 @@ export default function MisClientes() {
             {carpeta.materiales.length} materiales · {[...carpeta.productos].join(" · ") || "sin producto"}
           </p>
         </div>
-        <button type="button" onClick={() => setNuevo(true)} className="inline-flex items-center gap-1.5 self-start rounded-xl bg-[#E37439] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]/40 sm:self-auto">
-          <Plus className="h-4 w-4" /> Nuevo material
+        <button type="button" onClick={() => setNuevo(true)} className="inline-flex items-center gap-2 self-start rounded-2xl bg-[#E37439] px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_22px_rgba(227,116,57,0.35)] transition-transform hover:-translate-y-0.5 hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]/40 sm:self-auto">
+          <Plus className="h-5 w-5" /> Nuevo material
         </button>
         </div>
 
@@ -286,8 +286,8 @@ export default function MisClientes() {
                   const corregir = pendientes.some((p) => p.m.id === m.id && p.tipo === "corregir");
                   return (
                     <tr key={m.id} onClick={() => navigate(`/materials/${m.id}`)} className="group cursor-pointer hover:bg-muted/40">
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-foreground">
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-foreground underline-offset-2 group-hover:text-[#E37439] group-hover:underline">
                           {m.folio != null && <span className="mr-1.5 font-mono text-[11px] font-normal text-muted-foreground/70">#{m.folio}</span>}
                           {m.name}
                         </p>
@@ -297,7 +297,7 @@ export default function MisClientes() {
                         {statusLabel(m.status as MaterialStatus)}
                         {corregir && <span className="ml-1.5 rounded-full bg-[#D64545] px-1.5 py-0.5 text-[10px] font-semibold text-white">corregir</span>}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
                           <span className="h-2 w-2 rounded-full" style={{ background: mom.color }} /> {mom.nombre}
                         </span>
@@ -317,7 +317,7 @@ export default function MisClientes() {
                           <button type="button" onClick={(e) => { e.stopPropagation(); setSubirPara(m); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground hover:border-[#E37439] hover:text-[#E37439]">
                             <Upload className="h-3.5 w-3.5" /> Subir versión
                           </button>
-                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-muted-foreground group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
+                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1 text-xs font-semibold text-background group-hover:bg-[#E37439] group-hover:text-white">Ver detalle <ChevronRight className="h-3.5 w-3.5" /></span>
                         </span>
                       </td>
                     </tr>
@@ -349,8 +349,8 @@ export default function MisClientes() {
           {esAdmin ? "Todos los clientes" : `Tus ${carpetas.length} ${carpetas.length === 1 ? "cliente" : "clientes"}`} · {totalActivos} materiales activos
         </p>
       </div>
-      <button type="button" onClick={() => setNuevo(true)} className="inline-flex items-center gap-1.5 self-start rounded-xl bg-[#E37439] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]/40 sm:self-auto">
-        <Plus className="h-4 w-4" /> Nuevo material
+      <button type="button" onClick={() => setNuevo(true)} className="inline-flex items-center gap-2 self-start rounded-2xl bg-[#E37439] px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_22px_rgba(227,116,57,0.35)] transition-transform hover:-translate-y-0.5 hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]/40 sm:self-auto">
+        <Plus className="h-5 w-5" /> Nuevo material
       </button>
       </div>
 

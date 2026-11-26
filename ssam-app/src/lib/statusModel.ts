@@ -254,7 +254,9 @@ export function isPaqueteAtrasado(
 
 export function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
-  const d = new Date(dateStr);
+  // Una fecha sola (AAAA-MM-DD) se lee como mediodía local: si no, en México
+  // se mostraba un día antes (se interpretaba como medianoche UTC).
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? `${dateStr}T12:00:00` : dateStr);
   return d.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "short",

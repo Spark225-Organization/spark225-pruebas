@@ -3,10 +3,10 @@
 // te lleva a la página, te enseña con una animación cómo se hace y te da un recorrido guiado en la pantalla real.
 // También contesta con datos del Portal («¿qué tengo vencido?», «¿cómo va» y el nombre de un cliente) usando solo lo que tú ya puedes ver.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias } from './datos.js?v=202611270800';
-import { vigentes, visiblePara, estatusVisible, saludProyecto, cumplimiento, areasVigentes } from './store.js?v=202611270800';
-import { I, fechaRelativa } from './ui.js?v=202611270800';
-import { TEMAS, CATEGORIAS, ESCENAS, RECORRIDOS, SUGERENCIAS, PAGINAS, SINONIMOS } from './ayuda-datos.js?v=202611270800';
+import { hoyISO, sumarDias } from './datos.js?v=202611270810';
+import { vigentes, visiblePara, estatusVisible, saludProyecto, cumplimiento, areasVigentes } from './store.js?v=202611270810';
+import { I, fechaRelativa } from './ui.js?v=202611270810';
+import { TEMAS, CATEGORIAS, ESCENAS, RECORRIDOS, SUGERENCIAS, PAGINAS, SINONIMOS } from './ayuda-datos.js?v=202611270810';
 
 // ---------- Texto: normalizar, quitar palabras vacías y comparar con tolerancia a errores ----------
 const VACIAS = new Set(('a al ante algo alguna alguien como con cual cuales cuando de del donde el ella en era es esa ese eso esta este esto estoy fue hay la las le les lo los me mi mis muy necesito no nos o oye para pero por porque puedo puede pueden que quiero quisiera se ser si sin sobre su sus te tengo tu tus un una uno unos unas y ya yo hola buenas buenos dias tardes favor ayuda ayudame dime explica explicame saber hacer hago hace hacemos podria poder seria tiene tienen hacerlo esto eso aqui alla bien mas menos cosa cosas tal vez igual entonces pues osea ok gracias')
@@ -61,7 +61,7 @@ function entidades(ctx, nq) {
   const { db } = ctx;
   const palabrasQ = new Set(nq.split(' '));
   const cli = db.clientes.find((c) => { const n = norm(c.nombre); return n && (nq.includes(n) || n.split(' ').filter((w) => w.length > 3).some((w) => palabrasQ.has(w))); });
-  const proy = db.proyectos.filter((p) => !p.id.startsWith('g-')).map((p) => { const ws = norm(p.nombre).split(' ').filter((w) => w.length > 3 && !/^spark/.test(w)); // «Spark225» va en muchos nombres: no distingue const hit = ws.filter((w) => palabrasQ.has(w)).length; return { p, hit, ratio: ws.length ? hit / ws.length : 0 }; })
+  const proy = db.proyectos.filter((p) => !p.id.startsWith('g-')).map((p) => { const ws = norm(p.nombre).split(' ').filter((w) => w.length > 3 && !/^spark/.test(w)); /* «Spark225» va en muchos nombres: no distingue */ const hit = ws.filter((w) => palabrasQ.has(w)).length; return { p, hit, ratio: ws.length ? hit / ws.length : 0 }; })
     .filter((x) => x.hit >= 2 || (x.hit >= 1 && x.ratio >= 0.5)).sort((a, b) => b.hit - a.hit || b.ratio - a.ratio)[0]?.p;
   const per = db.personas.find((p) => [p.corto, (p.nombre || '').split(' ')[0]].map(norm).some((n) => n && n.length > 2 && palabrasQ.has(n)));
   return { cli, proy, per };

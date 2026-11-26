@@ -5,9 +5,9 @@
 // lo marcado como visible y los comentarios no internos.
 
 import { crearBase, calcularVista, nuevoId, iso, fecha, hoy0, estadosOrden, IDX, type Base, type Fila } from "./demoData";
-import { rolDemo, guardarRolDemo, DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA, DEMO_DISENADOR_ID } from "./demoState";
+import { rolDemo, guardarRolDemo, laboratorioDemo, DEMO_ADMIN_ID, DEMO_DISENADOR_ID } from "./demoState";
 
-const CLAVE_BASE = "ssam-demo-base-v5"; // v5: Paco con sus clientes asignados
+const CLAVE_BASE = "ssam-demo-base-v6"; // v6: ejercicio con Paco (3 materiales, uno por laboratorio)
 
 function cargar(): Base {
   try {
@@ -48,21 +48,21 @@ export function reiniciarDemo() {
 }
 
 // ── Quién soy y qué puedo ver ─────────────────────────────────────────────
-const yo = () => (rolDemo() === "client" ? DEMO_CLIENTE_ID : rolDemo() === "admin" ? DEMO_ADMIN_ID : rolDemo() === "disenador" ? DEMO_DISENADOR_ID : null);
+const yo = () => (rolDemo() === "client" ? laboratorioDemo().perfil : rolDemo() === "admin" ? DEMO_ADMIN_ID : rolDemo() === "disenador" ? DEMO_DISENADOR_ID : null);
 const soyCliente = () => rolDemo() === "client";
 
 function baseVisible(): Base {
   if (!soyCliente()) return db;
   const mios = new Set(
-    db.materials.filter((m) => m.cliente_id === DEMO_CLIENTE_EMPRESA && m.visible_para_cliente).map((m) => m.id),
+    db.materials.filter((m) => m.cliente_id === laboratorioDemo().empresa && m.visible_para_cliente).map((m) => m.id),
   );
   const archivosMios = new Set(db.files.filter((f) => mios.has(f.material_id)).map((f) => f.id));
   const porMaterial = (t: Fila[]) => t.filter((x) => mios.has(x.material_id));
   return {
     ...db,
-    clients: db.clients.filter((c) => c.id === DEMO_CLIENTE_EMPRESA),
-    business_units: db.business_units.filter((u) => u.cliente_id === DEMO_CLIENTE_EMPRESA),
-    products: db.products.filter((p) => p.cliente_id === DEMO_CLIENTE_EMPRESA),
+    clients: db.clients.filter((c) => c.id === laboratorioDemo().empresa),
+    business_units: db.business_units.filter((u) => u.cliente_id === laboratorioDemo().empresa),
+    products: db.products.filter((p) => p.cliente_id === laboratorioDemo().empresa),
     materials: db.materials.filter((m) => mios.has(m.id)),
     status_history: porMaterial(db.status_history),
     comments: porMaterial(db.comments).filter((c) => c.visibilidad !== "interno"),
@@ -198,6 +198,12 @@ class Consulta implements PromiseLike<Res> {
       for (const n of lista) {
         if (t === "comments" && !n.autor_id) n.autor_id = yo();
         if (t === "files" && !n.created_by) n.created_by = yo();
+        if (t === "materials" && !db[t].some((x) => x.id === n.id)) {
+          // Folio consecutivo y primer registro del historial, como en la base real.
+          n.folio = n.folio ?? Math.max(1000, ...db.materials.map((x) => Number(x.folio) || 0)) + 1;
+          n.updated_at = n.updated_at ?? n.created_at;
+          db.status_history.push({ id: nuevoId("h"), material_id: n.id, status: n.status, inicio: n.created_at, fin: null });
+        }
         const i = db[t].findIndex((x) => x.id === n.id);
         if (i >= 0) db[t][i] = { ...db[t][i], ...n };
         else db[t].push(n);

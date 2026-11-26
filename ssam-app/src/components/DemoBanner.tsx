@@ -1,11 +1,11 @@
 // Aviso flotante del modo demo: recuerda que los datos son ficticios y deja
 // cambiar de rol sin buscar el menú.
 import { Repeat } from "lucide-react";
-import { DEMO, rolDemo, salirDemo } from "@/lib/demo/demoState";
+import { DEMO, rolDemo, salirDemo, laboratorioDemo } from "@/lib/demo/demoState";
 
 const DemoBanner = () => {
   if (!DEMO || !rolDemo()) return null;
-  const rol = rolDemo() === "client" ? "cliente" : rolDemo() === "disenador" ? "Paco (diseño)" : "administrador";
+  const rol = rolDemo() === "client" ? `cliente · ${laboratorioDemo().nombre}` : rolDemo() === "disenador" ? "Paco (diseño)" : "administrador";
   return (
     // z-40: queda debajo de paneles y diálogos (z-50) para no tapar sus botones.
     <div className="fixed bottom-10 left-4 z-40 flex items-center gap-3 rounded-full border border-border bg-card/95 py-1.5 pl-4 pr-1.5 text-xs shadow-card backdrop-blur">

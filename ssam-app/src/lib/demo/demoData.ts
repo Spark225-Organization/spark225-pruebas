@@ -96,12 +96,13 @@ export function crearBase(): Base {
   const perfiles: Fila[] = [
     { id: DEMO_ADMIN_ID, nombre: "Admin demo", email: "admin@demo.spark225.mx", rol: "admin", cliente_id: null },
     { id: DEMO_DISENADOR_ID, nombre: "Paco", email: "paco@demo.spark225.mx", rol: "creativo", cliente_id: null },
-    { id: DEMO_CLIENTE_ID, nombre: "Cliente demo (Aurora)", email: "cliente@aurora-demo.mx", rol: "cliente", cliente_id: DEMO_CLIENTE_EMPRESA },
+    { id: DEMO_CLIENTE_ID, nombre: "Ana Ruiz (Aurora)", email: "cliente@aurora-demo.mx", rol: "cliente", cliente_id: DEMO_CLIENTE_EMPRESA },
     { id: "e1000000-0000-4000-8000-000000000003", nombre: "Dra. Valeria Ríos", email: "medico@demo.spark225.mx", rol: "medical", cliente_id: null },
     { id: "e1000000-0000-4000-8000-000000000004", nombre: "Diego Montes", email: "diseno@demo.spark225.mx", rol: "creativo", cliente_id: null },
     { id: "e1000000-0000-4000-8000-000000000005", nombre: "Sofía Lara", email: "diseno2@demo.spark225.mx", rol: "creativo", cliente_id: null },
     { id: "e1000000-0000-4000-8000-000000000006", nombre: "Iván Peña", email: "veeva@demo.spark225.mx", rol: "veeva", cliente_id: null },
     { id: "e1000000-0000-4000-8000-000000000007", nombre: "Marta Gil (BioNova)", email: "marta@bionova-demo.mx", rol: "cliente", cliente_id: clientes[1].id },
+    { id: "e1000000-0000-4000-8000-000000000008", nombre: "Luis Vega (Delta)", email: "luis@delta-demo.mx", rol: "cliente", cliente_id: clientes[2].id },
   ].map((p) => ({ ...p, estado: "activo", created_at: iso(masDias(hoy, -200)) }));
   const internos = perfiles.filter((p) => p.rol !== "cliente" && p.rol !== "admin" && p.id !== DEMO_DISENADOR_ID);
   const paco = perfiles.find((p) => p.id === DEMO_DISENADOR_ID)!;
@@ -110,8 +111,16 @@ export function crearBase(): Base {
   // ── Materiales ──
   const formatos = ["Visual de ayuda", "Folleto para paciente", "Banner digital", "Email médico", "Video corto", "Infografía", "Presentación para congreso", "Post para redes"];
   const temas = ["lanzamiento", "beneficios clave", "posología", "estudio clínico", "adherencia", "mecanismo de acción", "preguntas frecuentes", "recordatorio de marca"];
-  // Distribución de etapas: hay de todo para ver Kanban, riesgo y portal.
-  const plan = [0, 1, 1, 2, 3, 3, 3, 4, 4, 5, 6, 7, 7, 7, 8, 9, 9, 10, 10, 10, 11, 11, 12, 12, 12, 13, 1, 4, 7, 10, 3, 12];
+  // Ejercicio con Paco (26 nov 2026): solo 3 materiales, uno por laboratorio
+  // ficticio, todos de Paco y esperando la revisión del cliente. Sin historial
+  // previo, para que el ciclo cliente → Paco se vea desde cero.
+  const EJERCICIO = [
+    { prod: 0, etapa: 7, formato: "Visual de ayuda", tema: "lanzamiento" },        // Aurora · diseño
+    { prod: 3, etapa: 3, formato: "Folleto para paciente", tema: "técnica de inhalación" }, // BioNova · contenido médico
+    { prod: 5, etapa: 7, formato: "Post para redes", tema: "recordatorio de marca" }, // Delta · diseño
+  ];
+  const plan = EJERCICIO.map((e) => e.etapa);
+  const CON_HISTORIAL = false;
 
   const materiales: Fila[] = [];
   const historial: Fila[] = [];
@@ -124,13 +133,13 @@ export function crearBase(): Base {
   const candados: Fila[] = [];
 
   plan.forEach((etapa, i) => {
-    const prod = productos[i % productos.length];
+    const prod = productos[EJERCICIO[i].prod];
     const cli = clientes.find((c) => c.id === prod.cliente_id)!;
     const ind = indicaciones[pick(prod._ind as number[])];
     // Paco lleva las cuentas de Aurora y BioNova; los demás, el resto.
     const otro = pick(internos);
     const resp = DEMO_CLIENTES_PACO.includes(cli.id) ? paco : otro;
-    const formato = formatos[i % formatos.length];
+    const formato = EJERCICIO[i].formato;
     const id = `f0000000-0000-4000-8000-${(i + 1).toString().padStart(12, "0")}`;
     // Cuántos días lleva: más avanzado, más antiguo.
     const edad = Math.round(6 + etapa * 5 + r() * 12);
@@ -146,7 +155,7 @@ export function crearBase(): Base {
     const restantes = Math.max(0, 10 - etapa);
     const comprometidaOriginal = masDias(solicitado, 30 + Math.round(r() * 10));
     // Algunos van tarde a propósito.
-    const tarde = i % 6 === 2 && etapa < 10;
+    const tarde = false;
     const comprometida = tarde ? masDias(hoy, -(2 + (i % 5))) : masDias(hoy, restantes * 3 + 4 + Math.round(r() * 6));
     const requerida = masDias(comprometida, (i % 4) - 1);
     const aprobadoAt = etapa >= 10 ? masDias(solicitado, edad - 3) : null;
@@ -158,7 +167,7 @@ export function crearBase(): Base {
     materiales.push({
       id,
       folio: 1000 + i + 1,
-      titulo: `${formato} · ${prod.nombre} · ${temas[i % temas.length]}`,
+      titulo: `${formato} · ${prod.nombre} · ${EJERCICIO[i].tema}`,
       cliente_id: cli.id,
       producto_id: prod.id,
       indicacion_id: ind.id,
@@ -192,7 +201,7 @@ export function crearBase(): Base {
     // Archivos: a partir del desarrollo hay al menos una pieza.
     if (etapa >= 1) {
       const fileId = nuevoId("a");
-      const nVers = etapa >= 7 ? 3 : etapa >= 4 ? 2 : 1;
+      const nVers = 1;
       archivos.push({ id: fileId, material_id: id, nombre: `${formato.replace(/ /g, "_")}_${prod.nombre.split(" ")[0]}.pdf`, tipo: "application/pdf", created_by: resp.id, created_at: iso(masDias(solicitado, 2)) });
       for (let v = 1; v <= nVers; v++) {
         versiones.push({ id: nuevoId("b"), file_id: fileId, version_number: v, storage_path: `demo/${id}/${fileId}/v${v}.pdf`, tamano_bytes: 480000 + v * 91000, visibilidad: "visible_para_cliente", es_final: v === nVers, subido_por: resp.id, fecha_carga: iso(masDias(solicitado, 2 + v * 4)) });
@@ -205,21 +214,21 @@ export function crearBase(): Base {
     }
 
     // Conversación: notas internas y comentarios con el cliente.
-    if (etapa >= 2) {
+    if (CON_HISTORIAL && etapa >= 2) {
       comentarios.push({ id: nuevoId("c"), material_id: id, texto: "Referencias revisadas; falta validar la cita del estudio en la lámina 3.", autor_id: internos[0].id, visibilidad: "interno", parent_id: null, version_id: null, requiere_cambio: false, estado: "resuelto", created_at: iso(masDias(solicitado, 5)) });
     }
-    if (etapa >= 3) {
+    if (CON_HISTORIAL && etapa >= 3) {
       const cc = { id: nuevoId("c"), material_id: id, texto: "¿Podemos destacar más el beneficio principal en la portada?", autor_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : marta.id, visibilidad: "visible_para_cliente", parent_id: null, version_id: null, requiere_cambio: etapa === 3 || etapa === 7, estado: etapa === 3 || etapa === 7 ? "abierto" : "resuelto", created_at: iso(masDias(solicitado, 9)) };
       comentarios.push(cc);
       comentarios.push({ id: nuevoId("c"), material_id: id, texto: "Claro, lo ajustamos en la siguiente versión.", autor_id: resp.id, visibilidad: "visible_para_cliente", parent_id: cc.id, version_id: null, requiere_cambio: false, estado: "resuelto", created_at: iso(masDias(solicitado, 10)) });
     }
-    if (etapa >= 4) {
+    if (CON_HISTORIAL && etapa >= 4) {
       aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_medico", decision: i % 4 === 0 ? "cambios" : "aprobado", motivo: i % 4 === 0 ? ["referencias_incorrectas", "ortografia_redaccion", "solicitud_fuera_plan", "otro"][(i / 4) % 4] : null, approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : marta.id, comentario: i % 4 === 0 ? "Ajustar el claim de eficacia." : "Contenido médico aprobado.", version_id: null, created_at: iso(masDias(solicitado, 12)) });
     }
-    if (etapa >= 8 && i % 3 === 1) {
+    if (CON_HISTORIAL && etapa >= 8 && i % 3 === 1) {
       aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_grafico", decision: "cambios", motivo: i % 2 ? "error_diseno" : "ortografia_redaccion", approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : marta.id, comentario: "Ajustar el diseño de la portada.", version_id: null, created_at: iso(masDias(solicitado, 18)) });
     }
-    if (etapa >= 8) {
+    if (CON_HISTORIAL && etapa >= 8) {
       aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_grafico", decision: "aprobado", approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : marta.id, comentario: "Diseño aprobado.", version_id: null, created_at: iso(masDias(solicitado, 22)) });
     }
     if (etapa >= 10) {
@@ -228,7 +237,7 @@ export function crearBase(): Base {
         paquete.push({ id: nuevoId("q"), material_id: id, item_name: n, detalle: null, entregado: ok, entregado_by: ok ? resp.id : null, entregado_by_name: ok ? resp.nombre : null, entregado_at: ok ? iso(entregado ?? masDias(hoy, -1)) : null });
       });
     }
-    if (i % 9 === 4) {
+    if (CON_HISTORIAL && i % 9 === 4) {
       candados.push({ id: nuevoId("k"), material_id: id, status_desde: ESTADOS[etapa], status_hacia: ESTADOS[Math.min(etapa + 1, 13)], status_destino: ESTADOS[Math.min(etapa + 1, 13)], mensaje: "Candado: falta la aprobación del cliente antes de avanzar.", usuario: resp.id, created_at: iso(masDias(hoy, -3)) });
     }
   });

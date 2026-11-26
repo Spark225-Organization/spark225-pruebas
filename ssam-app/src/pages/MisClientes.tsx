@@ -18,7 +18,14 @@ import {
   ArrowLeft,
   Repeat,
   EyeOff,
+  Plus,
+  Upload,
+  Bell,
+  CheckCircle2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { NuevoMaterial } from "@/components/material/NuevoMaterial";
+import { SubirVersion } from "@/components/material/SubirVersion";
 import { supabase } from "@/lib/supabase";
 import { useOperacion } from "@/data/operacion";
 import { useAuth } from "@/lib/auth";
@@ -29,7 +36,9 @@ import { MOMENTOS, momento, nombreMotivo, type Momento } from "@/lib/portalModel
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-type Decision = { material_id: string; decision: string; motivo: string | null; comentario: string | null; created_at: string };
+type Decision = { material_id: string; decision: string; motivo: string | null; comentario: string | null; created_at: string; profiles?: { nombre?: string; rol?: string } | null };
+type Aviso = { id: string; material_id: string; tipo: "rechazo" | "aprobacion" | "comentario"; autor: string; texto: string; created_at: string };
+const CLAVE_VISTOS = "ssam-avisos-vistos-";
 type Pendiente = { m: Material; tipo: "corregir" | "enviar" | "vencido"; detalle: string };
 
 const EN_DESARROLLO = ["desarrollo_medico", "desarrollo_grafico"];
@@ -55,19 +64,65 @@ export default function MisClientes() {
   const [decisiones, setDecisiones] = useState<Record<string, Decision>>({});
   const [buscar, setBuscar] = useState("");
   const [momentoSel, setMomentoSel] = useState<Momento | "">("");
+  const [nuevo, setNuevo] = useState(false);
+  const [subirPara, setSubirPara] = useState<Material | null>(null);
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
+  const [vistos, setVistos] = useState<string>(() => {
+    try {
+      return localStorage.getItem(CLAVE_VISTOS + (user?.id ?? "")) ?? "";
+    } catch {
+      return "";
+    }
+  });
+
+  // «Nuevo material» desde el menú lateral (?nuevo=1).
+  useEffect(() => {
+    if (params.get("nuevo") === "1") {
+      setNuevo(true);
+      const p = new URLSearchParams(params);
+      p.delete("nuevo");
+      setParams(p, { replace: true });
+    }
+  }, [params, setParams]);
 
   // Última decisión del cliente por material (para saber qué hay que corregir).
   useEffect(() => {
     let vivo = true;
     (async () => {
-      const { data: filas } = await (supabase as any)
+      let { data: filas, error } = await (supabase as any)
         .from("approvals")
-        .select("material_id, decision, motivo, comentario, created_at")
+        .select("material_id, decision, motivo, comentario, created_at, profiles!approvals_approver_id_fkey(nombre, rol)")
         .order("created_at", { ascending: false });
+      if (error) {
+        ({ data: filas } = await (supabase as any)
+          .from("approvals")
+          .select("material_id, decision, motivo, comentario, created_at")
+          .order("created_at", { ascending: false }));
+      }
+      const { data: coms } = await (supabase as any)
+        .from("comments")
+        .select("id, material_id, texto, visibilidad, created_at, profiles!comments_autor_id_fkey(nombre, rol)")
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (!vivo) return;
       const r: Record<string, Decision> = {};
       for (const f of (filas ?? []) as Decision[]) if (!r[f.material_id]) r[f.material_id] = f;
       setDecisiones(r);
+      // Avisos: lo que hizo el cliente (decisiones y comentarios), lo más nuevo primero.
+      const esCliente = (p?: { rol?: string } | null) => !!p && /^(cliente|client)$/i.test(p.rol ?? "");
+      const av: Aviso[] = [];
+      for (const f of (filas ?? []) as Decision[]) {
+        if (!esCliente(f.profiles)) continue;
+        const rech = ES_RECHAZO.has(String(f.decision));
+        av.push({ id: `a-${f.material_id}-${f.created_at}`, material_id: f.material_id, tipo: rech ? "rechazo" : "aprobacion", autor: f.profiles?.nombre ?? "El cliente", texto: rech ? nombreMotivo(f.motivo) : f.comentario ? "con comentarios" : "", created_at: f.created_at });
+      }
+      for (const c of (coms ?? []) as any[]) {
+        if (!esCliente(c.profiles) || c.visibilidad === "interno") continue;
+        if (/^(Rechazado|Aprobado con comentarios|Cambios solicitados)/.test(c.texto ?? "")) continue; // ya va en la decisión
+        av.push({ id: `c-${c.id}`, material_id: c.material_id, tipo: "comentario", autor: c.profiles?.nombre ?? "El cliente", texto: String(c.texto ?? "").slice(0, 140), created_at: c.created_at });
+      }
+      av.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      setAvisos(av);
     })();
     return () => {
       vivo = false;
@@ -99,6 +154,26 @@ export default function MisClientes() {
     return out;
   }, [mios, decisiones]);
 
+  const misIds = useMemo(() => new Set(mios.map((m) => m.id)), [mios]);
+  const misAvisos = useMemo(() => avisos.filter((a) => misIds.has(a.material_id)).slice(0, 30), [avisos, misIds]);
+  const nuevos = misAvisos.filter((a) => !vistos || a.created_at > vistos);
+  const avisado = useMemo(() => ({ hecho: false }), []);
+  useEffect(() => {
+    if (!avisado.hecho && nuevos.length) {
+      avisado.hecho = true;
+      toast(`Tienes ${nuevos.length} ${nuevos.length === 1 ? "aviso nuevo" : "avisos nuevos"} de tus clientes.`, { icon: "🔔" });
+    }
+  }, [nuevos.length, avisado]);
+  const marcarVistos = () => {
+    const ahora = new Date().toISOString();
+    setVistos(ahora);
+    try {
+      localStorage.setItem(CLAVE_VISTOS + (user?.id ?? ""), ahora);
+    } catch {
+      /* nada */
+    }
+  };
+
   const carpetas = useMemo(() => {
     const map = new Map<string, { id: string; nombre: string; materiales: Material[]; productos: Set<string> }>();
     for (const m of mios) {
@@ -125,6 +200,14 @@ export default function MisClientes() {
   const nombre = (user?.name ?? "").split(/[\s(]/)[0];
   const carpeta = clienteSel ? carpetas.find((c) => c.id === clienteSel) ?? null : null;
 
+  const nombreMaterial = (id: string) => mios.find((m) => m.id === id)?.name ?? "Material";
+  const dialogos = (
+    <>
+      {nuevo && <NuevoMaterial clienteInicial={carpeta?.id ?? null} onCerrar={() => setNuevo(false)} />}
+      {subirPara && <SubirVersion material={subirPara} onCerrar={() => setSubirPara(null)} onListo={data.reload} />}
+    </>
+  );
+
   // ── Dentro de la carpeta de un cliente ──
   if (carpeta) {
     const suyos = pendientes.filter((p) => p.m.client_id === carpeta.id);
@@ -135,6 +218,7 @@ export default function MisClientes() {
       .sort((a, b) => (a.fecha_comprometida ?? "9").localeCompare(b.fecha_comprometida ?? "9"));
     return (
       <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <button type="button" onClick={() => { setParams({}); setMomentoSel(""); setBuscar(""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-[#E37439]">
             <ArrowLeft className="h-3.5 w-3.5" /> Mis clientes
@@ -146,8 +230,14 @@ export default function MisClientes() {
             {carpeta.materiales.length} materiales · {[...carpeta.productos].join(" · ") || "sin producto"}
           </p>
         </div>
+        <button type="button" onClick={() => setNuevo(true)} className="inline-flex items-center gap-1.5 self-start rounded-xl bg-[#E37439] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]/40 sm:self-auto">
+          <Plus className="h-4 w-4" /> Nuevo material
+        </button>
+        </div>
 
         {DEMO && <AvisoProbarCliente />}
+
+        <Avisos avisos={misAvisos.filter((a) => carpeta.materiales.some((m) => m.id === a.material_id))} vistos={vistos} onVistos={marcarVistos} nombre={nombreMaterial} abrir={(id) => navigate(`/materials/${id}`)} />
 
         <Pendientes pendientes={suyos} abrir={(id) => navigate(`/materials/${id}`)} mostrarCliente={false} />
 
@@ -221,7 +311,12 @@ export default function MisClientes() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-muted-foreground group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
+                        <span className="inline-flex items-center gap-2">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setSubirPara(m); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground hover:border-[#E37439] hover:text-[#E37439]">
+                            <Upload className="h-3.5 w-3.5" /> Subir versión
+                          </button>
+                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-muted-foreground group-hover:text-[#E37439]">Abrir <ChevronRight className="h-4 w-4" /></span>
+                        </span>
                       </td>
                     </tr>
                   );
@@ -233,6 +328,7 @@ export default function MisClientes() {
             </table>
           </div>
         </section>
+        {dialogos}
       </div>
     );
   }
@@ -241,6 +337,7 @@ export default function MisClientes() {
   const totalActivos = mios.filter((m) => momento(m) !== "entregado").length;
   return (
     <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <p className="text-sm text-muted-foreground first-letter:uppercase">
           {new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
@@ -250,8 +347,14 @@ export default function MisClientes() {
           {esAdmin ? "Todos los clientes" : `Tus ${carpetas.length} ${carpetas.length === 1 ? "cliente" : "clientes"}`} · {totalActivos} materiales activos
         </p>
       </div>
+      <button type="button" onClick={() => setNuevo(true)} className="inline-flex items-center gap-1.5 self-start rounded-xl bg-[#E37439] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#C45B24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]/40 sm:self-auto">
+        <Plus className="h-4 w-4" /> Nuevo material
+      </button>
+      </div>
 
       {DEMO && <AvisoProbarCliente />}
+
+      <Avisos avisos={misAvisos} vistos={vistos} onVistos={marcarVistos} nombre={nombreMaterial} abrir={(id) => navigate(`/materials/${id}`)} />
 
       <Pendientes pendientes={pendientes} abrir={(id) => navigate(`/materials/${id}`)} mostrarCliente />
 
@@ -295,7 +398,52 @@ export default function MisClientes() {
           </div>
         )}
       </section>
+      {dialogos}
     </div>
+  );
+}
+
+function Avisos({ avisos, vistos, onVistos, nombre, abrir }: { avisos: Aviso[]; vistos: string; onVistos: () => void; nombre: (id: string) => string; abrir: (id: string) => void }) {
+  if (!avisos.length) return null;
+  const nuevos = avisos.filter((a) => !vistos || a.created_at > vistos);
+  const lista = (nuevos.length ? nuevos : avisos).slice(0, 6);
+  const ICONO = { rechazo: XCircle, aprobacion: CheckCircle2, comentario: MessageSquare } as const;
+  const COLOR = { rechazo: "text-[#D64545]", aprobacion: "text-[#2E9E5B]", comentario: "text-sky-600 dark:text-sky-300" } as const;
+  const VERBO = { rechazo: "rechazó", aprobacion: "aprobó", comentario: "comentó en" } as const;
+  return (
+    <section aria-label="Avisos de tus clientes" className={cn("rounded-2xl border p-4", nuevos.length ? "border-[#E37439]/40 bg-[#E37439]/[0.06]" : "border-border bg-card")}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-2 text-sm font-bold text-foreground">
+          <span className="relative">
+            <Bell className="h-4 w-4 text-[#E37439]" />
+            {nuevos.length > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#D64545]" />}
+          </span>
+          {nuevos.length ? `${nuevos.length} ${nuevos.length === 1 ? "aviso nuevo" : "avisos nuevos"} de tus clientes` : "Últimos avisos de tus clientes"}
+        </p>
+        {nuevos.length > 0 && (
+          <button type="button" onClick={onVistos} className="text-xs font-semibold text-muted-foreground hover:text-[#E37439]">Marcar como vistos</button>
+        )}
+      </div>
+      <ul className="mt-2 divide-y divide-border">
+        {lista.map((a) => {
+          const Ico = ICONO[a.tipo];
+          return (
+            <li key={a.id}>
+              <button type="button" onClick={() => abrir(a.material_id)} className="flex w-full items-start gap-2.5 py-2 text-left hover:opacity-80">
+                <Ico className={cn("mt-0.5 h-4 w-4 shrink-0", COLOR[a.tipo])} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-foreground">
+                    <b>{a.autor}</b> {VERBO[a.tipo]} <b>{nombre(a.material_id)}</b>
+                  </span>
+                  {a.texto && <span className="block truncate text-xs text-muted-foreground">{a.texto}</span>}
+                </span>
+                <span className="shrink-0 text-[11px] text-muted-foreground">{formatDate(a.created_at)}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -337,7 +485,7 @@ function AvisoProbarCliente() {
   return (
     <p className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
       <Repeat className="h-3.5 w-3.5 text-[#E37439]" />
-      Para ver lo que ve el cliente, usa <b>Cambiar rol</b> abajo a la izquierda y entra como cliente (Laboratorios Aurora). Los cambios se ven en ambos lados.
+      Para ver lo que ve el cliente, usa <b>Cambiar rol</b> abajo a la izquierda y entra como cliente eligiendo el laboratorio. Los cambios se ven en ambos lados.
     </p>
   );
 }

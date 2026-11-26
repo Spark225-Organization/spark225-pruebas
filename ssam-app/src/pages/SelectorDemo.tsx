@@ -2,7 +2,7 @@
 // Solo existe en el sitio de pruebas (VITE_SSAM_DEMO=1).
 import { Building2, ShieldCheck, RotateCcw, Palette } from "lucide-react";
 import { Marca } from "@/components/Marca";
-import { entrarDemo } from "@/lib/demo/demoState";
+import { entrarDemo, DEMO_LABORATORIOS } from "@/lib/demo/demoState";
 import { reiniciarDemo } from "@/lib/demo/fakeSupabase";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ const opciones = [
     rol: "client" as const,
     icono: Building2,
     titulo: "Entrar como cliente",
-    texto: "Lo que ve un laboratorio en su portal: sus materiales, la revisión de piezas y las aprobaciones.",
+    texto: "Lo que ve un laboratorio en su portal: revisa, marca correcciones sobre la pieza y aprueba o rechaza. Elige el laboratorio:",
   },
 ];
 
@@ -45,7 +45,28 @@ const SelectorDemo = () => (
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          {opciones.map(({ rol, icono: Icono, titulo, texto }) => (
+          {opciones.map(({ rol, icono: Icono, titulo, texto }) =>
+            rol === "client" ? (
+              <div key={rol} className="flex flex-col items-start gap-3 rounded-[10px] border border-[#DBDBDB] bg-white p-6 text-left shadow-card">
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#E37439]/10 text-[#E37439]">
+                  <Icono className="h-5 w-5" />
+                </span>
+                <span className="text-base font-bold text-[#0E1E2A]">{titulo}</span>
+                <span className="text-xs leading-relaxed text-[#4E5964]">{texto}</span>
+                <div className="mt-1 flex w-full flex-col gap-1.5">
+                  {DEMO_LABORATORIOS.map((l) => (
+                    <button
+                      key={l.empresa}
+                      type="button"
+                      onClick={() => entrarDemo("client", l.empresa)}
+                      className="rounded-lg border border-[#DBDBDB] px-3 py-2 text-left text-xs font-semibold text-[#0E1E2A] transition-colors hover:border-[#E37439] hover:text-[#E37439] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]"
+                    >
+                      {l.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
             <button
               key={rol}
               type="button"
@@ -58,7 +79,8 @@ const SelectorDemo = () => (
               <span className="text-base font-bold text-[#0E1E2A] group-hover:text-[#E37439]">{titulo}</span>
               <span className="text-xs leading-relaxed text-[#4E5964]">{texto}</span>
             </button>
-          ))}
+            ),
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-[#8894A0]">

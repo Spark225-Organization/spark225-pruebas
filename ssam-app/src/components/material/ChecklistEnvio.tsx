@@ -1,4 +1,7 @@
-// Checklist antes de enviar un material al cliente.
+// Checklist obligatorio antes de enviar un material: al cliente (médico o
+// gráfico) y, desde la junta del 25 nov 2026, también cuando el diseñador
+// entrega el arte a revisión de dirección gráfica (referencias, colores y
+// pautas para el impresor).
 // Usa el checklist de Spark225 (tabla checklist_templates: el que se presentó
 // a Eisai Oncología), filtrado por etapa (médico o gráfico) y por formato del
 // material. Cada punto se marca «Cumple» o «No aplica» (con motivo). Solo
@@ -17,9 +20,16 @@ type Punto = { id: string; item: string; detalle: string | null; orden: number; 
 type Estado = { estado: "cumple" | "no_aplica"; motivo?: string };
 
 export const ETAPAS_CLIENTE = ["aprobacion_cliente_medico", "aprobacion_cliente_grafico"] as const;
-export const pideChecklist = (destino: string) => (ETAPAS_CLIENTE as readonly string[]).includes(destino);
+/** Etapa destino → checklist que se exige antes de entrar a ella. */
+const TIPO_POR_DESTINO: Record<string, string> = {
+  revision_direccion_grafico: "entrega_diseno",
+  aprobacion_cliente_medico: "pre_envio_medico",
+  aprobacion_cliente_grafico: "pre_envio_grafico",
+};
+export const pideChecklist = (destino: string) => destino in TIPO_POR_DESTINO;
+const esCliente = (destino: string) => (ETAPAS_CLIENTE as readonly string[]).includes(destino);
 
-const tipoPara = (destino: string) => (destino === "aprobacion_cliente_medico" ? "pre_envio_medico" : "pre_envio_grafico");
+const tipoPara = (destino: string) => TIPO_POR_DESTINO[destino];
 
 /** ¿El punto aplica a este formato? (formatos vacío = todos) */
 function aplica(p: Punto, formato: string) {
@@ -126,10 +136,10 @@ export function ChecklistEnvio({
           </div>
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1.5 text-xs font-semibold text-[#E37439]">
-              <ListChecks className="h-3.5 w-3.5" /> Antes de enviar a {destinoNombre.toLowerCase()}
+              <ListChecks className="h-3.5 w-3.5" /> {esCliente(destino) ? `Antes de enviar a ${destinoNombre.toLowerCase()}` : "Checklist del diseñador · obligatorio"}
             </p>
             <h3 className="mt-0.5 truncate text-lg font-bold text-[#0E1E2A]">{material.name}</h3>
-            <p className="text-xs text-[#7A8590]">{formato ? `Formato: ${formato}. ` : ""}Revisa cada punto; lo que no aplique, explica por qué.</p>
+            <p className="text-xs text-[#7A8590]">{formato ? `Formato: ${formato}. ` : ""}Revisa cada punto; lo que no aplique, explica por qué. Sin el checklist completo no se puede enviar.</p>
           </div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-full p-1.5 text-[#7A8590] hover:bg-[#F3F4F6]">
             <X className="h-4 w-4" />
@@ -142,7 +152,7 @@ export function ChecklistEnvio({
           )}
           {puntos?.length === 0 && (
             <li className="rounded-2xl border border-dashed border-[#DBDBDB] p-6 text-center text-sm text-[#7A8590]">
-              No hay checklist configurado para esta etapa.
+              No hay checklist configurado para esta etapa. No se puede enviar hasta que un administrador lo configure.
             </li>
           )}
           {puntos?.map((p, i) => {
@@ -177,7 +187,7 @@ export function ChecklistEnvio({
           <div className="flex gap-2">
             <button type="button" onClick={onCerrar} className="rounded-xl px-4 py-2 text-sm font-semibold text-[#4E5964] hover:bg-[#F3F4F6]">Cancelar</button>
             <button type="button" onClick={enviar} disabled={!completo || enviando} className="inline-flex items-center gap-1.5 rounded-xl bg-[#E37439] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C45B24] disabled:opacity-40">
-              {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Enviar al cliente
+              {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {esCliente(destino) ? "Enviar al cliente" : "Enviar a revisión"}
             </button>
           </div>
         </div>

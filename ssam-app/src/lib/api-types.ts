@@ -42,6 +42,9 @@ export interface Indication {
   status: "activo" | "inactivo" | "active" | "inactive" | null;
   materials_count: number | null;
   created_at?: string;
+  /** Producto al que pertenece la indicación (indications.producto_id). */
+  producto_id?: string | null;
+  area_terapeutica?: string | null;
 }
 
 export interface Material {

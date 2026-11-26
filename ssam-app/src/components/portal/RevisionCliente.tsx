@@ -1,15 +1,16 @@
-// Revisión del cliente dentro de la ficha: aprobar o pedir cambios.
-// Pedir cambios guía en 3 pasos cortos: qué tipo de cambio (motivo), qué
-// cambiar (texto, voz con transcripción) y evidencia (archivos y marcas sobre
-// la pieza). Todo queda en el historial y le llega al equipo de Spark225.
+// Revisión del cliente dentro de la ficha: Aprobar o Rechazar.
+// Rechazar pide una categoría obligatoria (una sola, para las estadísticas de
+// rechazos), el motivo por escrito (texto o voz con transcripción) y evidencia
+// opcional (archivos y marcas sobre la pieza). Todo queda en el historial y
+// le llega al equipo de Spark225.
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Undo2, Mic, Square, Paperclip, PenLine, X, Loader2, FileText } from "lucide-react";
+import { CheckCircle2, XCircle, Mic, Square, Paperclip, PenLine, X, Loader2, FileText } from "lucide-react";
 import { mutateClientDecision, mutateCreateComment } from "@/data/operacion";
 import { StorageService, type StoredFile } from "@/lib/storage";
 import { useAuth } from "@/lib/auth";
 import type { Material } from "@/lib/api-types";
-import { MOTIVOS_CAMBIO } from "@/lib/portalModelo";
+import { MOTIVOS_RECHAZO } from "@/lib/portalModelo";
 import { MarcadorImagen } from "@/components/portal/MarcadorImagen";
 import { cn } from "@/lib/utils";
 
@@ -25,29 +26,29 @@ export function RevisionCliente({
   vigente: StoredFile | null;
   onDone: () => void;
 }) {
-  const [modo, setModo] = useState<null | "aprobar" | "cambios">(null);
+  const [modo, setModo] = useState<null | "aprobar" | "rechazar">(null);
   const etapa = material.status === "aprobacion_cliente_medico" ? "el contenido médico" : "el diseño";
 
   return (
     <div className="rounded-2xl border border-[#E37439]/35 bg-[#FFF7F2] p-4">
-      <p className="text-sm font-bold text-[#0E1E2A]">Te toca revisar {etapa}</p>
+      <p className="text-sm font-bold text-[#0E1E2A]">Pendiente de tu revisión: {etapa}</p>
       <p className="mt-1 text-xs text-[#4E5964]">
         {vigente ? (
-          <>Estás viendo <b>{vigente.name}</b> · versión {vigente.version}. Tu decisión aplica a esta versión.</>
+          <>Archivo en revisión: <b>{vigente.name}</b> · versión {vigente.version}. Tu decisión aplica a esta versión.</>
         ) : (
-          "Aún no hay archivo cargado; tu decisión queda registrada sin versión."
+          "Aún no hay archivo cargado; tu decisión quedará registrada sin versión."
         )}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setModo("aprobar")} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#2E9E5B] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[#238048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E9E5B]/40">
           <CheckCircle2 className="h-4 w-4" /> Aprobar
         </button>
-        <button type="button" onClick={() => setModo("cambios")} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D64545]/35 bg-white px-3 py-2.5 text-sm font-semibold text-[#B23A3A] hover:bg-[#FFF1F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D64545]/30">
-          <Undo2 className="h-4 w-4" /> Pedir cambios
+        <button type="button" onClick={() => setModo("rechazar")} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D64545]/35 bg-white px-3 py-2.5 text-sm font-semibold text-[#B23A3A] hover:bg-[#FFF1F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D64545]/30">
+          <XCircle className="h-4 w-4" /> Rechazar
         </button>
       </div>
       {modo === "aprobar" && <Aprobar material={material} vigente={vigente} onCerrar={() => setModo(null)} onDone={onDone} />}
-      {modo === "cambios" && <PedirCambios material={material} vigente={vigente} onCerrar={() => setModo(null)} onDone={onDone} />}
+      {modo === "rechazar" && <Rechazar material={material} vigente={vigente} onCerrar={() => setModo(null)} onDone={onDone} />}
     </div>
   );
 }
@@ -106,9 +107,9 @@ function Aprobar({ material, vigente, onCerrar, onDone }: { material: Material; 
 // Reconocimiento de voz del navegador (Chrome/Edge/Safari). Sin costo ni servidor.
 const Reconocedor: any = typeof window !== "undefined" ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
 
-function PedirCambios({ material, vigente, onCerrar, onDone }: { material: Material; vigente: StoredFile | null; onCerrar: () => void; onDone: () => void }) {
+function Rechazar({ material, vigente, onCerrar, onDone }: { material: Material; vigente: StoredFile | null; onCerrar: () => void; onDone: () => void }) {
   const { user } = useAuth();
-  const [motivos, setMotivos] = useState<string[]>([]);
+  const [motivo, setMotivo] = useState<string>("");
   const [texto, setTexto] = useState("");
   const [adjuntos, setAdjuntos] = useState<Adjunto[]>([]);
   const [marcando, setMarcando] = useState<{ src: string; nombre: string } | null>(null);
@@ -172,7 +173,7 @@ function PedirCambios({ material, vigente, onCerrar, onDone }: { material: Mater
   const esImagenVigente = !!vigente && (vigente.category === "image" || /\.(png|jpe?g|webp|gif)$/i.test(vigente.name));
   const urlVigente = vigente ? StorageService.getUrl(vigente) : "";
 
-  const listo = motivos.length > 0 && (texto.trim().length > 0 || adjuntos.length > 0);
+  const listo = !!motivo && texto.trim().length > 0;
 
   const enviar = async () => {
     if (!listo || !user) return;
@@ -186,38 +187,39 @@ function PedirCambios({ material, vigente, onCerrar, onDone }: { material: Mater
         await StorageService.upload({ file: f, materialId: material.id, stage: "cambios_cliente", uploadedBy: user.id, uploadedByName: user.name });
         subidos.push(f.name);
       }
-      const nombres = motivos.map((m) => MOTIVOS_CAMBIO.find((x) => x.id === m)?.nombre ?? m);
+      const categoria = MOTIVOS_RECHAZO.find((x) => x.id === motivo)?.nombre ?? motivo;
       const cuerpo = [
-        `Cambios solicitados (${nombres.join(", ")})${vigente ? ` sobre ${vigente.name} v${vigente.version}` : ""}:`,
+        `Rechazado · ${categoria}${vigente ? ` · ${vigente.name} v${vigente.version}` : ""}:`,
         texto.trim(),
         subidos.length ? `Adjuntos: ${subidos.join(", ")}` : "",
       ].filter(Boolean).join("\n");
       // 2. Comentario visible para ambos lados, con todo el detalle.
       await mutateCreateComment({ material_id: material.id, author_id: user.id, author_name: user.name, body: cuerpo, interno: false, requiere_cambio: true });
-      // 3. Decisión: regresa a desarrollo con el motivo principal registrado.
-      const r = await mutateClientDecision(material.id, "cambios", vigente?.id ?? null, cuerpo, motivos[0]);
+      // 3. Decisión: regresa a desarrollo con la categoría de rechazo registrada.
+      const r = await mutateClientDecision(material.id, "cambios", vigente?.id ?? null, cuerpo, motivo);
       if (r.error) throw new Error(r.error);
-      toast.success("Cambios enviados. Spark225 ya fue notificado.");
+      toast.success("Rechazo registrado. Spark225 ya fue notificado.");
       onCerrar();
       onDone();
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudieron enviar los cambios.");
+      toast.error(e?.message ?? "No se pudo registrar el rechazo.");
     }
     setEnviando(false);
   };
 
   return (
-    <Hoja titulo="Pedir cambios" onCerrar={onCerrar}>
+    <Hoja titulo="Rechazar material" onCerrar={onCerrar}>
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
         <div>
-          <p className="text-sm font-semibold text-[#0E1E2A]">1. ¿Qué tipo de cambio es?</p>
-          <p className="text-xs text-[#7A8590]">Puedes elegir más de uno. Nos ayuda a no repetir errores.</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {MOTIVOS_CAMBIO.map((m) => {
-              const on = motivos.includes(m.id);
+          <p className="text-sm font-semibold text-[#0E1E2A]">1. Categoría del rechazo</p>
+          <p className="text-xs text-[#7A8590]">Elige una. Nos permite medir el origen de cada rechazo.</p>
+          <div role="radiogroup" aria-label="Categoría del rechazo" className="mt-2 grid gap-1.5 sm:grid-cols-2">
+            {MOTIVOS_RECHAZO.map((m) => {
+              const on = motivo === m.id;
               return (
-                <button key={m.id} type="button" title={m.ayuda} aria-pressed={on} onClick={() => setMotivos((x) => (on ? x.filter((y) => y !== m.id) : [...x, m.id]))} className={cn("rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors", on ? "border-[#E37439] bg-[#E37439] text-white" : "border-[#E3E6EA] text-[#4E5964] hover:border-[#E37439]/50")}>
-                  {m.nombre}
+                <button key={m.id} type="button" role="radio" aria-checked={on} onClick={() => setMotivo(m.id)} className={cn("rounded-xl border px-3 py-2 text-left transition-colors", on ? "border-[#D64545] bg-[#FFF1F1]" : "border-[#E3E6EA] hover:border-[#D64545]/40")}>
+                  <span className={cn("block text-xs font-semibold", on ? "text-[#B23A3A]" : "text-[#0E1E2A]")}>{m.nombre}</span>
+                  <span className="block text-[11px] leading-snug text-[#7A8590]">{m.ayuda}</span>
                 </button>
               );
             })}
@@ -226,7 +228,7 @@ function PedirCambios({ material, vigente, onCerrar, onDone }: { material: Mater
 
         <div>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#0E1E2A]">2. ¿Qué hay que cambiar?</p>
+            <p className="text-sm font-semibold text-[#0E1E2A]">2. Motivo del rechazo</p>
             <button type="button" onClick={grabando ? pararVoz : empezarVoz} className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold", grabando ? "bg-[#D64545] text-white" : "bg-[#F3F4F6] text-[#0E1E2A] hover:bg-[#E9EBEE]")}>
               {grabando ? (
                 <>
@@ -242,14 +244,14 @@ function PedirCambios({ material, vigente, onCerrar, onDone }: { material: Mater
               )}
             </button>
           </div>
-          <textarea value={texto + (parcial ? (texto ? " " : "") + parcial : "")} onChange={(e) => setTexto(e.target.value)} placeholder="Escribe o dicta los cambios. Ej.: en la lámina 2, cambiar «tratamiento» por «terapia»." className="mt-2 min-h-[110px] w-full rounded-xl border border-[#E3E6EA] p-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
+          <textarea value={texto + (parcial ? (texto ? " " : "") + parcial : "")} onChange={(e) => setTexto(e.target.value)} placeholder="Describe el motivo y lo que debe corregirse. Ej.: en la lámina 2, la referencia 3 no corresponde a la fuente citada." className="mt-2 min-h-[110px] w-full rounded-xl border border-[#E3E6EA] p-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
           <p className="mt-1 text-[11px] text-[#7A8590]">
             {Reconocedor ? "Al dictar, se transcribe aquí y el audio también se adjunta." : "Tu navegador no transcribe la voz; el audio se adjunta para que lo escuchemos."}
           </p>
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-[#0E1E2A]">3. Evidencia</p>
+          <p className="text-sm font-semibold text-[#0E1E2A]">3. Evidencia <span className="font-normal text-[#7A8590]">(opcional)</span></p>
           <div className="mt-2 flex flex-wrap gap-2">
             {esImagenVigente && (
               <button type="button" onClick={() => setMarcando({ src: urlVigente, nombre: vigente!.name })} className="inline-flex items-center gap-1.5 rounded-xl border border-[#E37439]/40 bg-[#FFF7F2] px-3 py-2 text-xs font-semibold text-[#C45B24] hover:bg-[#FFEFE4]">
@@ -284,11 +286,11 @@ function PedirCambios({ material, vigente, onCerrar, onDone }: { material: Mater
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-[#EEF0F2] px-5 py-3">
-        <p className="text-[11px] text-[#7A8590]">{!motivos.length ? "Elige el tipo de cambio" : !listo ? "Describe el cambio o adjunta evidencia" : "Listo para enviar"}</p>
+        <p className="text-[11px] text-[#7A8590]">{!motivo ? "Elige la categoría" : !listo ? "Describe el motivo del rechazo" : "Listo para enviar"}</p>
         <div className="flex gap-2">
           <button type="button" onClick={onCerrar} className="rounded-xl px-4 py-2 text-sm font-semibold text-[#4E5964] hover:bg-[#F3F4F6]">Cancelar</button>
-          <button type="button" onClick={enviar} disabled={!listo || enviando || grabando} className="inline-flex items-center gap-1.5 rounded-xl bg-[#E37439] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C45B24] disabled:opacity-50">
-            {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />} Enviar cambios
+          <button type="button" onClick={enviar} disabled={!listo || enviando || grabando} className="inline-flex items-center gap-1.5 rounded-xl bg-[#D64545] px-4 py-2 text-sm font-semibold text-white hover:bg-[#B23A3A] disabled:opacity-50">
+            {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Confirmar rechazo
           </button>
         </div>
       </div>

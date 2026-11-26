@@ -1,42 +1,49 @@
 // Modelo del portal del cliente: cómo se agrupan los materiales en lenguaje
 // del cliente, qué cuenta en cada indicador y qué se le pide a él.
-import type { Material, MaterialMetric, MaterialForecast } from "@/lib/api-types";
+import type { Material, MaterialMetric, MaterialForecast, Indication } from "@/lib/api-types";
 
-/** Momento del material visto por el cliente (en orden). */
+/** Momento del material visto por el cliente, en orden cronológico estricto
+ *  (acordado con Carlos el 25 nov 2026): por revisar → en desarrollo →
+ *  aprobados → por producirse → entregados. */
 export type Momento =
-  | "revisar"      // espera su aprobación
+  | "revisar"      // espera su aprobación (médica o gráfica)
   | "desarrollo"   // Spark225 lo está trabajando
-  | "regulatorio"  // sometido / aprobación interna del laboratorio
-  | "producir"     // aprobado, falta producirlo
-  | "entregar"     // en producción o con paquete pendiente
+  | "aprobado"     // el cliente lo aprobó; falta su código de aprobación regulatoria
+  | "producir"     // con código o en producción
   | "entregado";   // paquete final entregado o implementado
 
 export const MOMENTOS: { id: Momento; nombre: string; corto: string; color: string }[] = [
-  { id: "revisar", nombre: "Esperan tu revisión", corto: "Por revisar", color: "#E37439" },
+  { id: "revisar", nombre: "Por revisar", corto: "Por revisar", color: "#E37439" },
   { id: "desarrollo", nombre: "En desarrollo", corto: "En desarrollo", color: "#4E5964" },
-  { id: "regulatorio", nombre: "En aprobación regulatoria", corto: "Regulatorio", color: "#7A6FB0" },
-  { id: "producir", nombre: "Aprobados por producirse", corto: "Por producirse", color: "#D99A12" },
-  { id: "entregar", nombre: "Por entregarse", corto: "Por entregarse", color: "#2F7FB8" },
+  { id: "aprobado", nombre: "Aprobados", corto: "Aprobados", color: "#7A6FB0" },
+  { id: "producir", nombre: "Por producirse", corto: "Por producirse", color: "#D99A12" },
   { id: "entregado", nombre: "Entregados", corto: "Entregados", color: "#2E9E5B" },
 ];
 
 export function momento(m: Material): Momento {
   const s = m.status;
   if (s === "aprobacion_cliente_medico" || s === "aprobacion_cliente_grafico") return "revisar";
-  if (s === "sometimiento_final" || s === "crc") return "regulatorio";
   if (m.paquete_final_entregado_at || s === "implementado") return "entregado";
-  if (s === "produccion") return "entregar";
-  if (s === "aprobado") return m.codigos_registrados_at ? "entregar" : "producir";
+  if (s === "sometimiento_final" || s === "crc") return "aprobado";
+  if (s === "aprobado") return m.codigos_registrados_at ? "producir" : "aprobado";
+  if (s === "produccion") return "producir";
   return "desarrollo";
 }
+
+/** Posición del momento (0 a 4) para la barra de avance. */
+export const momentoIndice = (m: Material) => MOMENTOS.findIndex((x) => x.id === momento(m));
+
+/** ¿El paso k ya quedó atrás? «Por revisar» y «En desarrollo» se alternan en
+ *  cada ronda, así que estando en desarrollo la revisión no cuenta como hecha. */
+export const pasoHecho = (k: number, actual: number) => k < actual && !(k === 0 && actual === 1);
 
 /** Qué se le pide al cliente en este momento (vacío si nada). */
 export function teToca(m: Material): string {
   const s = m.status;
   if (s === "aprobacion_cliente_medico") return "Revisar y aprobar el contenido médico";
   if (s === "aprobacion_cliente_grafico") return "Revisar y aprobar el diseño";
-  if (s === "sometimiento_final" || s === "crc") return "Registrar los códigos de aprobación";
-  if (!m.fecha_requerida_cliente && momento(m) !== "entregado") return "Indicar la fecha que lo necesitas";
+  if (s === "sometimiento_final" || s === "crc") return "Registrar el código de aprobación";
+  if (!m.fecha_requerida_cliente && momento(m) !== "entregado") return "Registrar la fecha requerida";
   return "";
 }
 
@@ -63,7 +70,7 @@ export const TONO_CLASE: Record<string, string> = {
   gris: "bg-[#9AA3AD]/15 text-[#4E5964]",
 };
 
-/** Cuándo lo va a recibir: pronóstico si existe, si no la fecha comprometida. */
+/** Fecha estimada de entrega: pronóstico si existe; si no, la fecha comprometida. */
 export function cuandoLlega(m: Material, fc?: MaterialForecast): string | null {
   if (momento(m) === "entregado") return m.paquete_final_entregado_at ?? null;
   return fc?.entrega_estimada ?? m.fecha_comprometida ?? null;
@@ -72,18 +79,18 @@ export function cuandoLlega(m: Material, fc?: MaterialForecast): string | null {
 export interface Indicadores {
   total: number;
   revisar: number;
-  aprobadosATiempo: number;
+  desarrollo: number;
   aprobados: number;
   producir: number;
-  entregar: number;
   entregados: number;
-  desarrollo: number;
+  /** Entregados a tiempo contra la fecha requerida (o la comprometida). */
+  entregadosATiempo: number;
 }
 
 export function indicadores(ms: Material[], metricas: Record<string, MaterialMetric | undefined>): Indicadores {
   const by = (x: Momento) => ms.filter((m) => momento(m) === x).length;
-  const aprob = ms.filter((m) => ["producir", "entregar", "entregado"].includes(momento(m)));
-  const aTiempo = aprob.filter((m) => {
+  const entregados = ms.filter((m) => momento(m) === "entregado");
+  const aTiempo = entregados.filter((m) => {
     const met = metricas[m.id];
     if (met?.a_tiempo_vs_requerida != null) return met.a_tiempo_vs_requerida;
     if (met?.a_tiempo != null) return met.a_tiempo;
@@ -92,22 +99,42 @@ export function indicadores(ms: Material[], metricas: Record<string, MaterialMet
   return {
     total: ms.length,
     revisar: by("revisar"),
-    desarrollo: by("desarrollo") + by("regulatorio"),
-    aprobados: aprob.length,
-    aprobadosATiempo: aTiempo.length,
+    desarrollo: by("desarrollo"),
+    aprobados: by("aprobado"),
     producir: by("producir"),
-    entregar: by("entregar"),
-    entregados: by("entregado"),
+    entregados: entregados.length,
+    entregadosATiempo: aTiempo.length,
   };
 }
 
-/** Motivos de cambio: mismos valores que el catálogo motivo_devolucion de la base. */
-export const MOTIVOS_CAMBIO: { id: string; nombre: string; ayuda: string }[] = [
-  { id: "ortografia_redaccion", nombre: "Ortografía o redacción", ayuda: "Typos, acentos, puntuación o frases poco claras." },
-  { id: "referencias_incorrectas", nombre: "Referencias", ayuda: "Cita, número de referencia o formato del laboratorio." },
-  { id: "contenido_no_sustentado", nombre: "Contenido médico", ayuda: "Un dato, claim o indicación que no está respaldado." },
-  { id: "texto_faltante", nombre: "Falta texto o leyenda", ayuda: "Leyendas regulatorias, IPP, registro o datos que faltan." },
-  { id: "error_diseno", nombre: "Error de diseño", ayuda: "Colores, logo, tipografía o elementos fuera de lugar." },
-  { id: "cambio_diseno_solicitado", nombre: "Cambio de diseño", ayuda: "Ajuste de estilo, colores o composición que prefieres." },
-  { id: "otro", nombre: "Petición adicional u otro", ayuda: "Algo nuevo que no estaba en la solicitud original." },
+/** Categorías de rechazo (junta con Carlos, 25 nov 2026). El id es el valor
+ *  del catálogo motivo_devolucion de la base; «solicitud_fuera_plan» se agrega
+ *  con clientes-sql/05-junta-25nov.sql. Una sola categoría por rechazo, para
+ *  que las estadísticas sumen el 100 %. */
+export const MOTIVOS_RECHAZO: { id: string; nombre: string; ayuda: string }[] = [
+  { id: "solicitud_fuera_plan", nombre: "Solicitud adicional fuera de plan", ayuda: "Algo nuevo que no estaba en la solicitud original." },
+  { id: "referencias_incorrectas", nombre: "Error en referencias científicas", ayuda: "Cita, número de referencia, fuente o formato del laboratorio." },
+  { id: "error_diseno", nombre: "Problema de diseño", ayuda: "Colores, logo, tipografía, composición o elementos fuera de lugar." },
+  { id: "ortografia_redaccion", nombre: "Falla ortográfica", ayuda: "Errores de ortografía, acentos, puntuación o redacción." },
+  { id: "otro", nombre: "Otro", ayuda: "Cualquier motivo distinto; descríbelo en el texto." },
 ];
+
+/** Nombre legible de cualquier motivo guardado (incluye los del catálogo anterior). */
+const MOTIVOS_ANTERIORES: Record<string, string> = {
+  contenido_no_sustentado: "Contenido médico no sustentado",
+  texto_faltante: "Falta texto o leyenda",
+  cambio_diseno_solicitado: "Cambio de diseño solicitado",
+};
+export const nombreMotivo = (id?: string | null) =>
+  !id ? "Sin categoría" : MOTIVOS_RECHAZO.find((x) => x.id === id)?.nombre ?? MOTIVOS_ANTERIORES[id] ?? id;
+
+/** Indicaciones médicas registradas para un producto (tabla indications).
+ *  Pendiente: completar con la tabla de indicaciones de Paco (junta 25 nov). */
+export const INDICACIONES_PENDIENTE = "Pendiente: tabla de indicaciones de Paco";
+export function indicacionesDe(productoId: string | null | undefined, todas: Indication[]): string[] {
+  if (!productoId) return [];
+  return todas
+    .filter((i) => i.producto_id === productoId && (i.status ?? "activo") !== "inactivo" && !/^\[DEMO\]/.test(i.name))
+    .map((i) => i.name)
+    .sort((a, b) => a.localeCompare(b, "es"));
+}

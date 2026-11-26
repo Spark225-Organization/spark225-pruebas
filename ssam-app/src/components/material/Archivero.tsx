@@ -15,7 +15,7 @@ function necesitaDelCliente(m: Material): string {
   if (s === "aprobacion_cliente_medico") return "Aprobación del contenido médico";
   if (s === "aprobacion_cliente_grafico") return "Aprobación del diseño";
   if (s === "sometimiento_final" || s === "crc") return "Códigos de aprobación del laboratorio";
-  if (!m.fecha_requerida_cliente && momento(m) !== "entregado") return "Fecha en que lo necesita";
+  if (!m.fecha_requerida_cliente && momento(m) !== "entregado") return "Registrar fecha requerida";
   return "";
 }
 

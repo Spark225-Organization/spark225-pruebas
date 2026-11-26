@@ -1,10 +1,9 @@
-// Portal del cliente: inicio tipo tablero.
-// Orden pensado para un gerente de producto con poco tiempo:
-//  1) lo que espera su revisión (lo único que depende de él),
-//  2) cómo van sus materiales (indicadores que filtran al tocarlos),
-//  3) cuándo los va a recibir,
-//  4) sus productos como carpetas (con sus indicaciones),
-//  5) todos los materiales en lista, tablero o línea de tiempo, con filtros.
+// Portal del cliente. Misma estructura limpia que la vista de administrador
+// (junta con Carlos, 25 nov 2026): encabezado con conteos y cambio de vista,
+// lo que espera su revisión, indicadores por etapa en orden cronológico
+// (por revisar → en desarrollo → aprobados → por producirse → entregados),
+// tabla de materiales con búsqueda y filtros, y abajo sus productos con sus
+// indicaciones médicas y las próximas entregas.
 import { useMemo, useState } from "react";
 import {
   Search,
@@ -15,6 +14,8 @@ import {
   CalendarClock,
   Truck,
   FolderOpen,
+  FileText,
+  ChevronRight,
   X,
   Eye,
   EyeOff,
@@ -25,7 +26,9 @@ import { MaterialFicha } from "@/components/portal/MaterialFicha";
 import { useOperacion } from "@/data/operacion";
 import { useAuth } from "@/lib/auth";
 import type { Material, ClientTimelineRow, MaterialMetric, MaterialForecast } from "@/lib/api-types";
-import { formatDate, clientStepIndex, CLIENT_STEPS } from "@/lib/statusModel";
+import { formatDate } from "@/lib/statusModel";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   MOMENTOS,
   type Momento,
@@ -36,6 +39,10 @@ import {
   cuandoLlega,
   indicadores,
   diasHasta,
+  momentoIndice,
+  pasoHecho,
+  indicacionesDe,
+  INDICACIONES_PENDIENTE,
 } from "@/lib/portalModelo";
 import { cn } from "@/lib/utils";
 
@@ -84,18 +91,24 @@ const ClientPortal = () => {
     [mios],
   );
 
-  // Productos como carpetas, con sus indicaciones y avance.
+  // Productos con sus indicaciones médicas (tabla indications, por producto)
+  // y su avance. Si el producto aún no tiene indicaciones registradas, se usan
+  // las de sus materiales; la lista completa llega con la tabla de Paco.
   const carpetas = useMemo(() => {
-    const map = new Map<string, { nombre: string; materiales: Material[]; indicaciones: Set<string> }>();
+    const map = new Map<string, { nombre: string; materiales: Material[]; indicaciones: Set<string>; productoId: string | null }>();
     for (const m of mios) {
       const k = m.product_name ?? "Sin producto";
-      if (!map.has(k)) map.set(k, { nombre: k, materiales: [], indicaciones: new Set() });
+      if (!map.has(k)) map.set(k, { nombre: k, materiales: [], indicaciones: new Set(), productoId: m.product_id ?? null });
       const c = map.get(k)!;
       c.materiales.push(m);
-      if (m.indication_name) c.indicaciones.add(m.indication_name);
+    }
+    for (const c of map.values()) {
+      const medicas = indicacionesDe(c.productoId, data.indications);
+      for (const n of medicas) c.indicaciones.add(n);
+      if (!medicas.length) for (const m of c.materiales) if (m.indication_name) c.indicaciones.add(m.indication_name);
     }
     return [...map.values()].sort((a, b) => b.materiales.length - a.materiales.length);
-  }, [mios]);
+  }, [mios, data.indications]);
 
   const productos = useMemo(() => carpetas.map((c) => c.nombre), [carpetas]);
   const indicaciones = useMemo(() => {
@@ -152,8 +165,8 @@ const ClientPortal = () => {
     return (
       <div className="space-y-6">
         <Skeleton className="h-24 rounded-2xl" />
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="grid gap-3 sm:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-2xl" />
           ))}
         </div>
@@ -165,87 +178,119 @@ const ClientPortal = () => {
   const nombre = (user?.name ?? "").split(/[\s(]/)[0];
   const material = abierto ? mios.find((m) => m.id === abierto) ?? null : null;
 
+  const activos = mios.filter((m) => momento(m) !== "entregado").length;
+
   return (
-    <div className="space-y-8 pb-10">
-      {/* 1. Saludo + lo que espera su revisión */}
-      <section className="ssam-subir">
-        <p className="text-sm text-[#4E5964]">
-          {new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
-        <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight text-[#0E1E2A]">
-          Hola{nombre ? `, ${nombre}` : ""}.{" "}
-          {ind.revisar > 0 ? (
-            <span className="text-[#4E5964]">
-              Tienes {ind.revisar} {ind.revisar === 1 ? "material" : "materiales"} por revisar.
-            </span>
-          ) : (
-            <span className="text-[#4E5964]">No tienes nada pendiente por revisar.</span>
-          )}
-        </h1>
+    <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Encabezado, como en la vista de administrador */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm capitalize text-[#7A8590]">
+            {new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#0E1E2A]">Hola{nombre ? `, ${nombre}` : ""}</h1>
+          <p className="text-[#4E5964]">
+            {ind.revisar > 0 ? (
+              <span className="font-semibold text-[#E37439]">
+                {ind.revisar} {ind.revisar === 1 ? "material pendiente" : "materiales pendientes"} de tu revisión
+              </span>
+            ) : (
+              "Sin materiales pendientes de tu revisión"
+            )}
+            {" · "}
+            <span className="font-medium text-[#0E1E2A]">{activos} activos</span>
+            {" · "}
+            {ind.entregados} entregados
+          </p>
+        </div>
+        <div className="inline-flex rounded-xl border border-[#E3E6EA] bg-white p-1" role="tablist" aria-label="Vista">
+          {(
+            [
+              ["lista", "Tabla", LayoutList],
+              ["tablero", "Tablero", Columns3],
+              ["tiempo", "Línea de tiempo", GanttChartSquare],
+            ] as [Vista, string, typeof LayoutList][]
+          ).map(([v, t, Ico]) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={vista === v}
+              onClick={() => setVista(v)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                vista === v ? "bg-[#0E1E2A] text-white" : "text-[#4E5964] hover:bg-[#F6F7F8]",
+              )}
+            >
+              <Ico className="h-3.5 w-3.5" /> {t}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {porRevisar.length > 0 && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {porRevisar.map((m, i) => {
-              const espera = Math.max(0, -(diasHasta(m.updated_at) ?? 0));
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setAbierto(m.id)}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                  className="ssam-subir ssam-latido group flex flex-col gap-3 rounded-2xl border border-[#E37439]/35 bg-white p-4 text-left shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]"
-                >
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="font-semibold text-[#E37439]">
-                      {m.status === "aprobacion_cliente_medico" ? "Contenido médico" : "Diseño"} · {espera === 0 ? "llegó hoy" : `esperando ${espera} d`}
-                    </span>
-                    {m.folio != null && <span className="font-mono text-[#9AA4B2]">#{m.folio}</span>}
-                  </div>
-                  <p className="text-[15px] font-bold leading-snug text-[#0E1E2A]">{m.name}</p>
-                  <p className="text-xs text-[#4E5964]">
-                    {m.product_name ?? "—"}
-                    {m.indication_name ? ` · ${m.indication_name}` : ""}
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1.5 self-start rounded-full bg-[#E37439] px-3 py-1.5 text-xs font-semibold text-white transition-colors group-hover:bg-[#C45B24]">
-                    Revisar ahora <ArrowRight className="h-3.5 w-3.5" />
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* 2. Cómo van: indicadores que filtran al tocarlos */}
-      <section aria-label="Cómo van tus materiales" className="ssam-subir" style={{ animationDelay: "80ms" }}>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            { id: "revisar" as Momento, valor: ind.revisar, etiqueta: "Por revisar", extra: "dependen de ti" },
-            { id: "desarrollo" as Momento, valor: ind.desarrollo, etiqueta: "En proceso", extra: "con Spark225 o regulatorio" },
-            { id: "producir" as Momento, valor: ind.aprobados, etiqueta: "Aprobados", extra: ind.aprobados ? `${ind.aprobadosATiempo} a tiempo` : "aún ninguno", destacar: true },
-            { id: "producir" as Momento, valor: ind.producir, etiqueta: "Por producirse", extra: "aprobados, sin producir" },
-            { id: "entregar" as Momento, valor: ind.entregar, etiqueta: "Por entregarse", extra: "en producción o paquete" },
-            { id: "entregado" as Momento, valor: ind.entregados, etiqueta: "Entregados", extra: "paquete final listo" },
-          ].map((k, i) => {
-            const color = MOMENTOS.find((x) => x.id === k.id)!.color;
-            const activo = momentoSel === k.id && !k.destacar;
+      {/* Lo que espera su revisión (lo único que depende del cliente) */}
+      {porRevisar.length > 0 && (
+        <section aria-label="Pendientes de tu revisión" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {porRevisar.map((m, i) => {
+            const espera = Math.max(0, -(diasHasta(m.updated_at) ?? 0));
             return (
               <button
-                key={k.etiqueta}
+                key={m.id}
                 type="button"
-                onClick={() => (k.destacar ? setMomentoSel("") : irA(k.id))}
+                onClick={() => setAbierto(m.id)}
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="ssam-subir ssam-latido group flex flex-col gap-2 rounded-2xl border border-[#E37439]/35 bg-white p-4 text-left shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]"
+              >
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="font-semibold text-[#E37439]">
+                    {m.status === "aprobacion_cliente_medico" ? "Contenido médico" : "Diseño"} · {espera === 0 ? "recibido hoy" : `en espera desde hace ${espera} d`}
+                  </span>
+                  {m.folio != null && <span className="font-mono text-[#9AA4B2]">#{m.folio}</span>}
+                </div>
+                <p className="text-[15px] font-bold leading-snug text-[#0E1E2A]">{m.name}</p>
+                <p className="text-xs text-[#4E5964]">
+                  {m.product_name ?? "—"}
+                  {m.indication_name ? ` · ${m.indication_name}` : ""}
+                </p>
+                <span className="mt-auto inline-flex items-center gap-1.5 self-start rounded-full bg-[#E37439] px-3 py-1.5 text-xs font-semibold text-white transition-colors group-hover:bg-[#C45B24]">
+                  Revisar <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      )}
+
+      {/* Etapas en orden cronológico; cada una filtra la tabla */}
+      <section aria-label="Materiales por etapa">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {MOMENTOS.map((x, i) => {
+            const valor = mios.filter((m) => momento(m) === x.id).length;
+            const activo = momentoSel === x.id;
+            const extra =
+              x.id === "revisar" ? "dependen de ti"
+              : x.id === "desarrollo" ? "con Spark225"
+              : x.id === "aprobado" ? "en trámite de código"
+              : x.id === "producir" ? "con código o en producción"
+              : ind.entregados ? `${ind.entregadosATiempo} a tiempo` : "aún ninguno";
+            return (
+              <button
+                key={x.id}
+                type="button"
+                onClick={() => irA(x.id)}
+                aria-pressed={activo}
                 className={cn(
                   "flex flex-col items-start rounded-2xl border bg-white px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]",
                   activo ? "border-[#0E1E2A]" : "border-[#E3E6EA]",
                 )}
-                style={{ animationDelay: `${120 + i * 40}ms` }}
               >
                 <span className="flex items-center gap-1.5 text-xs font-medium text-[#4E5964]">
-                  <span className="h-2 w-2 rounded-full" style={{ background: k.destacar ? "#2E9E5B" : color }} />
-                  {k.etiqueta}
+                  <span className="text-[10px] font-bold tabular-nums text-[#9AA4B2]">{i + 1}</span>
+                  <span className="h-2 w-2 rounded-full" style={{ background: x.color }} />
+                  {x.nombre}
                 </span>
-                <span className="mt-1 text-[28px] font-bold leading-none tabular-nums text-[#0E1E2A]">{k.valor}</span>
-                <span className="mt-1 text-[11px] text-[#7A8590]">{k.extra}</span>
+                <span className="mt-1 text-[28px] font-bold leading-none tabular-nums text-[#0E1E2A]">{valor}</span>
+                <span className="mt-1 text-[11px] text-[#7A8590]">{extra}</span>
               </button>
             );
           })}
@@ -260,87 +305,11 @@ const ClientPortal = () => {
         )}
       </section>
 
-      {/* 3 y 4. Cuándo te llegan + tus productos */}
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-        <div className="ssam-subir rounded-2xl border border-[#E3E6EA] bg-white p-5" style={{ animationDelay: "140ms" }}>
-          <h2 className="flex items-center gap-2 text-sm font-bold text-[#0E1E2A]">
-            <Truck className="h-4 w-4 text-[#E37439]" /> Lo que vas a recibir
-          </h2>
-          {proximas.length === 0 ? (
-            <p className="mt-4 text-sm text-[#7A8590]">Sin entregas programadas por ahora.</p>
-          ) : (
-            <ol className="mt-4 space-y-3">
-              {proximas.map(({ m, f }) => {
-                const d = diasHasta(f);
-                return (
-                  <li key={m.id}>
-                    <button type="button" onClick={() => setAbierto(m.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-[#F6F7F8]">
-                      <span className="flex w-12 shrink-0 flex-col items-center rounded-lg bg-[#F6F7F8] py-1">
-                        <span className="text-[10px] uppercase text-[#7A8590]">{new Date(f!).toLocaleDateString("es-MX", { month: "short" })}</span>
-                        <span className="text-lg font-bold leading-none text-[#0E1E2A]">{new Date(f!).getUTCDate()}</span>
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-[#0E1E2A]">{m.name}</span>
-                        <span className="block text-xs text-[#7A8590]">
-                          {d != null && d >= 0 ? (d === 0 ? "hoy" : `en ${d} días`) : "fecha pasada"} · {MOMENTOS.find((x) => x.id === momento(m))!.corto}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </div>
-
-        <div className="ssam-subir" style={{ animationDelay: "180ms" }}>
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-[#0E1E2A]">
-            <FolderOpen className="h-4 w-4 text-[#E37439]" /> Tus productos
-          </h2>
-          <div className="grid gap-x-3 gap-y-5 pt-2 sm:grid-cols-2">
-            {carpetas.map((c) => {
-              const activo = producto === c.nombre;
-              const pend = c.materiales.filter((m) => momento(m) === "revisar").length;
-              return (
-                <button
-                  key={c.nombre}
-                  type="button"
-                  onClick={() => {
-                    setProducto(activo ? "" : c.nombre);
-                    setIndicacion("");
-                  }}
-                  className={cn(
-                    "ssam-carpeta border bg-white p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E37439]",
-                    activo ? "border-[#E37439] bg-[#FFF7F2]" : "border-[#E3E6EA]",
-                  )}
-                  aria-pressed={activo}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-[#0E1E2A]">{c.nombre}</p>
-                    <span className="text-xs tabular-nums text-[#7A8590]">{c.materiales.length}</span>
-                  </div>
-                  <p className="mt-0.5 truncate text-xs text-[#7A8590]">
-                    {[...c.indicaciones].join(" · ") || "Sin indicación"}
-                  </p>
-                  <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-[#EEF0F2]">
-                    {MOMENTOS.map((x) => {
-                      const n = c.materiales.filter((m) => momento(m) === x.id).length;
-                      return n ? <span key={x.id} style={{ width: `${(n / c.materiales.length) * 100}%`, background: x.color }} /> : null;
-                    })}
-                  </div>
-                  {pend > 0 && <p className="mt-2 text-xs font-semibold text-[#E37439]">{pend} por revisar</p>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Todos los materiales */}
-      <section id="materiales" className="scroll-mt-6 space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-[#0E1E2A]">Todos tus materiales</h2>
+      {/* Materiales: tarjeta con búsqueda, filtros y tabla, como el administrador */}
+      <Card id="materiales" className="scroll-mt-6 border-none shadow-sm">
+        <CardHeader className="space-y-3 pb-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-bold text-[#0E1E2A]">Materiales</h2>
             <p className="text-xs text-[#7A8590]">
               {filtrados.length} de {mios.length}
               {hayFiltro && (
@@ -350,79 +319,54 @@ const ClientPortal = () => {
               )}
             </p>
           </div>
-          <div className="inline-flex rounded-xl border border-[#E3E6EA] bg-white p-1" role="tablist" aria-label="Vista">
-            {(
-              [
-                ["lista", "Lista", LayoutList],
-                ["tablero", "Tablero", Columns3],
-                ["tiempo", "Línea de tiempo", GanttChartSquare],
-              ] as [Vista, string, typeof LayoutList][]
-            ).map(([v, t, Ico]) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={vista === v}
-                onClick={() => setVista(v)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-                  vista === v ? "bg-[#0E1E2A] text-white" : "text-[#4E5964] hover:bg-[#F6F7F8]",
-                )}
-              >
-                <Ico className="h-3.5 w-3.5" /> {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[200px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A8590]" />
-            <input
-              value={buscar}
-              onChange={(e) => setBuscar(e.target.value)}
-              placeholder="Buscar por nombre, producto o #folio"
-              className="h-9 w-full rounded-xl border border-[#E3E6EA] bg-white pl-9 pr-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20"
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[200px] max-w-sm flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A8590]" />
+              <input
+                value={buscar}
+                onChange={(e) => setBuscar(e.target.value)}
+                placeholder="Buscar por nombre, producto o #folio"
+                className="h-9 w-full rounded-xl border border-[#E3E6EA] bg-white pl-9 pr-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20"
+              />
+            </div>
+            <Selector valor={producto} cambiar={(v) => { setProducto(v); setIndicacion(""); }} vacio="Todos los productos" opciones={productos} />
+            <Selector valor={indicacion} cambiar={setIndicacion} vacio="Todas las indicaciones" opciones={indicaciones} />
+            <Selector
+              valor={momentoSel}
+              cambiar={(v) => setMomentoSel(v as Momento | "")}
+              vacio="Todas las etapas"
+              opciones={MOMENTOS.map((x) => x.id)}
+              etiqueta={(id) => MOMENTOS.find((x) => x.id === id)?.nombre ?? id}
             />
+            <button
+              type="button"
+              onClick={() => setOcultarEntregados((v) => !v)}
+              aria-pressed={ocultarEntregados}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-colors",
+                ocultarEntregados ? "border-[#0E1E2A] bg-[#0E1E2A] text-white" : "border-[#E3E6EA] bg-white text-[#4E5964] hover:bg-[#F6F7F8]",
+              )}
+            >
+              {ocultarEntregados ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {ocultarEntregados ? "Entregados ocultos" : "Ocultar entregados"}
+            </button>
           </div>
-          <Selector valor={producto} cambiar={(v) => { setProducto(v); setIndicacion(""); }} vacio="Todos los productos" opciones={productos} />
-          <Selector valor={indicacion} cambiar={setIndicacion} vacio="Todas las indicaciones" opciones={indicaciones} />
-          <Selector
-            valor={momentoSel}
-            cambiar={(v) => setMomentoSel(v as Momento | "")}
-            vacio="Cualquier etapa"
-            opciones={MOMENTOS.map((x) => x.id)}
-            etiqueta={(id) => MOMENTOS.find((x) => x.id === id)?.nombre ?? id}
-          />
-          <button
-            type="button"
-            onClick={() => setOcultarEntregados((v) => !v)}
-            aria-pressed={ocultarEntregados}
-            className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-colors",
-              ocultarEntregados ? "border-[#0E1E2A] bg-[#0E1E2A] text-white" : "border-[#E3E6EA] bg-white text-[#4E5964] hover:bg-[#F6F7F8]",
-            )}
-          >
-            {ocultarEntregados ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-            {ocultarEntregados ? "Entregados ocultos" : "Ocultar entregados"}
-          </button>
-        </div>
-
-        {filtrados.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#DBDBDB] bg-white py-14 text-center">
-            <p className="text-sm font-semibold text-[#0E1E2A]">
-              {mios.length === 0 ? "Aún no hay materiales en tu portal" : "Ningún material coincide con estos filtros"}
-            </p>
-            <p className="mt-1 text-xs text-[#7A8590]">
-              {mios.length === 0 ? "Spark225 los habilitará aquí en cuanto arranquen." : "Quita algún filtro para ver más."}
-            </p>
-          </div>
-        ) : vista === "lista" ? (
-          <Lista materiales={filtrados} pronostico={pronostico} abrir={setAbierto} />
-        ) : vista === "tablero" ? (
-          <Tablero materiales={filtrados} abrir={setAbierto} />
-        ) : (
-          <div className="rounded-2xl border border-[#E3E6EA] bg-white p-4">
+        </CardHeader>
+        <CardContent>
+          {filtrados.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#DBDBDB] bg-white py-14 text-center">
+              <p className="text-sm font-semibold text-[#0E1E2A]">
+                {mios.length === 0 ? "Aún no hay materiales en tu portal" : "Ningún material coincide con estos filtros"}
+              </p>
+              <p className="mt-1 text-xs text-[#7A8590]">
+                {mios.length === 0 ? "Spark225 los habilitará aquí en cuanto arranquen." : "Quita algún filtro para ver más."}
+              </p>
+            </div>
+          ) : vista === "lista" ? (
+            <Lista materiales={filtrados} pronostico={pronostico} abrir={setAbierto} />
+          ) : vista === "tablero" ? (
+            <Tablero materiales={filtrados} abrir={setAbierto} />
+          ) : (
             <Gantt
               rows={timeline.map((r) => ({
                 material_id: r.material_id,
@@ -441,8 +385,106 @@ const ClientPortal = () => {
               height={340}
               showToday
             />
-          </div>
-        )}
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Productos con indicaciones médicas + próximas entregas */}
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <Card className="border-none shadow-sm">
+          <CardHeader className="pb-3">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[#0E1E2A]">
+              <FolderOpen className="h-4 w-4 text-[#E37439]" /> Productos
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Producto</TableHead>
+                    <TableHead>
+                      Indicaciones médicas
+                      <span className="ml-1.5 rounded-full bg-[#F5C245]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#8A6200]" title={INDICACIONES_PENDIENTE}>
+                        en actualización
+                      </span>
+                    </TableHead>
+                    <TableHead className="text-right">Materiales</TableHead>
+                    <TableHead className="text-right">Por revisar</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {carpetas.map((c) => {
+                    const activo = producto === c.nombre;
+                    const pend = c.materiales.filter((m) => momento(m) === "revisar").length;
+                    return (
+                      <TableRow
+                        key={c.nombre}
+                        onClick={() => {
+                          setProducto(activo ? "" : c.nombre);
+                          setIndicacion("");
+                          document.getElementById("materiales")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                        className={cn("cursor-pointer hover:bg-muted/30", activo && "bg-[#FFF7F2]")}
+                        aria-selected={activo}
+                      >
+                        <TableCell className="font-semibold text-[#0E1E2A]">{c.nombre}</TableCell>
+                        <TableCell>
+                          {c.indicaciones.size ? (
+                            <div className="flex flex-wrap gap-1">
+                              {[...c.indicaciones].map((n) => (
+                                <span key={n} className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[11px] text-[#4E5964]">{n}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[#9AA4B2]">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{c.materiales.length}</TableCell>
+                        <TableCell className={cn("text-right tabular-nums", pend ? "font-semibold text-[#E37439]" : "text-[#9AA4B2]")}>{pend}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm">
+          <CardHeader className="pb-3">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[#0E1E2A]">
+              <Truck className="h-4 w-4 text-[#E37439]" /> Próximas entregas
+            </h2>
+          </CardHeader>
+          <CardContent>
+            {proximas.length === 0 ? (
+              <p className="text-sm text-[#7A8590]">Sin entregas programadas por el momento.</p>
+            ) : (
+              <ol className="space-y-2">
+                {proximas.map(({ m, f }) => {
+                  const d = diasHasta(f);
+                  return (
+                    <li key={m.id}>
+                      <button type="button" onClick={() => setAbierto(m.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-[#F6F7F8]">
+                        <span className="flex w-12 shrink-0 flex-col items-center rounded-lg bg-[#F6F7F8] py-1">
+                          <span className="text-[10px] uppercase text-[#7A8590]">{new Date(f!).toLocaleDateString("es-MX", { month: "short", timeZone: "UTC" })}</span>
+                          <span className="text-lg font-bold leading-none text-[#0E1E2A]">{new Date(f!).getUTCDate()}</span>
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-[#0E1E2A]">{m.name}</span>
+                          <span className="block text-xs text-[#7A8590]">
+                            Fecha estimada de entrega {d != null && d >= 0 ? (d === 0 ? "hoy" : `en ${d} días`) : "vencida"} · {MOMENTOS.find((x) => x.id === momento(m))!.corto}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <MaterialFicha material={material} onClose={() => setAbierto(null)} onCambio={data.reload} />
@@ -482,68 +524,93 @@ function Selector({
   );
 }
 
-/** Avance en pasos del cliente (6 puntos). */
-export function Pasos({ status }: { status: string }) {
-  const i = clientStepIndex(status);
+/** Avance en las 5 etapas del cliente, en orden cronológico. */
+export function Pasos({ material }: { material: Material }) {
+  const i = momentoIndice(material);
   return (
-    <span className="flex items-center gap-1" title={CLIENT_STEPS[i]}>
-      {CLIENT_STEPS.map((_, k) => (
-        <span key={k} className={cn("h-1.5 rounded-full transition-all", k < i ? "w-3 bg-[#2E9E5B]" : k === i ? "w-5 bg-[#E37439]" : "w-3 bg-[#E3E6EA]")} />
+    <span className="flex h-1 gap-0.5" title={MOMENTOS[i]?.nombre}>
+      {MOMENTOS.map((x, k) => (
+        <span key={x.id} className={cn("flex-1 rounded-full", pasoHecho(k, i) ? "bg-[#2E9E5B]" : k === i ? "bg-[#E37439]" : "bg-[#E3E6EA]")} />
       ))}
     </span>
   );
 }
 
+/** Tabla de materiales con la misma estructura que la del administrador. */
 function Lista({ materiales, pronostico, abrir }: { materiales: Material[]; pronostico: Record<string, MaterialForecast>; abrir: (id: string) => void }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E3E6EA] bg-white">
-      <div className="hidden grid-cols-[minmax(0,2.4fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_96px_96px] gap-3 border-b border-[#E3E6EA] bg-[#F8F9FA] px-4 py-2.5 text-[11px] font-semibold text-[#7A8590] lg:grid">
-        <span>Material</span>
-        <span>Producto e indicación</span>
-        <span>En qué va</span>
-        <span>Qué necesitamos de ti</span>
-        <span>Lo necesitas</span>
-        <span>Te llega</span>
-      </div>
-      <ul className="divide-y divide-[#EEF0F2]">
-        {materiales.map((m, i) => {
-          const sem = semaforo(m);
-          const toca = teToca(m);
-          return (
-            <li key={m.id} className="ssam-subir" style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}>
-              <button
-                type="button"
-                onClick={() => abrir(m.id)}
-                className="grid w-full grid-cols-1 gap-2 px-4 py-3 text-left transition-colors hover:bg-[#FAFBFC] focus-visible:bg-[#FFF7F2] focus-visible:outline-none lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_96px_96px] lg:items-center lg:gap-3"
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    {m.folio != null && <span className="font-mono text-[11px] text-[#9AA4B2]">#{m.folio}</span>}
-                    <span className="truncate text-sm font-semibold text-[#0E1E2A]">{m.name}</span>
+    <div className="overflow-x-auto rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="min-w-[280px]">Material / Producto</TableHead>
+            <TableHead className="min-w-[160px]">Etapa actual</TableHead>
+            <TableHead className="whitespace-nowrap">Fecha requerida</TableHead>
+            <TableHead className="whitespace-nowrap">Fecha estimada de entrega</TableHead>
+            <TableHead>Acción requerida</TableHead>
+            <TableHead className="text-right">
+              <span className="sr-only">Abrir</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {materiales.map((m) => {
+            const sem = semaforo(m);
+            const toca = teToca(m);
+            const mom = MOMENTOS.find((x) => x.id === momento(m))!;
+            return (
+              <TableRow key={m.id} onClick={() => abrir(m.id)} className="group cursor-pointer hover:bg-muted/30">
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#E37439]/8 text-[#E37439] transition-colors group-hover:bg-[#E37439] group-hover:text-white">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold leading-none text-[#0E1E2A]">{m.name}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="rounded border px-1 font-mono text-[10px] text-[#7A8590]">{m.folio != null ? `#${m.folio}` : "—"}</span>
+                        <span className="truncate text-xs text-[#7A8590]">
+                          {m.product_name ?? "—"}
+                          {m.indication_name ? ` · ${m.indication_name}` : ""}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1.5">
+                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-[#4E5964]">
+                      <span className="h-2 w-2 rounded-full" style={{ background: mom.color }} />
+                      {mom.nombre}
+                    </span>
+                    <Pasos material={m} />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="flex flex-col gap-1 text-xs text-[#4E5964]">
+                    {fechaCorta(m.fecha_requerida_cliente)}
+                    <span className={cn("w-fit rounded-full px-1.5 py-0.5 text-[10px] font-semibold", TONO_CLASE[sem.tono])}>{sem.label}</span>
                   </span>
-                </span>
-                <span className="min-w-0 text-xs text-[#4E5964]">
-                  <span className="block truncate font-medium">{m.product_name ?? "—"}</span>
-                  <span className="block truncate text-[#7A8590]">{m.indication_name ?? "—"}</span>
-                </span>
-                <span className="flex flex-col gap-1">
-                  <Pasos status={m.status} />
-                  <span className="text-[11px] text-[#4E5964]">{MOMENTOS.find((x) => x.id === momento(m))!.corto}</span>
-                </span>
-                <span className={cn("text-xs", toca ? "font-semibold text-[#E37439]" : "text-[#9AA4B2]")}>{toca || "Nada por ahora"}</span>
-                <span className="flex flex-col gap-1 text-xs text-[#4E5964]">
-                  {fechaCorta(m.fecha_requerida_cliente)}
-                  <span className={cn("w-fit rounded-full px-1.5 py-0.5 text-[10px] font-semibold", TONO_CLASE[sem.tono])}>{sem.label}</span>
-                </span>
-                <span className="flex items-center gap-1 text-xs text-[#4E5964]">
-                  <CalendarClock className="h-3 w-3 text-[#9AA4B2]" />
-                  {fechaCorta(cuandoLlega(m, pronostico[m.id]))}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                </TableCell>
+                <TableCell>
+                  <span className="flex items-center gap-1 text-xs text-[#4E5964]">
+                    <CalendarClock className="h-3 w-3 text-[#9AA4B2]" />
+                    {fechaCorta(cuandoLlega(m, pronostico[m.id]))}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className={cn("text-xs", toca ? "font-semibold text-[#E37439]" : "text-[#9AA4B2]")}>{toca || "Ninguna por ahora"}</span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#4E5964] group-hover:text-[#0E1E2A]">
+                    Detalles <ChevronRight className="h-4 w-4" />
+                  </span>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

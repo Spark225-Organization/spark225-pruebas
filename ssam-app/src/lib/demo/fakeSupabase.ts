@@ -7,7 +7,7 @@
 import { crearBase, calcularVista, nuevoId, iso, fecha, hoy0, estadosOrden, IDX, type Base, type Fila } from "./demoData";
 import { rolDemo, guardarRolDemo, DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA } from "./demoState";
 
-const CLAVE_BASE = "ssam-demo-base-v2";
+const CLAVE_BASE = "ssam-demo-base-v3"; // v3: rechazos con categoría y checklist del diseñador
 
 function cargar(): Base {
   try {

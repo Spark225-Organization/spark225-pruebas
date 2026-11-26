@@ -32,6 +32,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@/lib/api-types";
+import { indicacionesDe, INDICACIONES_PENDIENTE } from "@/lib/portalModelo";
 import { useOperacion, isEntityActive } from "@/data/operacion";
 
 const Products = () => {
@@ -103,7 +104,13 @@ const Products = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="w-[300px]">Producto</TableHead>
+                    <TableHead className="w-[260px]">Producto</TableHead>
+                    <TableHead className="min-w-[220px]">
+                      Indicaciones médicas
+                      <span className="ml-1.5 rounded-full bg-[#F5C245]/25 px-1.5 py-0.5 text-[10px] font-semibold normal-case text-[#8A6200]" title={INDICACIONES_PENDIENTE}>
+                        falta tabla de Paco
+                      </span>
+                    </TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Categoría</TableHead>
                     <TableHead>Mat. Activos</TableHead>
@@ -128,6 +135,20 @@ const Products = () => {
                             </p>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const ind = indicacionesDe(product.id, data.indications);
+                          return ind.length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {ind.map((n) => (
+                                <span key={n} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">{n}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

@@ -32,6 +32,7 @@ import {
   CargaEquipoChart,
 } from "@/components/report/ReportCharts";
 import { useClientAgg } from "@/components/report/Insights";
+import { RechazosPorCategoria } from "@/components/report/RechazosPorCategoria";
 
 const Reports = () => {
   const { state: filters } = useFilters();
@@ -198,6 +199,9 @@ const Reports = () => {
               <DevolucionesChart metrics={fm} />
             </div>
           )}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <RechazosPorCategoria />
+          </div>
         </TabsContent>
 
         <TabsContent value="cumplimiento" className="space-y-6">

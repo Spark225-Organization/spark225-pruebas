@@ -209,7 +209,10 @@ export function crearBase(): Base {
       comentarios.push({ id: nuevoId("c"), material_id: id, texto: "Claro, lo ajustamos en la siguiente versión.", autor_id: resp.id, visibilidad: "visible_para_cliente", parent_id: cc.id, version_id: null, requiere_cambio: false, estado: "resuelto", created_at: iso(masDias(solicitado, 10)) });
     }
     if (etapa >= 4) {
-      aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_medico", decision: i % 4 === 0 ? "cambios" : "aprobado", approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : perfiles[6].id, comentario: i % 4 === 0 ? "Ajustar el claim de eficacia." : "Contenido médico aprobado.", version_id: null, created_at: iso(masDias(solicitado, 12)) });
+      aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_medico", decision: i % 4 === 0 ? "cambios" : "aprobado", motivo: i % 4 === 0 ? ["referencias_incorrectas", "ortografia_redaccion", "solicitud_fuera_plan", "otro"][(i / 4) % 4] : null, approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : perfiles[6].id, comentario: i % 4 === 0 ? "Ajustar el claim de eficacia." : "Contenido médico aprobado.", version_id: null, created_at: iso(masDias(solicitado, 12)) });
+    }
+    if (etapa >= 8 && i % 3 === 1) {
+      aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_grafico", decision: "cambios", motivo: i % 2 ? "error_diseno" : "ortografia_redaccion", approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : perfiles[6].id, comentario: "Ajustar el diseño de la portada.", version_id: null, created_at: iso(masDias(solicitado, 18)) });
     }
     if (etapa >= 8) {
       aprobaciones.push({ id: nuevoId("p"), material_id: id, stage: "aprobacion_cliente_grafico", decision: "aprobado", approver_id: cli.id === DEMO_CLIENTE_EMPRESA ? DEMO_CLIENTE_ID : perfiles[6].id, comentario: "Diseño aprobado.", version_id: null, created_at: iso(masDias(solicitado, 22)) });

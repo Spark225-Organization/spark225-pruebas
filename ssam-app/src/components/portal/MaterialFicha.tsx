@@ -1,14 +1,14 @@
 // Ficha del material a pantalla completa para el cliente.
 // Izquierda: la pieza en grande, lista para verse sin descargar, con sus
-// versiones. Derecha: en qué va, lo que le toca (aprobar / pedir cambios),
+// versiones. Derecha: en qué va, lo que le toca (aprobar / rechazar),
 // fechas y la conversación con Spark225.
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, Download, FileText, ImageIcon, Check, MessageSquare, CalendarClock, ExternalLink } from "lucide-react";
 import { StorageService, type StoredFile } from "@/lib/storage";
 import type { Material } from "@/lib/api-types";
-import { CLIENT_STEPS, clientStepIndex, formatDate } from "@/lib/statusModel";
-import { momento, semaforo, TONO_CLASE, MOMENTOS } from "@/lib/portalModelo";
+import { formatDate } from "@/lib/statusModel";
+import { momento, momentoIndice, pasoHecho, semaforo, TONO_CLASE, MOMENTOS } from "@/lib/portalModelo";
 import { RevisionCliente } from "@/components/portal/RevisionCliente";
 import { CommentThread } from "@/components/portal/CommentThread";
 import { FechaRequeridaClienteCard } from "@/components/material/FechaRequeridaClienteCard";
@@ -51,7 +51,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
 
   useEffect(() => {
     if (!material) return;
-    const k = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector('[role="dialog"][aria-label="Pedir cambios"],[role="dialog"][aria-label="Aprobar material"],[aria-label="Marcar cambios sobre la imagen"]') && onClose();
+    const k = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector('[role="dialog"][aria-label="Rechazar material"],[role="dialog"][aria-label="Aprobar material"],[aria-label="Marcar cambios sobre la imagen"]') && onClose();
     window.addEventListener("keydown", k);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -75,7 +75,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
   const ver = archivos?.find((f) => f.id === verId) ?? null;
   const vigente = archivos?.[0] ?? null;
   const url = ver ? StorageService.getUrl(ver) : "";
-  const paso = clientStepIndex(material.status);
+  const paso = momentoIndice(material);
   const mom = MOMENTOS.find((x) => x.id === momento(material))!;
   const sem = semaforo(material);
   const piezaActual = piezas.find((p) => p.versiones.some((v) => v.id === verId));
@@ -170,17 +170,17 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
           {momento(material) === "revisar" && <RevisionCliente material={material} vigente={ver ?? vigente} onDone={() => { setRecarga((n) => n + 1); onCambio(); }} />}
 
           <div>
-            <p className="mb-2 text-xs font-semibold text-[#7A8590]">En qué va</p>
+            <p className="mb-2 text-xs font-semibold text-[#7A8590]">Etapa del material</p>
             <ol className="space-y-0">
-              {CLIENT_STEPS.map((s, k) => (
+              {MOMENTOS.map(({ nombre: s }, k) => (
                 <li key={s} className="flex gap-3">
                   <span className="flex flex-col items-center">
-                    <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold", k < paso ? "bg-[#2E9E5B] text-white" : k === paso ? "bg-[#E37439] text-white ring-4 ring-[#E37439]/15" : "bg-[#EEF0F2] text-[#9AA4B2]")}>
-                      {k < paso ? <Check className="h-3 w-3" /> : k + 1}
+                    <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold", pasoHecho(k, paso) ? "bg-[#2E9E5B] text-white" : k === paso ? "bg-[#E37439] text-white ring-4 ring-[#E37439]/15" : "bg-[#EEF0F2] text-[#9AA4B2]")}>
+                      {pasoHecho(k, paso) ? <Check className="h-3 w-3" /> : k + 1}
                     </span>
-                    {k < CLIENT_STEPS.length - 1 && <span className={cn("w-px flex-1 min-h-[14px]", k < paso ? "bg-[#2E9E5B]" : "bg-[#E3E6EA]")} />}
+                    {k < MOMENTOS.length - 1 && <span className={cn("w-px flex-1 min-h-[14px]", pasoHecho(k, paso) ? "bg-[#2E9E5B]" : "bg-[#E3E6EA]")} />}
                   </span>
-                  <span className={cn("pb-3 text-sm", k === paso ? "font-bold text-[#0E1E2A]" : k < paso ? "text-[#4E5964]" : "text-[#9AA4B2]")}>{s}</span>
+                  <span className={cn("pb-3 text-sm", k === paso ? "font-bold text-[#0E1E2A]" : pasoHecho(k, paso) ? "text-[#4E5964]" : "text-[#9AA4B2]")}>{s}</span>
                 </li>
               ))}
             </ol>
@@ -191,7 +191,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
             <div className="flex items-center gap-3 rounded-2xl border border-[#E3E6EA] px-4 py-3">
               <CalendarClock className="h-4 w-4 text-[#4E5964]" />
               <div>
-                <p className="text-xs text-[#7A8590]">Spark225 se compromete a entregarlo</p>
+                <p className="text-xs text-[#7A8590]">Fecha de entrega comprometida por Spark225</p>
                 <p className="text-sm font-semibold text-[#0E1E2A]">{material.fecha_comprometida ? formatDate(material.fecha_comprometida) : "Por definir"}</p>
               </div>
             </div>

@@ -45,7 +45,7 @@ export const FechaRequeridaClienteCard = ({
 
   const save = async () => {
     if (!fecha) {
-      toast.error("Selecciona una fecha.");
+      toast.error("Seleccione una fecha.");
       return;
     }
     // Si ya existe una fecha y se cambia, exigir motivo (auditoría).
@@ -54,7 +54,7 @@ export const FechaRequeridaClienteCard = ({
       fecha !== material.fecha_requerida_cliente &&
       !motivo.trim()
     ) {
-      toast.error("Indica el motivo del cambio de fecha.");
+      toast.error("Indique el motivo del cambio de fecha.");
       return;
     }
     setSaving(true);
@@ -64,7 +64,7 @@ export const FechaRequeridaClienteCard = ({
       toast.error(res.error);
       return;
     }
-    toast.success("Fecha requerida por el cliente actualizada.");
+    toast.success("Fecha requerida actualizada.");
     setOpen(false);
     onDone();
   };
@@ -75,7 +75,7 @@ export const FechaRequeridaClienteCard = ({
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-base flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-[#1E3A5F]" />
-            Lo que necesita el cliente
+            Fecha requerida por el cliente
           </CardTitle>
           {hasValue ? (
             <Button
@@ -92,7 +92,7 @@ export const FechaRequeridaClienteCard = ({
               className="gap-2 bg-[#1E3A5F] hover:bg-[#163049] text-white"
               onClick={openModal}
             >
-              <CalendarPlus className="h-3.5 w-3.5" /> Capturar fecha
+              <CalendarPlus className="h-3.5 w-3.5" /> Registrar fecha
             </Button>
           )}
         </div>
@@ -108,13 +108,13 @@ export const FechaRequeridaClienteCard = ({
           <span className="text-sm font-semibold text-foreground">
             {material.fecha_requerida_cliente
               ? formatDate(material.fecha_requerida_cliente)
-              : "Sin fecha capturada"}
+              : "Sin fecha registrada"}
           </span>
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
           {hasValue
-            ? "Fecha en la que el cliente necesita el material. Los KPIs de cumplimiento se miden contra esta fecha."
-            : "Captura la fecha en la que el cliente necesita el material. Los KPIs de cumplimiento se miden contra esta fecha."}
+            ? "Fecha en la que se requiere el material. Los KPIs de cumplimiento se miden contra esta fecha."
+            : "Registre la fecha en la que se requiere el material. Los KPIs de cumplimiento se miden contra esta fecha."}
         </p>
       </CardContent>
 

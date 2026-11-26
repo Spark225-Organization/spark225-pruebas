@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE } from './datos.js?v=202611260010';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611260010';
-import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611260010';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES } from './datos.js?v=202611261300';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611261300';
+import { I, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611261300';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {
@@ -144,6 +144,8 @@ export function AsistenteTarea({ ctx, inicial = {}, cerrar }) {
     { id: 'responsable', tipo: 'opciones', corto: 'Quién', pregunta: '¿Quién la hace?', ayuda: 'Le llega un aviso si no eres tú.',
       opciones: db.personas.map((p) => ({ id: p.id, nombre: p.id === yo ? 'Yo' : p.corto, sub: p.puesto, persona: p })), resumen: (x) => (x === yo ? 'Yo' : nombreP(x)) },
     { id: 'fecha', tipo: 'fecha', corto: 'Para cuándo', pregunta: '¿Para cuándo?', falta: 'Elige una fecha.', resumen: (x) => fechaRelativa(x) },
+    { id: 'prioridad', tipo: 'opciones', corto: 'Prioridad', pregunta: '¿Qué tan urgente es?', falta: 'Elige una prioridad.',
+      opciones: PRIORIDADES.map((p) => ({ id: p.id, nombre: p.nombre })), resumen: (x) => PRIORIDADES.find((p) => p.id === x)?.nombre },
   ];
   const Vista = ({ v }) => {
     const c = db.clientes.find((x) => x.id === v.cliente);
@@ -155,7 +157,7 @@ export function AsistenteTarea({ ctx, inicial = {}, cerrar }) {
     inicial=${{ responsable: ctx.persona || yo, fecha: undefined, ...inicial }}
     alCrear=${(v) => {
       const proyecto = v.proyecto && proyectosDe(v.cliente).some((p) => p.id === v.proyecto) ? v.proyecto : 'g-' + v.cliente;
-      const a = crear(nuevaVacia(v.responsable, { titulo: v.titulo.trim(), cliente: v.cliente, proyecto, fecha: v.fecha, esfuerzo: 'S', asignadaPor: yo }), yo);
+      const a = crear(nuevaVacia(v.responsable, { titulo: v.titulo.trim(), cliente: v.cliente, proyecto, fecha: v.fecha, prioridad: v.prioridad || 'media', esfuerzo: 'S', asignadaPor: yo }), yo);
       ctx.setUltimoCliente(v.cliente);
       ctx.toast(a.responsable === yo ? 'Tarea creada' : `Tarea creada para ${nombreP(a.responsable)}`, { texto: 'Ver', f: () => ctx.abrir(a.id) });
     }} />`;

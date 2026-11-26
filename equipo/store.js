@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611260010';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611261300';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -147,7 +147,7 @@ export function validar(a) {
 export function nuevaVacia(uId, extra = {}) {
   return {
     id: null, titulo: '', estatus: 'pendiente', responsable: uId, colaboradores: [], cliente: null, proyecto: null,
-    fecha: hoyISO(), esfuerzo: null, bloque: null, repeticion: { tipo: 'no', cada: 7 }, dependeDe: null,
+    fecha: hoyISO(), prioridad: 'media', esfuerzo: null, bloque: null, repeticion: { tipo: 'no', cada: 7 }, dependeDe: null,
     foco: null, checklist: [], enlaces: [], notas: '', asignadaPor: uId, ...extra,
   };
 }
@@ -176,6 +176,7 @@ export function actualizar(id, cambios, uId, motivoFecha) {
     if (cambios.responsable !== uId) avisar(cambios.responsable, `${persona(uId)?.corto} te asignó «${a.titulo}».`, a.id, 'asignacion');
   }
   if (cambios.titulo && cambios.titulo !== antes.titulo) log(a, uId, 'cambió el título');
+  if (cambios.prioridad !== undefined && cambios.prioridad !== antes.prioridad) log(a, uId, cambios.prioridad ? `puso prioridad ${cambios.prioridad}` : 'quitó la prioridad');
   if (cambios.colaboradores || cambios.notas !== undefined) avisarEtiquetas(a, antes, uId);
   if (cambios.estatus && cambios.estatus !== antes.estatus) aplicarEstatus(a, antes.estatus, cambios.estatus, uId);
   estado.actividades = [...estado.actividades];
@@ -420,7 +421,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611260010';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios } from './nube.js?v=202611261300';
 
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos'];
 const SIN_BORRADO = new Set(['avisos', 'eventos']); // se recortan en memoria; no se borran en la nube

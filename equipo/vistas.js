@@ -1,11 +1,11 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS } from './datos.js?v=202611260010';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio } from './store.js?v=202611260010';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611260010';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611260010';
-import { Widgets } from './widgets.js?v=202611260010';
-import { useArrastre } from './arrastre.js?v=202611260010';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611261300';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611261300';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611261300';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611261300';
+import { Widgets } from './widgets.js?v=202611261300';
+import { useArrastre } from './arrastre.js?v=202611261300';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -30,7 +30,7 @@ export function Inicio(ctx) {
     titulo = 'Semana'; sub = `${fechaCorta(l)} – ${fechaCorta(sumarDias(l, 6))}`;
   } else if (vista === 'mes') {
     titulo = mayus(fmt({ month: 'long' }).format(new Date(fecha + 'T12:00:00'))); sub = fecha.slice(0, 4);
-  } else { titulo = 'Tarjetas'; sub = ''; }
+  } else { titulo = vista === 'lista' ? 'Lista' : 'Tarjetas'; sub = ''; }
 
   const paso = vista === 'semana' ? 7 : vista === 'mes' ? 30 : 1;
   const mover = (n) => {
@@ -41,6 +41,7 @@ export function Inicio(ctx) {
   const cal = vista === 'dia' ? html`<${DiaCal} ctx=${ctx} ahora=${ahora} />`
     : vista === 'semana' ? html`<${Semana} ctx=${ctx} hoy=${hoy} />`
     : vista === 'mes' ? html`<${Mes} ctx=${ctx} hoy=${hoy} />`
+    : vista === 'lista' ? html`<${Lista} ctx=${ctx} hoy=${hoy} />`
     : html`<${Tarjetas} ctx=${ctx} hoy=${hoy} />`;
   const widgets = html`<${Widgets} ctx=${ctx} persona=${persona} editable=${propia} hoy=${hoy} ancho=${acomodo === 'arriba' || acomodo === 'widgets'} />`;
 
@@ -48,7 +49,7 @@ export function Inicio(ctx) {
     <header class="cab-inicio">
       <div class="cab-dia" data-tour="titulo">
         <h1>${titulo}</h1><span class="sub">${sub}</span>
-        ${vista !== 'tarjetas' && vista !== 'dia' && html`<span class="nav-flechas">
+        ${!['tarjetas', 'lista', 'dia'].includes(vista) && html`<span class="nav-flechas">
           <button class="icon-btn" onClick=${() => mover(-1)} aria-label="Anterior">${I('flecha')}</button>
           <button class="btn fantasma chico" onClick=${() => setFecha(hoy)}>Hoy</button>
           <button class="icon-btn" onClick=${() => mover(1)} aria-label="Siguiente">${I('flecha', 'rot-180')}</button></span>`}
@@ -182,4 +183,93 @@ function Tarjetas({ ctx, hoy }) {
         })}</div>
       </section>`;
     })}</div>`;
+}
+
+// ---------- Lista: las tareas en filas, como una tabla de Notion ----------
+// Vencidas arriba y en rojo; agrupa por estatus, cliente o persona; ordena tocando el encabezado.
+const PRI = Object.fromEntries(PRIORIDADES.map((p) => [p.id, p]));
+const SIG_PRI = { alta: 'media', media: 'baja', baja: null, null: 'alta' };
+const diasEntre = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+
+function Lista({ ctx, hoy }) {
+  const { db, yo, persona } = ctx;
+  const prefs = prefsDe(yo);
+  const por = prefs.listaPor || 'estatus';
+  const alcance = prefs.listaAlcance || 'mias';
+  const [orden, setOrden] = useState({ col: 'fecha', dir: 1 });
+  const [hechas, setHechas] = useState(false);
+  const [soloVencidas, setSoloVencidas] = useState(false);
+
+  const vencida = (a) => a.estatus !== 'hecho' && a.fecha < hoy;
+  const base = (alcance === 'equipo' ? vigentes().filter((a) => visiblePara(a, yo) && enFiltroInicio(a, yo)) : misActs(ctx))
+    .filter((a) => a.estatus !== 'hecho' || (hechas && (a.cerrada || '').slice(0, 10) >= sumarDias(hoy, -14)));
+  const nVencidas = base.filter(vencida).length;
+  const acts = soloVencidas ? base.filter(vencida) : base;
+
+  const cli = (a) => db.clientes.find((c) => c.id === a.cliente);
+  const per = (id) => db.personas.find((p) => p.id === id);
+  const proy = (a) => db.proyectos.find((p) => p.id === a.proyecto);
+  const llave = {
+    titulo: (a) => (a.titulo || '').toLowerCase(),
+    cliente: (a) => (cli(a)?.nombre || '').toLowerCase(),
+    responsable: (a) => (per(a.responsable)?.corto || '').toLowerCase(),
+    fecha: (a) => a.fecha || '9999',
+    prioridad: (a) => PRI[a.prioridad]?.orden ?? 9,
+  };
+  const ordenar = (lista) => [...lista].sort((x, y) => {
+    if (orden.col === 'fecha' && vencida(x) !== vencida(y)) return vencida(x) ? -1 : 1; // vencidas siempre arriba
+    const a = llave[orden.col](x), b = llave[orden.col](y);
+    return (a < b ? -1 : a > b ? 1 : 0) * orden.dir || (x.fecha < y.fecha ? -1 : 1);
+  });
+
+  const grupos = por === 'estatus'
+    ? ESTATUS.map((s) => ({ id: s.id, nombre: s.nombre, icono: html`<${Anillo} estatus=${s.id} />`, lista: acts.filter((a) => estatusVisible(a) === s.id) }))
+    : por === 'cliente'
+      ? db.clientes.map((c) => ({ id: c.id, nombre: c.nombre, color: c.color, lista: acts.filter((a) => a.cliente === c.id) }))
+      : por === 'persona'
+        ? db.personas.map((p) => ({ id: p.id, nombre: p.corto, icono: html`<${Avatar} p=${p} />`, lista: acts.filter((a) => a.responsable === p.id) }))
+        : [{ id: 'todas', nombre: null, lista: acts }];
+
+  const encabezado = (col, texto, clase = '') => html`<th class=${clase} aria-sort=${orden.col === col ? (orden.dir > 0 ? 'ascending' : 'descending') : 'none'}>
+    <button onClick=${() => setOrden((o) => ({ col, dir: o.col === col ? -o.dir : 1 }))}>${texto}${orden.col === col && I('flecha', orden.dir > 0 ? 'rot-abajo' : 'rot-arriba')}</button></th>`;
+  const cambiarPri = (e, a) => { e.stopPropagation(); actualizar(a.id, { prioridad: SIG_PRI[a.prioridad ?? null] }, yo); };
+  const quien = persona === yo ? 'Mías' : per(persona)?.corto;
+  const opcion = (k, t, valor, f) => html`<button key=${k} aria-pressed=${valor === k} onClick=${() => f(k)}>${t}</button>`;
+
+  return html`
+    <div class="ls-barra">
+      <div class="segmentado chico" aria-label="De quién">${[['mias', quien], ['equipo', 'Equipo']].map(([k, t]) => opcion(k, t, alcance, (v) => guardarPrefs(yo, { listaAlcance: v })))}</div>
+      <div class="segmentado chico" aria-label="Agrupar por">${[['estatus', 'Estatus'], ['cliente', 'Cliente'], ['persona', 'Persona'], ['nada', 'Sin agrupar']].map(([k, t]) => opcion(k, t, por, (v) => guardarPrefs(yo, { listaPor: v })))}</div>
+      ${nVencidas > 0 && html`<button class=${'ls-vencidas' + (soloVencidas ? ' on' : '')} aria-pressed=${soloVencidas} onClick=${() => setSoloVencidas(!soloVencidas)}>${I('alerta')}${nVencidas} ${nVencidas === 1 ? 'vencida' : 'vencidas'}</button>`}
+      <label class="ls-hechas"><input type="checkbox" checked=${hechas} onChange=${() => setHechas(!hechas)} />Ver hechas</label>
+    </div>
+    ${!acts.length ? html`<div class="ls-vacia"><p>${soloVencidas ? 'Nada vencido.' : 'No hay tareas con este filtro.'}</p><button class="btn prim" onClick=${() => ctx.nueva()}>Nueva tarea</button></div>` : html`
+    <div class="ls-marco">
+      <table class="ls">
+        <thead><tr>
+          ${encabezado('titulo', 'Tarea', 'c-tarea')}
+          ${encabezado('cliente', 'Cliente', 'c-cli')}
+          ${encabezado('responsable', 'Responsable', 'c-resp')}
+          ${encabezado('fecha', 'Fecha', 'c-fecha')}
+          ${encabezado('prioridad', 'Prioridad', 'c-pri')}
+        </tr></thead>
+        ${grupos.filter((g) => g.lista.length).map((g) => html`<tbody key=${g.id}>
+          ${g.nombre && html`<tr class="ls-grupo"><th colspan="5" scope="rowgroup"><span>${g.icono || html`<i class="bolita" style=${`--c:${g.color}`}></i>`}${g.nombre}<b>${g.lista.length}</b></span></th></tr>`}
+          ${ordenar(g.lista).map((a) => {
+            const ev = estatusVisible(a), c = cli(a), r = per(a.responsable), v = vencida(a), pri = PRI[a.prioridad];
+            const atraso = v ? diasEntre(a.fecha, hoy) : 0;
+            return html`<tr key=${a.id} class=${'ls-fila' + (a.estatus === 'hecho' ? ' hecha' : '') + (v ? ' vencida' : '')} tabindex="0"
+              onClick=${() => ctx.abrir(a.id)} onKeyDown=${(e) => { if (e.key === 'Enter') ctx.abrir(a.id); else teclasActividad(e, a, ctx); }} onContextMenu=${(e) => ctx.abrirMenu(e, a)}>
+              <td class="c-tarea"><div class="ls-t">
+                <button class="anillo-mini" onClick=${(e) => { e.stopPropagation(); ctx.avanzar(a); }} aria-label=${`Estatus: ${ev}. Avanzar`}><${Anillo} estatus=${ev} /></button>
+                <span><span class="ls-tit">${a.titulo}</span>${proy(a) && proy(a).nombre !== 'General' && html`<small>${proy(a).nombre}</small>`}</span></div></td>
+              <td class="c-cli">${c && html`<span class="ls-cli" style=${`--c:${c.color}`}><i></i>${c.nombre}</span>`}</td>
+              <td class="c-resp">${r && html`<span class="ls-per"><${Avatar} p=${r} />${r.corto}</span>`}</td>
+              <td class="c-fecha">${v ? html`<span class="ls-atraso">${atraso} ${atraso === 1 ? 'día' : 'días'} tarde</span>` : fechaRelativa(a.fecha)}</td>
+              <td class="c-pri"><button class=${'ls-pri pri-' + (a.prioridad || 'nada')} onClick=${(e) => cambiarPri(e, a)} title="Cambiar prioridad" aria-label=${`Prioridad: ${pri?.nombre || 'sin prioridad'}. Cambiar`}>${pri ? html`<i></i>${pri.nombre}` : '—'}</button></td>
+            </tr>`;
+          })}
+        </tbody>`)}
+      </table>
+    </div>`}`;
 }

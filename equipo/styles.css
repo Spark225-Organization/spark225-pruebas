@@ -1254,3 +1254,66 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
   .cajon { top: auto; height: min(92vh, calc(100vh - env(safe-area-inset-top) - 8px)); }
   .avisos-panel { top: calc(60px + env(safe-area-inset-top)); right: 12px; }
 }
+
+/* Prioridad: alta (rojo), media (ámbar), baja (gris). Mismo punto en el formulario y en la lista. */
+.pri-op i, .ls-pri i { width: 8px; height: 8px; border-radius: 50%; background: var(--p); flex: none; }
+.pri-alta { --p: var(--rojo); }
+.pri-media { --p: var(--ambar); }
+.pri-baja { --p: var(--tinta-3); }
+.pri-op { gap: 7px; }
+.pri-op[aria-pressed="true"] { background: color-mix(in srgb, var(--p) 18%, var(--carbon)); color: var(--tinta); border-color: var(--p); }
+
+/* Lista: tareas en filas, como tabla de Notion */
+.ls-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
+.ls-vencidas { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--rojo) 45%, transparent); background: color-mix(in srgb, var(--rojo) 10%, transparent); color: var(--rojo); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.ls-vencidas .i { width: 14px; height: 14px; }
+.ls-vencidas.on { background: var(--rojo); color: #fff; border-color: var(--rojo); }
+.ls-hechas { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tinta-2); margin-left: auto; cursor: pointer; }
+.ls-marco { border-radius: var(--r-panel); background: var(--carbon); box-shadow: var(--anillo); overflow: auto; max-height: calc(100dvh - 240px); }
+.ls { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ls thead th { position: sticky; top: 0; z-index: 1; background: var(--carbon); text-align: left; font-weight: 500; color: var(--tinta-3); padding: 0; border-bottom: 1px solid var(--trazo-fuerte); white-space: nowrap; }
+.ls thead th button { all: unset; display: inline-flex; align-items: center; gap: 4px; padding: 10px 12px; cursor: pointer; font-size: 12px; }
+.ls thead th button:hover { color: var(--tinta); }
+.ls thead th button:focus-visible { outline: 2px solid var(--chispa); outline-offset: -2px; border-radius: 6px; }
+.ls thead th .i { width: 13px; height: 13px; }
+.ls-grupo th { text-align: left; padding: 16px 12px 6px; font-weight: 600; color: var(--tinta-2); font-size: 12px; }
+.ls-grupo span { display: inline-flex; align-items: center; gap: 8px; }
+.ls-grupo svg { width: 16px; height: 16px; }
+.ls-grupo .avatar { width: 20px; height: 20px; font-size: 9px; }
+.ls-grupo b { color: var(--tinta-3); font-weight: 500; }
+.ls-fila { cursor: pointer; }
+.ls-fila td { padding: 8px 12px; border-bottom: 1px solid var(--trazo); vertical-align: middle; }
+.ls-fila:hover td { background: var(--grafito); }
+.ls-fila:focus-visible { outline: 2px solid var(--chispa); outline-offset: -2px; }
+.ls-fila.vencida td:first-child { box-shadow: inset 3px 0 0 var(--rojo); }
+.ls-fila.hecha .ls-tit { color: var(--tinta-3); text-decoration: line-through; }
+.ls-t { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ls-t > span { display: flex; flex-direction: column; min-width: 0; }
+.ls-t .anillo-mini { flex: none; color: var(--tinta-2); }
+.ls-tit { color: var(--tinta); font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ls-t small { color: var(--tinta-3); font-size: 11px; margin-top: 1px; }
+.c-tarea { width: 46%; }
+.c-cli, .c-resp, .c-fecha, .c-pri { white-space: nowrap; }
+.ls-cli { display: inline-flex; align-items: center; gap: 6px; color: var(--tinta-2); }
+.ls-cli i { width: 8px; height: 8px; border-radius: 3px; background: var(--c); }
+.ls-per { display: inline-flex; align-items: center; gap: 6px; color: var(--tinta-2); }
+.ls-per .avatar { width: 22px; height: 22px; font-size: 9px; }
+.c-fecha { color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.ls-atraso { color: var(--rojo); font-weight: 600; }
+.ls-pri { all: unset; display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 9px; border-radius: 13px; color: var(--tinta-2); cursor: pointer; }
+.ls-pri:hover { background: var(--humo); }
+.ls-pri:focus-visible { outline: 2px solid var(--chispa); }
+.ls-pri.pri-alta { color: var(--rojo); font-weight: 600; }
+.ls-pri.pri-nada { color: var(--tinta-4); }
+.ls-vacia { padding: 48px 16px; text-align: center; color: var(--tinta-2); border-radius: var(--r-panel); background: var(--carbon); box-shadow: var(--anillo); }
+.ls-vacia p { margin: 0 0 14px; }
+@media (max-width: 760px) {
+  .ls .c-resp { display: none; }
+  .ls-hechas { margin-left: 0; }
+}
+@media (max-width: 520px) {
+  .ls .c-cli { display: none; }
+  .ls-fila td { padding: 8px; }
+  .ls thead th button { padding: 10px 8px; }
+  .ls-marco { max-height: none; }
+}

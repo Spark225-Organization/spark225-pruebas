@@ -51,6 +51,13 @@ export const VISTAS = [
   { id: 'semana', nombre: 'Semana', icono: 'columnas' },
   { id: 'mes', nombre: 'Mes', icono: 'semana' },
   { id: 'tarjetas', nombre: 'Tarjetas', icono: 'cuadricula' },
+  { id: 'lista', nombre: 'Lista', icono: 'lista' },
+];
+// Prioridad: mismas tres opciones que «Priority» en Notion (HIGH, Medium, Low).
+export const PRIORIDADES = [
+  { id: 'alta', nombre: 'Alta', notion: 'HIGH', orden: 0 },
+  { id: 'media', nombre: 'Media', notion: 'Medium', orden: 1 },
+  { id: 'baja', nombre: 'Baja', notion: 'Low', orden: 2 },
 ];
 export const ACOMODOS = [
   { id: 'derecha', nombre: 'Widgets a la derecha' },

@@ -1,8 +1,8 @@
 // Panel de una actividad: lo esencial arriba, el resto en «Más».
 import { html, useState, useEffect, useRef, useMemo } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, hoyISO, sumarDias } from './datos.js?v=202611260010';
-import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611260010';
-import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611260010';
+import { ESTATUS, REPETICION, MOTIVOS_FECHA, ESFUERZO_HORAS, PRIORIDADES, hoyISO, sumarDias } from './datos.js?v=202611261300';
+import { nuevaVacia, crear, actualizar, validar, archivar, restaurar, vigentes, dependenciaAbierta } from './store.js?v=202611261300';
+import { I, Anillo, Avatar, haceCuanto, duracion, fechaCorta } from './ui.js?v=202611261300';
 
 const copia = (x) => JSON.parse(JSON.stringify(x));
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -101,6 +101,12 @@ export function CajonActividad({ cajon, yo, db, toast, cerrar, pedirMotivo }) {
             ${dias.map((f) => html`<button key=${f} class="chip-op" aria-pressed=${b.fecha === f} onClick=${() => set('fecha', f)}>${etiquetaDia(f)}</button>`)}
             <input type="date" class="control fecha-mini" value=${b.fecha} onInput=${(e) => set('fecha', e.target.value)} aria-label="Otra fecha" />
           </div>
+        </div>
+
+        <div class="fila-ico" title="Prioridad">
+          ${I('alerta')}
+          <div class="chips-scroll" role="radiogroup" aria-label="Prioridad">${PRIORIDADES.map((p) => html`<button key=${p.id} role="radio" class=${'chip-op pri-op pri-' + p.id} aria-checked=${b.prioridad === p.id} aria-pressed=${b.prioridad === p.id}
+            onClick=${() => set('prioridad', b.prioridad === p.id ? null : p.id)}><i></i>${p.nombre}</button>`)}</div>
         </div>
 
         <div class="fila-ico" title="Hora">

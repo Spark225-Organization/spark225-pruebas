@@ -107,7 +107,7 @@ const Products = () => {
                     <TableHead className="w-[260px]">Producto</TableHead>
                     <TableHead className="min-w-[220px]">
                       Indicaciones médicas
-                      <span className="ml-1.5 rounded-full bg-[#F5C245]/25 px-1.5 py-0.5 text-[10px] font-semibold normal-case text-[#8A6200]" title={INDICACIONES_PENDIENTE}>
+                      <span className="ml-1.5 whitespace-nowrap rounded-full bg-[#F5C245]/25 px-1.5 py-0.5 text-[10px] font-semibold normal-case text-[#8A6200]" title={INDICACIONES_PENDIENTE}>
                         falta tabla de Paco
                       </span>
                     </TableHead>

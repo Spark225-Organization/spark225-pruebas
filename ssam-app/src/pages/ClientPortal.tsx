@@ -185,7 +185,7 @@ const ClientPortal = () => {
       {/* Encabezado, como en la vista de administrador */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm capitalize text-[#7A8590]">
+          <p className="text-sm text-[#7A8590] first-letter:uppercase">
             {new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-[#0E1E2A]">Hola{nombre ? `, ${nombre}` : ""}</h1>
@@ -405,7 +405,7 @@ const ClientPortal = () => {
                     <TableHead>Producto</TableHead>
                     <TableHead>
                       Indicaciones médicas
-                      <span className="ml-1.5 rounded-full bg-[#F5C245]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#8A6200]" title={INDICACIONES_PENDIENTE}>
+                      <span className="ml-1.5 whitespace-nowrap rounded-full bg-[#F5C245]/25 px-1.5 py-0.5 text-[10px] font-semibold text-[#8A6200]" title={INDICACIONES_PENDIENTE}>
                         en actualización
                       </span>
                     </TableHead>

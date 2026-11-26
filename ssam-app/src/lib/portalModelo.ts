@@ -35,7 +35,8 @@ export const momentoIndice = (m: Material) => MOMENTOS.findIndex((x) => x.id ===
 
 /** ¿El paso k ya quedó atrás? «Por revisar» y «En desarrollo» se alternan en
  *  cada ronda, así que estando en desarrollo la revisión no cuenta como hecha. */
-export const pasoHecho = (k: number, actual: number) => k < actual && !(k === 0 && actual === 1);
+export const pasoHecho = (k: number, actual: number) =>
+  actual === MOMENTOS.length - 1 ? true : k < actual && !(k === 0 && actual === 1);
 
 /** Qué se le pide al cliente en este momento (vacío si nada). */
 export function teToca(m: Material): string {

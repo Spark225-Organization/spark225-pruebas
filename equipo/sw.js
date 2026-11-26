@@ -1,7 +1,7 @@
 // Service worker mínimo: permite instalar la app y abrirla sin conexión.
 // Red primero para los archivos propios (así siempre ves la última versión publicada);
 // caché primero para fuentes y librerías con versión fija.
-const CACHE = 'ssam-equipo-202611262300';
+const CACHE = 'ssam-equipo-202611262330';
 const BASE = ['./', './index.html', './styles.css', './app.js', './actividad.js', './store.js', './datos.js', './ui.js', './mecha.js', './widgets.js', './arrastre.js', './vistas.js', './chat.js', './tour.js', './login.js', './nube.js', './nube-config.js', './google.js', './pipeline.js', './archivero.js', './asistente.js', './bienvenida.js', './instalar.js', './avisos.js', './tablero.js', './rh.js', './perfil.js', './enfoque.js', './enfoque-datos.js', './proyectos.js', './icons/iso.png', './icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -15,7 +15,8 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const propio = url.origin === location.origin;
   if (propio) {
-    e.respondWith(fetch(e.request).then((r) => { const copia = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)); return r; }).catch(() => caches.match(e.request)));
+    // «no-cache»: siempre pregunta al servidor si hay versión nueva (si no la hay, responde rápido con 304).
+    e.respondWith(fetch(e.request, { cache: 'no-cache' }).then((r) => { const copia = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)); return r; }).catch(() => caches.match(e.request)));
   } else if (/unpkg\.com|fonts\.(googleapis|gstatic)\.com/.test(url.host)) {
     e.respondWith(caches.match(e.request).then((m) => m || fetch(e.request).then((r) => { const copia = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)); return r; })));
   }

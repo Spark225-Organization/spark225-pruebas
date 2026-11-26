@@ -1,29 +1,29 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611262300';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611262330';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611262300';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611262300';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611262300';
-import { AltaRapida } from './mecha.js?v=202611262300';
-import { Inicio } from './vistas.js?v=202611262300';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611262300';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611262300';
-import { Tablero } from './tablero.js?v=202611262300';
-import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611262300';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611262300';
-import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611262300';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611262300';
-import { Chat } from './chat.js?v=202611262300';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611262300';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611262300';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611262300';
-import { Instalar } from './instalar.js?v=202611262300';
-import { notificar, activarPush } from './avisos.js?v=202611262300';
-import { Bienvenida, Recorrido } from './tour.js?v=202611262300';
-import { useArrastre } from './arrastre.js?v=202611262300';
-import { Galeria } from './widgets.js?v=202611262300';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611262330';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611262330';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611262330';
+import { AltaRapida } from './mecha.js?v=202611262330';
+import { Inicio } from './vistas.js?v=202611262330';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611262330';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611262330';
+import { Tablero } from './tablero.js?v=202611262330';
+import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611262330';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611262330';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611262330';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611262330';
+import { Chat } from './chat.js?v=202611262330';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611262330';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611262330';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611262330';
+import { Instalar } from './instalar.js?v=202611262330';
+import { notificar, activarPush } from './avisos.js?v=202611262330';
+import { Bienvenida, Recorrido } from './tour.js?v=202611262330';
+import { useArrastre } from './arrastre.js?v=202611262330';
+import { Galeria } from './widgets.js?v=202611262330';
 
 function useStore() {
   const [, set] = useState(0);
@@ -576,6 +576,10 @@ raiz.textContent = '';
 render(html`<${App} />`, raiz);
 
 // Solo en HTTPS: en local se desactiva para no quedarse con versiones viejas en caché.
+// Al publicar una versión nueva, el Portal la toma solo: busca actualización al abrir y recarga una vez.
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  const habia = !!navigator.serviceWorker.controller;
+  let recargado = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (habia && !recargado) { recargado = true; location.reload(); } });
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {}));
 }

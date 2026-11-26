@@ -3,51 +3,82 @@
 // los valores (estatus, salud, fases) van en español.
 // Mismo orden que Spark225 Home: Clients → Master Proyectos → Master Task Database → Master Minutas → Master Milestones → Master Riesgos y Decisiones.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270810';
-import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270810';
-import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270810';
-import { Lista } from './vistas.js?v=202611270810';
-import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270810';
-import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270810';
+import { hoyISO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO } from './datos.js?v=202611270830';
+import { vigentes, visiblePara, saludProyecto, cumplimiento } from './store.js?v=202611270830';
+import { I, Avatar, LogoCliente, Info, haceCuanto } from './ui.js?v=202611270830';
+import { Lista } from './vistas.js?v=202611270830';
+import { Columnas, TarjetaPipe } from './pipeline.js?v=202611270830';
+import { useVista, BarraVistas, Kanban, TarjetaBase, CalendarioMes, FichaCal, GraficaBarras } from './vistas-notion.js?v=202611270830';
 
 const fmt = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso.slice(0, 10) + 'T12:00:00')).replace('.', '') : '—');
 const sinAcento = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-// ---------- Spark225 Home (Inicio) ----------
+// ---------- Spark225 Home (lo principal del Inicio) ----------
+// Cada base Master es una tarjeta grande: su número, lo que necesita atención y los dos casos más urgentes,
+// que se abren con un toque. Abajo, Focus Map, Reportes y Compañía.
 export function BasesSpark({ ctx }) {
   const { db, yo } = ctx;
   const hoy = hoyISO();
-  const activos = db.clientes.filter((c) => !c.privado && (c.etapa || 'activo') === 'activo' && c.id !== 'interno');
-  const enRiesgo = activos.filter((c) => cumplimiento((a) => a.cliente === c.id, hoy).salud === 'riesgo').length;
-  const proys = db.proyectos.filter((p) => !p.id.startsWith('g-') && (p.fase || 'en_curso') !== 'terminado');
-  const proyRiesgo = proys.filter((p) => saludProyecto(p, hoy).salud === 'en_riesgo').length;
+  const nomCli = (id) => db.clientes.find((c) => c.id === id)?.nombre || '';
+  const nomPer = (id) => db.personas.find((p) => p.id === id)?.corto || '';
+  const diasTarde = (iso) => Math.round((new Date(hoy + 'T12:00:00') - new Date(iso + 'T12:00:00')) / 864e5);
+  // Clients
+  const activos = db.clientes.filter((c) => !c.privado && (c.etapa || 'activo') === 'activo' && c.id !== 'interno').map((c) => ({ c, cu: cumplimiento((a) => a.cliente === c.id, hoy) }));
+  const cliRiesgo = activos.filter((x) => x.cu.salud === 'riesgo').sort((a, b) => a.cu.pct - b.cu.pct);
+  // Master Proyectos
+  const proys = db.proyectos.filter((p) => !p.id.startsWith('g-') && (p.fase || 'en_curso') !== 'terminado').map((p) => ({ p, s: saludProyecto(p, hoy) }));
+  const proyRiesgo = proys.filter((x) => x.s.salud === 'en_riesgo');
+  const proyAtencion = proys.filter((x) => x.s.salud === 'atencion');
+  // Master Task Database
   const vivas = vigentes().filter((a) => a.estatus !== 'hecho' && visiblePara(a, yo) && a.cliente !== 'personal');
-  const vencidas = vivas.filter((a) => !a.sinFecha && a.fecha < hoy).length;
+  const vencidas = vivas.filter((a) => !a.sinFecha && a.fecha < hoy).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  // Master Minutas
+  const minutas = [...db.minutas].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  const minSemana = minutas.filter((m) => (m.fecha || '').slice(0, 10) >= sumar(hoy, -7)).length;
+  // Master Milestones
   const hitos = (db.hitos || []).filter((h) => h.estado !== 'cumplido');
-  const hitosProx = hitos.filter((h) => h.fechaInterna && h.fechaInterna >= hoy && h.fechaInterna <= sumar(hoy, 14)).length;
-  const riesgos = (db.riesgos || []).filter((r) => r.estado !== 'resuelto');
+  const hitosProx = hitos.filter((h) => h.fechaInterna).sort((a, b) => a.fechaInterna.localeCompare(b.fechaInterna));
+  const hitosTarde = hitos.filter((h) => h.fechaInterna && h.fechaInterna < hoy).length;
+  // Master Riesgos y Decisiones
+  const riesgos = (db.riesgos || []).filter((r) => r.estado !== 'resuelto').sort((a, b) => (b.escalar ? 1 : 0) - (a.escalar ? 1 : 0) || (a.fechaLimite || '9999').localeCompare(b.fechaLimite || '9999'));
   const escalar = riesgos.filter((r) => r.escalar).length;
-  const minutas = db.minutas.filter((m) => (m.fecha || '').slice(0, 10) >= sumar(hoy, -7)).length;
-  const items = [
-    ['#/clientes', 'clientes', 'Clients', `${activos.length} activos`, enRiesgo ? `${enRiesgo} en riesgo` : 'todos al día'],
-    ['#/proyectos', 'foco', 'Master Proyectos', `${proys.length} vigentes`, proyRiesgo ? `${proyRiesgo} en riesgo` : 'sin alertas'],
-    ['#/tareas', 'lista', 'Master Task Database', `${vivas.length} abiertas`, vencidas ? `${vencidas} vencidas` : 'nada vencido'],
-    ['#/minutas', 'nota', 'Master Minutas', `${db.minutas.length} en total`, `${minutas} esta semana`],
-    ['#/hitos', 'mapa', 'Master Milestones', `${hitos.length} por cumplir`, hitosProx ? `${hitosProx} en 2 semanas` : 'ninguno próximo'],
-    ['#/riesgos', 'alerta', 'Master Riesgos y Decisiones', `${riesgos.length} abiertos`, escalar ? `${escalar} para Carlos` : 'nada por escalar'],
-    ['#/tablero/enfoque', 'grafica', 'Focus Map', 'Prioridades del trimestre', 'captura el lunes'],
-    ['#/reportes', 'documento', 'Reportes', 'Por área y periodo', 'PDF, PowerPoint y Excel'],
-    ['#/rh/documentos', 'documento', 'Compañía', 'Organigrama y documentos', 'políticas, misión'],
+
+  const bases = [
+    { href: '#/clientes', ico: 'clientes', nombre: 'Clients', n: activos.length, que: activos.length === 1 ? 'cliente activo' : 'clientes activos',
+      alerta: cliRiesgo.length ? `${cliRiesgo.length} en riesgo de entrega` : 'Todos al día', mal: cliRiesgo.length > 0,
+      casos: cliRiesgo.slice(0, 2).map((x) => ({ t: x.c.nombre, s: `${x.cu.pct} % a tiempo`, href: '#/cliente/' + x.c.id })) },
+    { href: '#/proyectos', ico: 'foco', nombre: 'Master Proyectos', n: proys.length, que: 'proyectos vigentes',
+      alerta: proyRiesgo.length ? `${proyRiesgo.length} en riesgo · ${proyAtencion.length} en atención` : proyAtencion.length ? `${proyAtencion.length} en atención` : 'Sin alertas', mal: proyRiesgo.length > 0,
+      casos: [...proyRiesgo, ...proyAtencion].slice(0, 2).map((x) => ({ t: x.p.nombre, s: `${nomCli(x.p.cliente)} · ${x.s.razones[0] || ''}`, href: '#/proyecto/' + x.p.id })) },
+    { href: '#/tareas', ico: 'lista', nombre: 'Master Task Database', n: vivas.length, que: 'tareas abiertas',
+      alerta: vencidas.length ? `${vencidas.length} vencidas` : 'Nada vencido', mal: vencidas.length > 0,
+      casos: vencidas.slice(0, 2).map((a) => ({ t: a.titulo, s: `${nomPer(a.responsable)} · ${diasTarde(a.fecha)} ${diasTarde(a.fecha) === 1 ? 'día' : 'días'} tarde`, accion: () => ctx.abrir(a.id) })) },
+    { href: '#/minutas', ico: 'nota', nombre: 'Master Minutas', n: minSemana, que: minSemana === 1 ? 'junta esta semana' : 'juntas esta semana',
+      alerta: `${db.minutas.length} en total`, mal: false,
+      casos: minutas.slice(0, 2).map((m) => ({ t: m.titulo, s: `${nomCli(m.cliente)} · ${haceCuanto(m.fecha)}`, accion: () => ctx.abrirMinuta(m.id) })) },
+    { href: '#/hitos', ico: 'mapa', nombre: 'Master Milestones', n: hitos.length, que: 'hitos por cumplir',
+      alerta: hitosTarde ? `${hitosTarde} pasaron su fecha interna` : 'Ninguno atrasado', mal: hitosTarde > 0,
+      casos: hitosProx.slice(0, 2).map((h) => ({ t: h.nombre, s: `${db.proyectos.find((p) => p.id === h.proyecto)?.nombre || nomCli(h.cliente)} · ${fmt(h.fechaInterna)}`, href: h.proyecto ? '#/proyecto/' + h.proyecto : '#/hitos', rojo: h.fechaInterna < hoy })) },
+    { href: '#/riesgos', ico: 'alerta', nombre: 'Master Riesgos y Decisiones', n: riesgos.length, que: riesgos.length === 1 ? 'abierto' : 'abiertos',
+      alerta: escalar ? `${escalar} para Carlos` : 'Nada por escalar', mal: escalar > 0,
+      casos: riesgos.slice(0, 2).map((r) => ({ t: r.titulo, s: `${r.escalar ? 'Escalar a Carlos · ' : ''}${r.severidad || r.tipo || ''}`, href: r.proyecto ? '#/proyecto/' + r.proyecto : '#/riesgos' })) },
   ];
-  return html`<section class="bases" aria-label="Spark225 Home">
-    <h2 class="bases-t">Spark225 Home <${Info} t="Las mismas bases que en el Spark225 Home de Notion, con sus mismas vistas. Los números son de hoy; en naranja lo que necesita atención." /></h2>
-    <div class="bases-grid">${items.map(([href, ico, nombre, dato, alerta]) => {
-      const hay = /vencidas|riesgo|para Carlos/.test(alerta);
-      return html`<a key=${href} class="base" href=${href}>
-        <span class="base-ico">${I(ico)}</span>
-        <span class="base-txt"><b>${nombre}</b><small>${dato}</small><em class=${hay ? 'hay' : ''}>${alerta}</em></span>
-      </a>`;
-    })}</div>
+  const otros = [['#/tablero/enfoque', 'grafica', 'Focus Map', 'Prioridades del trimestre · captura el lunes'], ['#/reportes', 'documento', 'Reportes', 'Por área · PDF, PowerPoint y Excel'], ['#/rh/documentos', 'organigrama', 'Compañía', 'Organigrama y documentos']];
+  const caso = (k) => html`<li key=${k.t}>${k.href
+    ? html`<a href=${k.href}><span class="sh-c-t">${k.t}</span><small class=${k.rojo ? 'rojo' : ''}>${k.s}</small></a>`
+    : html`<button onClick=${k.accion}><span class="sh-c-t">${k.t}</span><small>${k.s}</small></button>`}</li>`;
+  return html`<section class="bases sh" aria-label="Spark225 Home">
+    <h2 class="bases-t sh-t">Spark225 Home <${Info} t="Las mismas bases que en el Spark225 Home de Notion, con sus mismas vistas. Cada tarjeta muestra lo que necesita atención ahora; toca un caso para abrirlo o el título para ver la base completa." /></h2>
+    <div class="sh-grid">${bases.map((b) => html`<article key=${b.href} class=${'sh-card' + (b.mal ? ' mal' : '')}>
+      <a class="sh-cab" href=${b.href}>
+        <span class="sh-ico">${I(b.ico)}</span>
+        <span class="sh-nom"><b>${b.nombre}</b><span class="sh-alerta">${b.mal ? html`<i></i>` : null}${b.alerta}</span></span>
+        <span class="sh-n"><b class="num">${b.n}</b><small>${b.que}</small></span>
+      </a>
+      ${b.casos.length > 0 ? html`<ul class="sh-casos">${b.casos.map(caso)}</ul>` : html`<p class="sh-vacio">${b.mal ? '' : 'Nada pendiente aquí.'}</p>`}
+      <a class="sh-abrir" href=${b.href}>Abrir ${b.nombre}${I('adelante')}</a>
+    </article>`)}</div>
+    <div class="sh-otros">${otros.map(([href, ico, t, s]) => html`<a key=${href} href=${href}><span class="sh-ico chico">${I(ico)}</span><span><b>${t}</b><small>${s}</small></span>${I('adelante')}</a>`)}</div>
   </section>`;
 }
 const sumar = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
@@ -265,9 +296,3 @@ export function MaestroMinutas({ ctx }) {
     ${cuerpo}`;
 }
 
-// Accesos compactos de Spark225 Home (en «Mi trabajo»): una fila de botones en lugar de las tarjetas grandes.
-export function AccesosSpark() {
-  const items = [['#/clientes', 'clientes', 'Clients'], ['#/proyectos', 'foco', 'Master Proyectos'], ['#/tareas', 'lista', 'Master Task Database'], ['#/minutas', 'nota', 'Master Minutas'],
-    ['#/hitos', 'mapa', 'Master Milestones'], ['#/riesgos', 'alerta', 'Master Riesgos y Decisiones'], ['#/tablero/enfoque', 'grafica', 'Focus Map'], ['#/reportes', 'documento', 'Reportes']];
-  return html`<nav class="accesos" aria-label="Spark225 Home">${items.map(([href, ico, t]) => html`<a key=${href} href=${href}>${I(ico)}<span>${t}</span></a>`)}</nav>`;
-}

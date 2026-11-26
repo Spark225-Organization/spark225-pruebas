@@ -3,10 +3,10 @@
 // te lleva a la página, te enseña con una animación cómo se hace y te da un recorrido guiado en la pantalla real.
 // También contesta con datos del Portal («¿qué tengo vencido?», «¿cómo va» y el nombre de un cliente) usando solo lo que tú ya puedes ver.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias } from './datos.js?v=202611270810';
-import { vigentes, visiblePara, estatusVisible, saludProyecto, cumplimiento, areasVigentes } from './store.js?v=202611270810';
-import { I, fechaRelativa } from './ui.js?v=202611270810';
-import { TEMAS, CATEGORIAS, ESCENAS, RECORRIDOS, SUGERENCIAS, PAGINAS, SINONIMOS } from './ayuda-datos.js?v=202611270810';
+import { hoyISO, sumarDias } from './datos.js?v=202611270830';
+import { vigentes, visiblePara, estatusVisible, saludProyecto, cumplimiento, areasVigentes } from './store.js?v=202611270830';
+import { I, fechaRelativa } from './ui.js?v=202611270830';
+import { TEMAS, CATEGORIAS, ESCENAS, RECORRIDOS, SUGERENCIAS, PAGINAS, SINONIMOS } from './ayuda-datos.js?v=202611270830';
 
 // ---------- Texto: normalizar, quitar palabras vacías y comparar con tolerancia a errores ----------
 const VACIAS = new Set(('a al ante algo alguna alguien como con cual cuales cuando de del donde el ella en era es esa ese eso esta este esto estoy fue hay la las le les lo los me mi mis muy necesito no nos o oye para pero por porque puedo puede pueden que quiero quisiera se ser si sin sobre su sus te tengo tu tus un una uno unos unas y ya yo hola buenas buenos dias tardes favor ayuda ayudame dime explica explicame saber hacer hago hace hacemos podria poder seria tiene tienen hacerlo esto eso aqui alla bien mas menos cosa cosas tal vez igual entonces pues osea ok gracias')
@@ -220,7 +220,8 @@ function Panel({ ctx, ruta, iniciarRecorrido }) {
   useEffect(() => { const f = (e) => preguntar(e.detail); addEventListener('ayuda-preguntar', f); return () => removeEventListener('ayuda-preguntar', f); }, []);
   const clave = Object.keys(SUGERENCIAS).filter((k) => k !== '*' && ruta.startsWith(k)).sort((a, b) => b.length - a.length)[0] || '*';
   const sugeridas = (SUGERENCIAS[clave] || SUGERENCIAS['*']).map((id) => TEMAS.find((t) => t.id === id)).filter(Boolean);
-  const ir = (b) => { if (b.antes) b.antes(); if (b.ir) location.hash = b.ir; if (b.temas) setVerTemas(true); if (b.recorrido) iniciarRecorrido(b.recorrido); };
+  const ir = (b) => { if (b.antes) b.antes(); if (b.ir) { location.hash = b.ir; if (innerWidth < 900) cerrar(); } if (b.temas) setVerTemas(true); if (b.recorrido) iniciarRecorrido(b.recorrido); };
+  const accion = (x) => { if (x.accion) { cerrar(); setTimeout(x.accion, 60); } else if (x.ir) { location.hash = x.ir; if (innerWidth < 900) cerrar(); } };
 
   return html`<aside class="ayuda-panel" role="dialog" aria-label="Ayuda de Spark225">
     <header class="ay-cab">
@@ -239,7 +240,7 @@ function Panel({ ctx, ruta, iniciarRecorrido }) {
         </div></div>
         ${c.mensajes.map((m) => (m.yo
           ? html`<div key=${m.id} class="ay-msg yo"><div class="ay-burbuja">${m.texto}</div></div>`
-          : html`<${Respuesta} key=${m.id} r=${m.r} ir=${ir} abrirTema=${abrirTema} iniciarRecorrido=${iniciarRecorrido} />`))}
+          : html`<${Respuesta} key=${m.id} r=${m.r} ir=${ir} accion=${accion} abrirTema=${abrirTema} iniciarRecorrido=${iniciarRecorrido} />`))}
         ${pensando && html`<div class="ay-msg bot"><div class="ay-burbuja ay-escribe" aria-label="Escribiendo"><i></i><i></i><i></i></div></div>`}`}
       <div ref=${fin}></div>
     </div>
@@ -250,7 +251,7 @@ function Panel({ ctx, ruta, iniciarRecorrido }) {
   </aside>`;
 }
 
-function Respuesta({ r, ir, abrirTema, iniciarRecorrido }) {
+function Respuesta({ r, ir, accion, abrirTema, iniciarRecorrido }) {
   const t = r.tema;
   const [demo, setDemo] = useState(false);
   const botones = [
@@ -264,7 +265,7 @@ function Respuesta({ r, ir, abrirTema, iniciarRecorrido }) {
     ${(t?.r || r.texto) && html`<p>${t?.r || r.texto}</p>`}
     ${t?.pasos?.length && html`<ol class="ay-pasos">${t.pasos.map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>`}
     ${t?.ojo && html`<p class="ay-ojo">${I('alerta')}<span>${t.ojo}</span></p>`}
-    ${r.items?.length > 0 && html`<ul class="ay-items">${r.items.map((x, i) => html`<li key=${i}><button onClick=${() => (x.accion ? x.accion() : x.ir && (location.hash = x.ir))}><span>${x.t}</span>${x.s && html`<small>${x.s}</small>`}</button></li>`)}</ul>`}
+    ${r.items?.length > 0 && html`<ul class="ay-items">${r.items.map((x, i) => html`<li key=${i}><button onClick=${() => accion(x)}><span>${x.t}</span>${x.s && html`<small>${x.s}</small>`}</button></li>`)}</ul>`}
     ${demo && t?.demo && html`<${Animacion} escena=${ESCENAS[t.demo]} />`}
     ${botones.length > 0 && html`<div class="ay-acciones">${botones.map((b, i) => html`<button key=${i} class=${'btn chico' + (i === 0 ? ' prim' : '')} onClick=${() => (b.fn ? b.fn() : ir(b))}>${b.ico ? I(b.ico) : null}${b.t}</button>`)}</div>`}
     ${r.relacionadas?.length > 0 && html`<div class="ay-rel"><small>${r.duda ? '' : 'También te puede servir'}</small><div class="ay-chips">${r.relacionadas.map((id) => TEMAS.find((x) => x.id === id)).filter(Boolean).map((x) => html`<button key=${x.id} onClick=${() => abrirTema(x.id)}>${x.titulo}</button>`)}</div></div>`}

@@ -1,10 +1,10 @@
 // Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
 // Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES, SALUD_PROYECTO, FASES_PROYECTO } from './datos.js?v=202611270810';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270810';
-import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto, Migas } from './ui.js?v=202611270810';
-import { NavClientes, ChipSalud } from './proyectos.js?v=202611270810';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES, SALUD_PROYECTO, FASES_PROYECTO } from './datos.js?v=202611270830';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270830';
+import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto, Migas } from './ui.js?v=202611270830';
+import { NavClientes, ChipSalud } from './proyectos.js?v=202611270830';
 const FASE_NOMBRE = Object.fromEntries(FASES_PROYECTO.map((f) => [f.id, f.nombre]));
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };

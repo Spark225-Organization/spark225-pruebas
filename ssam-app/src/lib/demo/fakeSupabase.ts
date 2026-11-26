@@ -11,6 +11,12 @@ const CLAVE_BASE = "ssam-demo-base-v5"; // v5: Paco con sus clientes asignados
 
 function cargar(): Base {
   try {
+    // Las versiones anteriores de la base demo ya no se usan: liberan espacio.
+    for (const k of Object.keys(localStorage)) if (k.startsWith("ssam-demo-base-") && k !== CLAVE_BASE) localStorage.removeItem(k);
+  } catch {
+    /* sin almacenamiento */
+  }
+  try {
     const t = localStorage.getItem(CLAVE_BASE);
     if (t) return JSON.parse(t);
   } catch {

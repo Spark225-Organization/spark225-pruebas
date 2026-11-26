@@ -1,29 +1,30 @@
 import { html, render, useState, useEffect, useRef, useCallback, useErrorBoundary } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611270040';
+import { ESTATUS, CAPACIDAD_SEMANA, hoyISO, sumarDias } from './datos.js?v=202611270120';
 import {
   store, vigentes, participa, siguienteEstatus, cambiarEstatus, alternarFoco, archivar, restaurar,
   borrarDefinitivo, marcarAvisosLeidos, horasEstimadas, esAdmin, mover, visiblePara, actualizar, prefsDe, sinLeerChat, historialGlobal, errorGuardado,
-  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611270040';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270040';
-import { CajonActividad, HojaMotivo } from './actividad.js?v=202611270040';
-import { AltaRapida } from './mecha.js?v=202611270040';
-import { Inicio } from './vistas.js?v=202611270040';
-import { Pipeline, HojaMinuta } from './pipeline.js?v=202611270040';
-import { Archivero, DetalleCliente } from './archivero.js?v=202611270040';
-import { Tablero } from './tablero.js?v=202611270040';
-import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611270040';
-import { RecursosHumanos, areaDe } from './rh.js?v=202611270040';
-import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611270040';
-import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611270040';
-import { Chat } from './chat.js?v=202611270040';
-import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611270040';
-import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611270040';
-import { Bienvenida as Conexiones } from './bienvenida.js?v=202611270040';
-import { Instalar } from './instalar.js?v=202611270040';
-import { notificar, activarPush } from './avisos.js?v=202611270040';
-import { Bienvenida, Recorrido } from './tour.js?v=202611270040';
-import { useArrastre } from './arrastre.js?v=202611270040';
-import { Galeria } from './widgets.js?v=202611270040';
+  conectarNube, nube, escucharNube, reintentarSubida, refrescarPersonas, enFiltroInicio, reasignarTareas } from './store.js?v=202611270120';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270120';
+import { CajonActividad, HojaMotivo } from './actividad.js?v=202611270120';
+import { AltaRapida } from './mecha.js?v=202611270120';
+import { Inicio } from './vistas.js?v=202611270120';
+import { Pipeline, HojaMinuta } from './pipeline.js?v=202611270120';
+import { Archivero, DetalleCliente } from './archivero.js?v=202611270120';
+import { Tablero } from './tablero.js?v=202611270120';
+import { Portafolio, DetalleProyecto } from './proyectos.js?v=202611270120';
+import { MaestroTareas, MaestroHitos, MaestroRiesgos, MaestroMinutas } from './bases.js?v=202611270120';
+import { RecursosHumanos, areaDe } from './rh.js?v=202611270120';
+import { EditarPerfil, aplicarInterfaz } from './perfil.js?v=202611270120';
+import { AsistenteTarea, AsistenteCliente, AsistenteProyecto, MenuCrear } from './asistente.js?v=202611270120';
+import { Chat } from './chat.js?v=202611270120';
+import { Login, NuevaClave, Pendiente, Cargando } from './login.js?v=202611270120';
+import { sesionActual, alCambiarSesion, miPerfil, salirNube, aprobarPersona, invitarPersona, cargarTodo, sincronizarNotion, marcarGoogle } from './nube.js?v=202611270120';
+import { Bienvenida as Conexiones } from './bienvenida.js?v=202611270120';
+import { Instalar } from './instalar.js?v=202611270120';
+import { notificar, activarPush } from './avisos.js?v=202611270120';
+import { Bienvenida, Recorrido } from './tour.js?v=202611270120';
+import { useArrastre } from './arrastre.js?v=202611270120';
+import { Galeria } from './widgets.js?v=202611270120';
 
 function useStore() {
   const [, set] = useState(0);
@@ -145,7 +146,7 @@ function App() {
   const clienteRuta = ruta.startsWith('/cliente/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
   const proyectoRuta = ruta.startsWith('/proyecto/') ? decodeURIComponent(ruta.split('/')[2] || '') : null;
   const rhRuta = ruta === '/equipo' ? 'personas' : ruta.startsWith('/rh') ? (['documentos', 'personas'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'spark') : null;
-  const vista = clienteRuta ? 'cliente' : proyectoRuta ? 'proyecto' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/proyectos': 'proyectos' }[ruta] || 'dia';
+  const vista = clienteRuta ? 'cliente' : proyectoRuta ? 'proyecto' : rhRuta ? 'rh' : ruta.startsWith('/tablero') ? 'tablero' : { '/papelera': 'papelera', '/historial': 'historial', '/pipeline': 'pipeline', '/clientes': 'clientes', '/proyectos': 'proyectos', '/tareas': 'tareas', '/hitos': 'hitos', '/riesgos': 'riesgos', '/minutas': 'minutas' }[ruta] || 'dia';
   const vistaCal = prefsDe(yo).vista;
 
   const ctx = {
@@ -236,6 +237,10 @@ function App() {
           ${vista === 'clientes' && html`<${Archivero} ctx=${ctx} />`}
           ${vista === 'cliente' && html`<${DetalleCliente} id=${clienteRuta} ctx=${ctx} />`}
           ${vista === 'proyectos' && html`<${Portafolio} ctx=${ctx} />`}
+          ${vista === 'tareas' && html`<${MaestroTareas} ctx=${ctx} />`}
+          ${vista === 'hitos' && html`<${MaestroHitos} ctx=${ctx} />`}
+          ${vista === 'riesgos' && html`<${MaestroRiesgos} ctx=${ctx} />`}
+          ${vista === 'minutas' && html`<${MaestroMinutas} ctx=${ctx} />`}
           ${vista === 'proyecto' && html`<${DetalleProyecto} id=${proyectoRuta} ctx=${ctx} />`}
           ${vista === 'historial' && html`<${Historial} db=${db} />`}
           ${vista === 'tablero' && html`<${Tablero} ctx=${ctx} pestana=${['entregas', 'orden'].includes(ruta.split('/')[2]) ? ruta.split('/')[2] : 'enfoque'} />`}
@@ -538,6 +543,10 @@ function Paleta({ db, yo, cerrar, ctx, setTema }) {
     { t: 'Pipeline', ico: 'columnas', f: () => { location.hash = '#/pipeline'; } },
     { t: 'Clientes', ico: 'clientes', f: () => { location.hash = '#/clientes'; } },
     { t: 'Proyectos (portafolio)', ico: 'foco', f: () => { location.hash = '#/proyectos'; } },
+    { t: 'Tareas de todo el equipo', ico: 'lista', f: () => { location.hash = '#/tareas'; } },
+    { t: 'Hitos y entregables', ico: 'mapa', f: () => { location.hash = '#/hitos'; } },
+    { t: 'Riesgos y decisiones', ico: 'alerta', f: () => { location.hash = '#/riesgos'; } },
+    { t: 'Minutas', ico: 'nota', f: () => { location.hash = '#/minutas'; } },
     { t: 'Mapa de enfoque (prioridades del trimestre)', ico: 'foco', f: () => { location.hash = '#/tablero/enfoque'; } },
     { t: 'Entregas a tiempo (tablero)', ico: 'grafica', f: () => { location.hash = '#/tablero/entregas'; } },
     { t: 'Organigrama de Spark', ico: 'organigrama', f: () => { location.hash = '#/rh/spark'; } },

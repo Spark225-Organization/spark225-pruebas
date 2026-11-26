@@ -2,12 +2,12 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270040';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270040';
-import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270040';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270120';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270120';
+import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270120';
 const T_ENTREGA = 'Porcentaje de tareas que se cerraron en su fecha compromiso, de las que vencieron en el periodo. Una tarea Alta pesa 3, una Media 2 y una Baja 1. Si la fecha la movió el cliente o algo externo, cuenta la nueva; si la movimos nosotros, cuenta la original. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %.';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270040';
-import { MapaEnfoque } from './enfoque.js?v=202611270040';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270120';
+import { MapaEnfoque } from './enfoque.js?v=202611270120';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');
@@ -181,17 +181,17 @@ export function HighlightsSpark({ ctx }) {
 
   return html`<section class="hl" aria-label="Highlights de Spark">
     <a href="#/tablero/entregas" class=${'hl-it hl-main s-' + (total.salud || 'nada')}>
-      <span class="hl-etq">Spark · entrega a tiempo</span>
+      <span class="hl-etq">Spark · entrega a tiempo <${Info} t=${T_ENTREGA} /></span>
       <b class="num">${total.pct === null ? '—' : total.pct + ' %'}</b>
       <span class="hl-sub">${total.salud ? html`<span class=${'sema s-' + total.salud}><i></i>${NOMBRE_SALUD[total.salud]}</span>` : 'Sin entregas en 30 días'}</span>
     </a>
     <a href="#/tablero/entregas" class="hl-it">
-      <span class="hl-etq">Cerradas esta semana</span>
+      <span class="hl-etq">Cerradas esta semana <${Info} t="Tareas de todo el equipo que se marcaron como terminadas desde el lunes." /></span>
       <b class="num">${cerradas.length}</b>
       <span class="hl-sub hl-caras">${cerradas.slice(0, 4).map((a) => html`<${Avatar} key=${a.id} p=${db.personas.find((p) => p.id === a.responsable)} />`)}${cerradas[0] ? html`<span class="hl-ult">${cerradas[0].titulo}</span>` : 'Aún nada'}</span>
     </a>
     <a href="#/clientes" class="hl-it">
-      <span class="hl-etq">Clientes activos</span>
+      <span class="hl-etq">Clientes activos <${Info} t="Clientes en etapa «Activo». Los puntos cuentan cuántos van bien (95 % o más a tiempo), en atención (85 a 94 %) y en riesgo (menos de 85 %)." /></span>
       <b class="num">${activos.length}</b>
       <span class="hl-sub hl-semas"><span class="sema s-bien"><i></i>${salud.bien}</span><span class="sema s-atencion"><i></i>${salud.atencion}</span><span class="sema s-riesgo"><i></i>${salud.riesgo}</span></span>
     </a>

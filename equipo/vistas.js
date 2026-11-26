@@ -1,12 +1,13 @@
 // Inicio: elige cómo ver tu calendario (Día, Semana, Mes, Tarjetas) y cómo acomodar los widgets.
 import { html, useState, useEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270040';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270040';
-import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270040';
-import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270040';
-import { Widgets } from './widgets.js?v=202611270040';
-import { HighlightsSpark } from './tablero.js?v=202611270040';
-import { useArrastre } from './arrastre.js?v=202611270040';
+import { hoyISO, sumarDias, ESTATUS, VISTAS, ACOMODOS, PRIORIDADES } from './datos.js?v=202611270120';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, enFiltroInicio, actualizar } from './store.js?v=202611270120';
+import { I, Anillo, Avatar, fechaRelativa, fechaCorta } from './ui.js?v=202611270120';
+import { DiaCal, useAhora, arrastrarActividad, teclasActividad } from './mecha.js?v=202611270120';
+import { Widgets } from './widgets.js?v=202611270120';
+import { HighlightsSpark } from './tablero.js?v=202611270120';
+import { BasesSpark } from './bases.js?v=202611270120';
+import { useArrastre } from './arrastre.js?v=202611270120';
 
 const fmt = (o) => new Intl.DateTimeFormat('es-MX', o);
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
@@ -67,6 +68,7 @@ export function Inicio(ctx) {
       </div>
     </header>
     ${propia && prefs.highlights !== false && html`<${HighlightsSpark} ctx=${ctx} />`}
+    ${propia && prefs.bases !== false && html`<${BasesSpark} ctx=${ctx} />`}
     <${FiltroClientes} ctx=${ctx} />
     <div class=${'inicio a-' + acomodo}>
       ${acomodo !== 'widgets' && html`<section class="col-cal" data-tour="calendario">${cal}</section>`}
@@ -193,11 +195,11 @@ const PRI = Object.fromEntries(PRIORIDADES.map((p) => [p.id, p]));
 const SIG_PRI = { alta: 'media', media: 'baja', baja: null, null: 'alta' };
 const diasEntre = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
 
-function Lista({ ctx, hoy }) {
+export function Lista({ ctx, hoy, equipo }) {
   const { db, yo, persona } = ctx;
   const prefs = prefsDe(yo);
   const por = prefs.listaPor || 'semana';
-  const alcance = prefs.listaAlcance || 'mias';
+  const alcance = equipo ? 'equipo' : prefs.listaAlcance || 'mias';
   const [orden, setOrden] = useState({ col: 'fecha', dir: 1 });
   const [hechas, setHechas] = useState(false);
   const [soloVencidas, setSoloVencidas] = useState(false);
@@ -245,7 +247,7 @@ function Lista({ ctx, hoy }) {
 
   return html`
     <div class="ls-barra">
-      <div class="segmentado chico" aria-label="De quién">${[['mias', quien], ['equipo', 'Equipo']].map(([k, t]) => opcion(k, t, alcance, (v) => guardarPrefs(yo, { listaAlcance: v })))}</div>
+      ${!equipo && html`<div class="segmentado chico" aria-label="De quién">${[['mias', quien], ['equipo', 'Equipo']].map(([k, t]) => opcion(k, t, alcance, (v) => guardarPrefs(yo, { listaAlcance: v })))}</div>`}
       <div class="segmentado chico" aria-label="Agrupar por">${[['semana', 'Mi semana'], ['estatus', 'Estatus'], ['cliente', 'Cliente'], ['persona', 'Persona'], ['nada', 'Sin agrupar']].map(([k, t]) => opcion(k, t, por, (v) => guardarPrefs(yo, { listaPor: v })))}</div>
       ${nVencidas > 0 && html`<button class=${'ls-vencidas' + (soloVencidas ? ' on' : '')} aria-pressed=${soloVencidas} onClick=${() => setSoloVencidas(!soloVencidas)}>${I('alerta')}${nVencidas} ${nVencidas === 1 ? 'vencida' : 'vencidas'}</button>`}
       <label class="ls-hechas"><input type="checkbox" checked=${hechas} onChange=${() => setHechas(!hechas)} />Ver hechas</label>

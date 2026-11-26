@@ -1751,9 +1751,9 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
 
 /* ===== Botón ⓘ ===== */
 .info { position: relative; display: inline-block; vertical-align: middle; font-weight: 400; letter-spacing: 0; text-transform: none; }
-.info summary { list-style: none; cursor: pointer; display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; box-shadow: inset 0 0 0 1.3px var(--tinta-3); color: var(--tinta-3); font: italic 700 10px Georgia, serif; }
+.info summary { list-style: none; cursor: pointer; display: inline-grid; place-items: center; width: 19px; height: 19px; margin-left: 4px; border-radius: 50%; background: color-mix(in srgb, var(--chispa) 16%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--chispa) 55%, transparent); color: var(--chispa); font: 800 11px Inter, sans-serif; }
 .info summary::-webkit-details-marker { display: none; }
-.info summary:hover, .info[open] summary { color: var(--tinta); box-shadow: inset 0 0 0 1.3px var(--tinta); }
+.info summary:hover, .info[open] summary { background: var(--chispa); color: #fff; box-shadow: none; }
 .info summary:focus-visible { outline: 2px solid var(--chispa); outline-offset: 2px; }
 .info-pop { position: absolute; z-index: 20; top: calc(100% + 8px); left: -12px; width: min(300px, 78vw); padding: 12px 14px; border-radius: 12px; background: var(--grafito); box-shadow: var(--sombra-pop); color: var(--tinta); font: 400 13px/1.5 Inter, sans-serif; white-space: normal; text-align: left; }
 @media (max-width: 520px) { .info-pop { left: auto; right: -12px; } }
@@ -1770,3 +1770,24 @@ kbd { font: 500 11px Inter, sans-serif; padding: 0 5px; border-radius: 5px; bord
 .ol-n { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--tinta-3); padding: 2px 9px; border-radius: 10px; background: var(--grafito); }
 .ol-n.hay { color: var(--ambar); background: color-mix(in srgb, var(--ambar) 14%, transparent); }
 .ca-lista small.tenue { font-size: 11px; white-space: nowrap; }
+
+/* ===== Bases de Spark (menú general del Inicio, como el Home de Notion) ===== */
+.bases { margin: 0 0 18px; }
+.bases-t { display: flex; align-items: center; gap: 4px; margin: 0 0 10px; font-size: 15px; font-weight: 650; }
+.bases-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.base { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 16px; background: var(--carbon); box-shadow: var(--anillo); color: var(--tinta); text-decoration: none; transition: transform 160ms var(--ease), box-shadow 160ms; }
+.base:hover { transform: translateY(-2px); box-shadow: var(--sombra-pop); }
+.base:focus-visible { outline: 2px solid var(--chispa); outline-offset: 2px; }
+.base-ico { flex: none; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--brasa-fondo); color: var(--chispa); }
+.base-ico .i { width: 20px; height: 20px; }
+.base-txt { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.base-txt b { font-size: 14px; font-weight: 650; }
+.base-txt small { font-size: 12px; color: var(--tinta-2); }
+.base-txt em { font-style: normal; font-size: 11px; color: var(--tinta-3); }
+.base-txt em.hay { color: var(--chispa); font-weight: 600; }
+.bases-buscar { min-width: 220px; }
+@media (max-width: 1000px) { .bases-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) {
+  .bases-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 2px 16px 6px; }
+  .base { flex: 0 0 62%; scroll-snap-align: start; }
+}

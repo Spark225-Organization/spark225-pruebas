@@ -2,11 +2,11 @@
 // Filtra por persona (yo, todos, alguien) y por cliente. Se ve en columnas por estatus o en lista por fecha.
 // Arriba van las minutas que llegan del correo: son de todos.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, ESTATUS } from './datos.js?v=202611270040';
-import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, acuerdoATarea } from './store.js?v=202611270040';
-import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270040';
-import { arrastrarActividad, teclasActividad } from './mecha.js?v=202611270040';
-import { useArrastre } from './arrastre.js?v=202611270040';
+import { hoyISO, sumarDias, ESTATUS } from './datos.js?v=202611270120';
+import { vigentes, participa, visiblePara, estatusVisible, prefsDe, guardarPrefs, acuerdoATarea } from './store.js?v=202611270120';
+import { I, Anillo, Avatar, fechaRelativa, haceCuanto } from './ui.js?v=202611270120';
+import { arrastrarActividad, teclasActividad } from './mecha.js?v=202611270120';
+import { useArrastre } from './arrastre.js?v=202611270120';
 
 const finDeSemana = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, 6 - ((d.getDay() + 6) % 7)); };
 
@@ -154,7 +154,7 @@ export function HojaMinuta({ id, ctx, cerrar }) {
   const m = ctx.db.minutas.find((x) => x.id === id);
   if (!m) return null;
   const c = ctx.db.clientes.find((x) => x.id === m.cliente);
-  const pend = m.acuerdos.filter((k) => !k.tarea);
+  const pend = (m.acuerdos || []).filter((k) => !k.tarea);
   const crearUna = (k) => { acuerdoATarea(m.id, k.id, ctx.yo); };
   return html`
     <div class="velo alto" onClick=${cerrar}></div>
@@ -163,12 +163,14 @@ export function HojaMinuta({ id, ctx, cerrar }) {
       <div class="hm-cab">
         <span class="pm-cli"><i class="bolita"></i>${c?.nombre}<em>${new Date(m.fecha).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}</em></span>
         <h2 class="hoja-t">${m.titulo}</h2>
-        <span class="hm-asis">${m.asistentes.map((pid) => html`<${Avatar} key=${pid} p=${ctx.db.personas.find((p) => p.id === pid)} />`)}</span>
+        <span class="hm-asis">${(m.asistentes || []).map((pid) => html`<${Avatar} key=${pid} p=${ctx.db.personas.find((p) => p.id === pid)} />`)}</span>
       </div>
-      <p class="hm-res">${m.resumen}</p>
+      <p class="hm-res">${m.resumen || (m.fuente === 'notion' ? 'Esta minuta vive en Notion; ábrela para ver el detalle completo.' : '')}</p>
+      ${m.fuente === 'notion' && (m.tareasNotion || []).length > 0 && html`<div class="hm-ac-cab"><span>Tareas que salieron de esta junta</span></div>
+        <ul class="ca-lista">${(m.tareasNotion || []).map((nid) => ctx.db.actividades.find((a) => a.notion === nid)).filter(Boolean).map((a) => html`<li key=${a.id}><button onClick=${() => { cerrar(); ctx.abrir(a.id); }}><span class="cl-t">${a.titulo}</span><span class="num cl-f">${fechaRelativa(a.fecha)}</span></button></li>`)}</ul>`}
       <div class="hm-ac-cab"><span>Acuerdos</span>
         ${pend.length > 1 && html`<button class="btn chico" onClick=${() => { pend.forEach(crearUna); ctx.toast(`${pend.length} tareas creadas`); }}>${I('mas')}Crear todas</button>`}</div>
-      <ul class="hm-acuerdos">${m.acuerdos.map((k) => {
+      <ul class="hm-acuerdos">${(m.acuerdos || []).map((k) => {
         const p = ctx.db.personas.find((x) => x.id === k.responsable);
         return html`<li key=${k.id}>
           <${Avatar} p=${p} />
@@ -177,6 +179,6 @@ export function HojaMinuta({ id, ctx, cerrar }) {
             : html`<button class="btn chico prim" onClick=${() => { crearUna(k); ctx.toast(`Tarea creada para ${p?.corto}`); }}>Crear tarea</button>`}
         </li>`;
       })}</ul>
-      <p class="hm-origen">${I('correo')}${m.origen ? html`Se armó sola con las notas que llegaron a tu correo. <a href=${m.origen} target="_blank" rel="noopener">Abrir correo</a>` : html`Se armó sola con la transcripción que llegó al correo. <span class="demo-tag">demo</span>`}</p>
+      <p class="hm-origen">${m.fuente === 'notion' ? html`${I('externo')}Viene de Master Minutas en Notion.${m.notion && html` <a href=${m.notion} target="_blank" rel="noopener">Abrir en Notion</a>`}${m.docs && html` · <a href=${m.docs} target="_blank" rel="noopener">Abrir el documento</a>`}` : html`${I('correo')}${m.origen ? html`Se armó sola con las notas que llegaron a tu correo. <a href=${m.origen} target="_blank" rel="noopener">Abrir correo</a>` : html`Se armó sola con la transcripción que llegó al correo. <span class="demo-tag">demo</span>`}`}</p>
     </div>`;
 }

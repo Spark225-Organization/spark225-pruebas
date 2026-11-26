@@ -1,9 +1,9 @@
 // Mapa de enfoque: prioridades del trimestre y sus KPI, con captura semanal (cierra el lunes 9:00).
 // Mapa (cómo va cada prioridad) · Captura de la semana · Semana a semana · Estructura (solo Dirección).
 import { html, useState, useEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { datosEnfoque, guardarEnfoque, borrarEnfoque, esAdmin, nube } from './store.js?v=202611270040';
-import { COLOR, TIPOS, colorKPI, colorPrioridad, validarCriterio, leerValor, cierreSemana, inicioSemana, semanaDeCarga } from './enfoque-datos.js?v=202611270040';
-import { I, Avatar, Info } from './ui.js?v=202611270040';
+import { datosEnfoque, guardarEnfoque, borrarEnfoque, esAdmin, nube } from './store.js?v=202611270120';
+import { COLOR, TIPOS, colorKPI, colorPrioridad, validarCriterio, leerValor, cierreSemana, inicioSemana, semanaDeCarga } from './enfoque-datos.js?v=202611270120';
+import { I, Avatar, Info } from './ui.js?v=202611270120';
 
 const fmtCorta = (d) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(d).replace('.', '');
 const fmtCierre = (d) => new Intl.DateTimeFormat('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(d).replace(/\./g, '');

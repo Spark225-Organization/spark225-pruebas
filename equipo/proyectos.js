@@ -2,9 +2,9 @@
 // con sus pestañas Actividades, Hitos, Riesgos y decisiones, Minutas y Unidades.
 // Los datos del proyecto, hitos y riesgos vienen de Notion (solo lectura); las tareas se editan aquí.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, ESTATUS, FASES_PROYECTO, SALUD_PROYECTO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO, PRIORIDADES } from './datos.js?v=202611270040';
-import { vigentes, visiblePara, estatusVisible, saludProyecto, prefsDe, guardarPrefs } from './store.js?v=202611270040';
-import { I, Anillo, Avatar, LogoCliente, Info, fechaRelativa, haceCuanto } from './ui.js?v=202611270040';
+import { hoyISO, ESTATUS, FASES_PROYECTO, SALUD_PROYECTO, ESTADO_HITO, SALUD_HITO, ESTADO_RIESGO, PRIORIDADES } from './datos.js?v=202611270120';
+import { vigentes, visiblePara, estatusVisible, saludProyecto, prefsDe, guardarPrefs } from './store.js?v=202611270120';
+import { I, Anillo, Avatar, LogoCliente, Info, fechaRelativa, haceCuanto } from './ui.js?v=202611270120';
 const T_SALUD = 'Regla de Notion. Rojo: 6 o más tareas vencidas o más de 35 días sin actualización ejecutiva. Amarillo: 3 a 5 vencidas, más de 21 días sin actualización, sin responsable, con una decisión requerida o sin tareas vivas. Sin evaluar: por iniciar o terminado. Un programa no tiene salud propia: la tienen sus unidades.';
 
 const FASE = Object.fromEntries(FASES_PROYECTO.map((f) => [f.id, f.nombre]));

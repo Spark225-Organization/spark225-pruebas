@@ -198,6 +198,7 @@ class Consulta implements PromiseLike<Res> {
       for (const n of lista) {
         if (t === "comments" && !n.autor_id) n.autor_id = yo();
         if (t === "files" && !n.created_by) n.created_by = yo();
+        if (t === "file_versions" && !n.fecha_carga) n.fecha_carga = n.created_at; // como el default de la base
         if (t === "materials" && !db[t].some((x) => x.id === n.id)) {
           // Folio consecutivo y primer registro del historial, como en la base real.
           n.folio = n.folio ?? Math.max(1000, ...db.materials.map((x) => Number(x.folio) || 0)) + 1;

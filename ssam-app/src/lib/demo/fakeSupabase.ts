@@ -5,9 +5,9 @@
 // lo marcado como visible y los comentarios no internos.
 
 import { crearBase, calcularVista, nuevoId, iso, fecha, hoy0, estadosOrden, IDX, type Base, type Fila } from "./demoData";
-import { rolDemo, guardarRolDemo, DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA } from "./demoState";
+import { rolDemo, guardarRolDemo, DEMO_ADMIN_ID, DEMO_CLIENTE_ID, DEMO_CLIENTE_EMPRESA, DEMO_DISENADOR_ID } from "./demoState";
 
-const CLAVE_BASE = "ssam-demo-base-v3"; // v3: rechazos con categoría y checklist del diseñador
+const CLAVE_BASE = "ssam-demo-base-v4"; // v4: Paco con sus clientes asignados
 
 function cargar(): Base {
   try {
@@ -41,7 +41,7 @@ export function reiniciarDemo() {
 }
 
 // ── Quién soy y qué puedo ver ─────────────────────────────────────────────
-const yo = () => (rolDemo() === "client" ? DEMO_CLIENTE_ID : rolDemo() === "admin" ? DEMO_ADMIN_ID : null);
+const yo = () => (rolDemo() === "client" ? DEMO_CLIENTE_ID : rolDemo() === "admin" ? DEMO_ADMIN_ID : rolDemo() === "disenador" ? DEMO_DISENADOR_ID : null);
 const soyCliente = () => rolDemo() === "client";
 
 function baseVisible(): Base {
@@ -297,7 +297,48 @@ function muestra(ruta: string) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#F5C245"/><stop offset="1" stop-color="#E47739"/></linearGradient></defs><rect width="1200" height="800" fill="#F8F9FA"/><rect x="0" y="0" width="1200" height="14" fill="url(#g)"/><text x="600" y="380" font-family="Inter,Arial" font-size="44" font-weight="700" fill="#4E5964" text-anchor="middle">Material de muestra</text><text x="600" y="440" font-family="Inter,Arial" font-size="26" fill="#8894A0" text-anchor="middle">${nombre} · datos ficticios</text></svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
-const firmar = (ruta: string) => subidos.get(ruta) ?? muestra(ruta);
+// PDF de muestra de 3 páginas (texto ficticio) para probar la revisión página por página.
+const pdfs = new Map<string, string>();
+function pdfMuestra(ruta: string) {
+  if (pdfs.has(ruta)) return pdfs.get(ruta)!;
+  const limpio = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\x20-\x7E]/g, " ").replace(/[()\\]/g, "");
+  const nombre = limpio((ruta.split("/").pop() ?? "material").replace(/\.pdf$/i, "").replace(/_/g, " "));
+  const paginas = [
+    ["Material de muestra", nombre, "Datos ficticios para probar la revision.", "Beneficio principal: mejora la adherencia al tratamiento.", "Referencia 1: Estudio clinico fase III, 2024.", "Referencia 2: Guia de practica clinica, 2023."],
+    ["Mecanismo de accion", "Texto de ejemplo para subrayar o resaltar.", "Posologia: una tableta al dia con alimentos.", "Leyenda regulatoria: consulte la IPP.", "Registro sanitario: 000M0000 SSA IV."],
+    ["Informacion para prescribir", "Contraindicaciones: hipersensibilidad.", "Reporte las sospechas de reacciones adversas.", "Aviso de publicidad: 000000000A0000.", "Spark225 - pieza de prueba"],
+  ];
+  const objs: string[] = [];
+  objs.push("<< /Type /Catalog /Pages 2 0 R >>");
+  const kids = paginas.map((_, i) => `${4 + i * 2} 0 R`).join(" ");
+  objs.push(`<< /Type /Pages /Kids [${kids}] /Count ${paginas.length} >>`);
+  objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  paginas.forEach((lineas, i) => {
+    const flujo = [
+      "0.96 0.76 0.27 rg 0 579 842 16 re f",
+      "0.89 0.47 0.22 rg 0 0 842 6 re f",
+      "0.31 0.35 0.39 rg",
+      `BT /F1 30 Tf 60 500 Td (${lineas[0]}) Tj ET`,
+      ...lineas.slice(1).map((l, k) => `BT /F1 ${k === 0 && i === 0 ? 18 : 15} Tf 60 ${440 - k * 42} Td (${l}) Tj ET`),
+      `BT /F1 10 Tf 740 24 Td (Pagina ${i + 1} de ${paginas.length}) Tj ET`,
+    ].join("\n");
+    objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
+    objs.push(`<< /Length ${flujo.length} >>\nstream\n${flujo}\nendstream`);
+  });
+  let pdf = "%PDF-1.4\n";
+  const offs: number[] = [];
+  objs.forEach((o, i) => {
+    offs.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("");
+  pdf += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
+  pdfs.set(ruta, url);
+  return url;
+}
+const firmar = (ruta: string) => subidos.get(ruta) ?? (/\.pdf$/i.test(ruta) ? pdfMuestra(ruta) : muestra(ruta));
 
 const storage = {
   from() {

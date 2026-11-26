@@ -33,6 +33,7 @@ import { PaqueteFinalCard } from "@/components/material/PaqueteFinalCard";
 import { StageStrip, DependenciaBadge } from "@/components/material/StageStrip";
 import { CommitmentHistory } from "@/components/material/CommitmentHistory";
 import { RevisionClienteCard } from "@/components/material/RevisionClienteCard";
+import { CorreccionesClienteCard } from "@/components/material/CorreccionesClienteCard";
 import {
   useOperacion,
   mutateCreateComment,
@@ -209,6 +210,7 @@ const MaterialDetail = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          <CorreccionesClienteCard material={material} />
           <FechaComprometidaCard material={material} onDone={data.reload} />
           {can("captureFechaRequerida") && (
             <FechaRequeridaClienteCard

@@ -6,14 +6,14 @@
 
 export const DEMO = import.meta.env.VITE_SSAM_DEMO === "1";
 
-export type DemoRol = "admin" | "client";
+export type DemoRol = "admin" | "client" | "disenador";
 
 const CLAVE_ROL = "ssam-demo-rol";
 
 export function rolDemo(): DemoRol | null {
   try {
     const v = localStorage.getItem(CLAVE_ROL);
-    return v === "admin" || v === "client" ? v : null;
+    return v === "admin" || v === "client" || v === "disenador" ? v : null;
   } catch {
     return null;
   }
@@ -32,12 +32,16 @@ export function guardarRolDemo(rol: DemoRol | null) {
 export const DEMO_ADMIN_ID = "d0000000-0000-4000-8000-000000000001";
 export const DEMO_CLIENTE_ID = "d0000000-0000-4000-8000-000000000002";
 export const DEMO_CLIENTE_EMPRESA = "c0000000-0000-4000-8000-000000000001";
+/** Paco: diseño y cuenta directa con el cliente (rol creativo). */
+export const DEMO_DISENADOR_ID = "d0000000-0000-4000-8000-000000000003";
+/** Clientes que lleva Paco en la demo (Aurora es la cuenta de cliente de prueba). */
+export const DEMO_CLIENTES_PACO = [DEMO_CLIENTE_EMPRESA, "c0000000-0000-4000-8000-000000000002"];
 
 /** Entra con un rol y recarga la app en la pantalla que le toca. */
 export function entrarDemo(rol: DemoRol) {
   guardarRolDemo(rol);
   const base = import.meta.env.BASE_URL || "/";
-  window.location.assign(base + (rol === "client" ? "portal" : ""));
+  window.location.assign(base + (rol === "client" ? "portal" : rol === "disenador" ? "mis-clientes" : ""));
 }
 
 /** Sale del rol y vuelve a la pantalla de elección. */

@@ -1,6 +1,6 @@
 // Entrada del modo demo: se elige el rol en lugar de escribir contraseña.
 // Solo existe en el sitio de pruebas (VITE_SSAM_DEMO=1).
-import { Building2, ShieldCheck, RotateCcw } from "lucide-react";
+import { Building2, ShieldCheck, RotateCcw, Palette } from "lucide-react";
 import { Marca } from "@/components/Marca";
 import { entrarDemo } from "@/lib/demo/demoState";
 import { reiniciarDemo } from "@/lib/demo/fakeSupabase";
@@ -11,7 +11,13 @@ const opciones = [
     rol: "admin" as const,
     icono: ShieldCheck,
     titulo: "Entrar como administrador",
-    texto: "Lo que ve el equipo Spark225: todos los clientes, el tablero, el kanban, el riesgo y la planeación.",
+    texto: "Lo que ve Carlos: todos los clientes, el tablero, el kanban, el riesgo, la planeación y los reportes.",
+  },
+  {
+    rol: "disenador" as const,
+    icono: Palette,
+    titulo: "Entrar como Paco",
+    texto: "Diseño y cuenta directa con el cliente: sus clientes en carpetas, subir versiones, corregir lo que pide el cliente, cambiar estatus y conversar.",
   },
   {
     rol: "client" as const,
@@ -25,7 +31,7 @@ const SelectorDemo = () => (
   <div className="relative flex min-h-screen flex-col bg-[#F8F9FA] font-sans text-[#1F2124]">
     <div className="h-1 w-full bg-gradient-spark-brand shrink-0" aria-hidden="true" />
     <div className="flex flex-1 items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-4xl">
         <div className="mb-8 flex flex-col items-start gap-4">
           <Marca tono="oscuro" ancho={120} />
           <div>
@@ -38,7 +44,7 @@ const SelectorDemo = () => (
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           {opciones.map(({ rol, icono: Icono, titulo, texto }) => (
             <button
               key={rol}

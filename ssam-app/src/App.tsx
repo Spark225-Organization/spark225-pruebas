@@ -30,6 +30,7 @@ const Riesgo = lazy(() => import("./pages/Riesgo"));
 const Planeacion = lazy(() => import("./pages/Planeacion"));
 const ClientPortal = lazy(() => import("./pages/ClientPortal"));
 const Calidad = lazy(() => import("./pages/Calidad"));
+const MisClientes = lazy(() => import("./pages/MisClientes"));
 
 const PendingActivation = () => (
   <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F8F9FA] p-6 text-center">
@@ -58,6 +59,8 @@ const ProtectedRoute = ({
   if (permission && !can(permission)) {
     // Un cliente externo que intenta abrir una ruta interna va a su portal.
     if (can("clientPortal")) return <Navigate to="/portal" replace />;
+    // Paco (diseño y cuentas) empieza en sus clientes, sin tableros internos.
+    if (can("misClientes")) return <Navigate to="/mis-clientes" replace />;
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
@@ -78,7 +81,7 @@ const ProtectedRoute = ({
 
 const AppRoutes = () => {
   const { user, loading, pendingActivation, can } = useAuth();
-  const homePath = can("clientPortal") ? "/portal" : "/";
+  const homePath = can("clientPortal") ? "/portal" : !can("dashboard") && can("misClientes") ? "/mis-clientes" : "/";
 
   if (loading) {
     return (
@@ -206,6 +209,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute permission="clientPortal">
             <ClientPortal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mis-clientes"
+        element={
+          <ProtectedRoute permission="misClientes">
+            <MisClientes />
           </ProtectedRoute>
         }
       />

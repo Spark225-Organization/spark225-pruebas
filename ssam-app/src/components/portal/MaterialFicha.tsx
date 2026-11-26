@@ -39,7 +39,7 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
     StorageService.list(material.id).then((fs) => {
       if (!vivo) return;
       // Las evidencias que sube el cliente no son «la pieza»: se ven en la conversación.
-      const piezas = fs.filter((f) => f.stage !== "cambios_cliente" && !/^Cambio_cliente_|^Marcas_|^Nota_de_voz_/.test(f.name));
+      const piezas = fs.filter((f) => f.stage !== "cambios_cliente" && !/^Cambio_cliente_|^Marcas_|^Nota_de_voz_|^Correcciones_/.test(f.name));
       const orden = [...piezas].sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || "") || b.version - a.version);
       setArchivos(orden);
       setVerId(orden[0]?.id ?? null);

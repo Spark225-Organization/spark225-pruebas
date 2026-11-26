@@ -77,6 +77,8 @@ export interface RolePermissions {
   ownMaterialsOnly: boolean;
   /** can create/delete materials */
   manageMaterials: boolean;
+  /** inicio por carpetas de los clientes asignados (Paco / diseño y cuentas) */
+  misClientes: boolean;
 }
 
 export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
@@ -100,6 +102,7 @@ export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
     toggleVisibleCliente: true,
     ownMaterialsOnly: false,
     manageMaterials: true,
+    misClientes: true,
   },
   medical: {
     dashboard: true,
@@ -121,18 +124,19 @@ export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
     toggleVisibleCliente: true,
     ownMaterialsOnly: false,
     manageMaterials: false,
+    misClientes: false,
   },
   creative: {
-    dashboard: true,
+    dashboard: false,
     materials: true,
     clients: false,
-    products: true,
+    products: false,
     indications: false,
     team: false,
     reports: false,
     roles: false,
-    risk: true,
-    planeacion: true,
+    risk: false,
+    planeacion: false,
     clientPortal: false,
     advanceStage: true,
     uploadFiles: true,
@@ -142,6 +146,7 @@ export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
     toggleVisibleCliente: true,
     ownMaterialsOnly: false,
     manageMaterials: false,
+    misClientes: true,
   },
   veeva: {
     dashboard: true,
@@ -163,6 +168,7 @@ export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
     toggleVisibleCliente: true,
     ownMaterialsOnly: false,
     manageMaterials: false,
+    misClientes: false,
   },
   client: {
     dashboard: false,
@@ -184,6 +190,7 @@ export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
     toggleVisibleCliente: false,
     ownMaterialsOnly: true,
     manageMaterials: false,
+    misClientes: false,
   },
 };
 

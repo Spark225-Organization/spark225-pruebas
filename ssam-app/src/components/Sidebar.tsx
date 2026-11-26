@@ -15,6 +15,7 @@ import {
   Columns3,
   KanbanSquare,
   CalendarRange,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ interface NavItem {
 // solo cuando hacen falta (catálogos y equipo).
 const PRINCIPAL: NavItem[] = [
   { label: "Inicio", icon: LayoutDashboard, href: "/", permission: "dashboard" },
+  { label: "Mis clientes", icon: FolderOpen, href: "/mis-clientes", permission: "misClientes" },
   { label: "Planeación", icon: CalendarRange, href: "/planeacion", permission: "planeacion" },
   { label: "Materiales", icon: Files, href: "/materials", permission: "materials", tambien: ["/kanban"] },
   { label: "En riesgo", icon: AlertTriangle, href: "/riesgo", permission: "risk" },

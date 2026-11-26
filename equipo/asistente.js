@@ -1,9 +1,9 @@
 // Asistentes para crear: una pregunta a la vez, con guía y sin formularios largos.
 // Sirve para tarea, cliente y proyecto. Enter avanza, Esc cierra, cada respuesta se puede corregir en el resumen.
 import { html, useState, useEffect, useLayoutEffect, useRef } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611270120';
-import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611270120';
-import { I, Avatar, LogoCliente, fechaRelativa, fechaCorta } from './ui.js?v=202611270120';
+import { hoyISO, sumarDias, SALUD, CARITAS, COLORES_CLIENTE, PRIORIDADES, ETAPAS_CLIENTE } from './datos.js?v=202611270230';
+import { crear, nuevaVacia, crearCliente, crearProyecto } from './store.js?v=202611270230';
+import { I, Avatar, LogoCliente, Carita, fechaRelativa, fechaCorta } from './ui.js?v=202611270230';
 
 // ---------- Opciones de fecha que entiende cualquiera ----------
 function opcionesFecha(conSinFecha) {
@@ -122,7 +122,7 @@ function Campo({ paso, valor, todo, poner, elegir }) {
   }
   if (t === 'color') return html`<div class="asis-colores" role="radiogroup">${COLORES_CLIENTE.map((c, k) => html`<button key=${c} ref=${k === 0 ? ref : null} role="radio" aria-checked=${valor === c} aria-label=${'Color ' + (k + 1)} style=${`--c:${c}`} onClick=${() => elegir(c)}></button>`)}</div>`;
   if (t === 'salud') return html`<div class="asis-ops salud" role="radiogroup">${SALUD.map((s, k) => html`<button key=${s.id} ref=${k === 0 ? ref : null} role="radio" aria-checked=${valor === s.id} class=${'asis-op s-' + s.id} onClick=${() => elegir(s.id)}><i class="semaforo"></i><span>${s.nombre}</span></button>`)}</div>`;
-  if (t === 'caritas') return html`<div class="asis-caritas" role="radiogroup">${CARITAS.map((c, k) => html`<button key=${k} ref=${k === 0 ? ref : null} role="radio" aria-checked=${valor === k + 1} aria-label=${`${k + 1} de 5`} onClick=${() => elegir(k + 1)}>${c}</button>`)}
+  if (t === 'caritas') return html`<div class="asis-caritas" role="radiogroup">${CARITAS.map((c, k) => html`<button key=${k} ref=${k === 0 ? ref : null} role="radio" aria-checked=${valor === k + 1} aria-label=${`${k + 1} de 5`} onClick=${() => elegir(k + 1)}><${Carita} n=${k + 1} tam=${30} /></button>`)}
     <button class="asis-nose" aria-checked=${valor === 0} onClick=${() => elegir(0)}>Aún no sé</button></div>`;
   return null;
 }
@@ -176,7 +176,7 @@ export function AsistenteCliente({ ctx, cerrar }) {
       opciones: db.personas.map((p) => ({ id: p.id, nombre: p.id === yo ? 'Yo' : p.corto, sub: p.puesto, persona: p })), resumen: (x) => db.personas.find((p) => p.id === x)?.corto },
     { id: 'etapa', tipo: 'opciones', corto: 'Etapa', pregunta: '¿En qué etapa está?', ayuda: 'El semáforo se calcula solo con la entrega a tiempo.',
       opciones: ETAPAS_CLIENTE.map((e) => ({ id: e.id, nombre: e.nombre, sub: e.ayuda })), resumen: (x) => ETAPAS_CLIENTE.find((e) => e.id === x)?.nombre },
-    { id: 'satisfaccion', tipo: 'caritas', corto: 'Satisfacción', pregunta: '¿Qué tan contento está?', ayuda: 'Lo puedes actualizar cada mes desde su ficha.', resumen: (x) => (x ? CARITAS[x - 1] : 'Aún no sé') },
+    { id: 'satisfaccion', tipo: 'caritas', corto: 'Satisfacción', pregunta: '¿Qué tan contento está?', ayuda: 'Lo puedes actualizar cada mes desde su ficha.', resumen: (x) => (x ? html`<${Carita} n=${x} tam=${18} />` : 'Aún no sé') },
   ];
   const Vista = ({ v }) => html`<div class="cli-card mini" style=${`--c:${v.color}`}><${LogoCliente} c=${{ nombre: v.nombre || '?', color: v.color }} /><b>${v.nombre}</b></div>`;
   return html`<${Asistente} titulo="Nuevo cliente" textoCrear="Crear cliente" pasos=${pasos} Vista=${Vista} cerrar=${cerrar}

@@ -1,12 +1,17 @@
 // Piezas visuales compartidas: íconos, anillo de estatus, estrella de Spark, avatares y formato de fechas.
 import { html } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO } from './datos.js?v=202611270120';
+import { hoyISO } from './datos.js?v=202611270230';
 
 const P = {
   hoy: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
   sol: 'M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4M12 8a4 4 0 100 8 4 4 0 000-8z',
   luna: 'M20 14.5A8 8 0 019.5 4 7 7 0 1020 14.5z',
   mas: 'M12 5v14M5 12h14',
+  sube: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+  baja: 'M3 7l6 6 4-4 8 8M15 17h6v-6',
+  porcentaje: 'M19 5L5 19M7 9a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',
+  calendario: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M8 14h3v3H8z',
+  casilla: 'M4 4h16v16H4zM8 12l3 3 5-6',
   grafica: 'M3 20h18M6 16v-4M11 16V6M16 16v-7M20 16v-2',
   rh: 'M4 6h16v14H4zM9 3h6v3H9zM9 10.5a2 2 0 100 4 2 2 0 000-4zM6.5 18c.4-1.4 1.4-2 2.5-2s2.1.6 2.5 2M14 11h3.5M14 14h3',
   organigrama: 'M9 3h6v4H9zM3 17h6v4H3zM15 17h6v4h-6zM12 7v5M6 17v-5h12v5',
@@ -93,6 +98,22 @@ export function Info({ t }) {
   // Funciona también dentro de una tarjeta que es enlace: abre la explicación sin navegar.
   const alternar = (e) => { e.preventDefault(); e.stopPropagation(); const d = e.currentTarget.parentElement; d.open = !d.open; };
   return html`<details class="info" onClick=${(e) => e.stopPropagation()}><summary aria-label="¿Qué mide esto?" title="¿Qué mide esto?" onClick=${alternar}>i</summary><span class="info-pop" role="note" onClick=${(e) => { e.preventDefault(); e.stopPropagation(); }}>${t}</span></details>`;
+}
+
+// Íconos propios para cada KPI según cómo se mide (sin emojis).
+const ICONO_TIPO = { mas: 'sube', menos: 'baja', pct_mas: 'porcentaje', pct_menos: 'porcentaje', fecha: 'calendario', si_no: 'casilla' };
+export function IconoKPI({ tipo }) {
+  return html`<span class=${'ico-kpi t-' + (tipo || 'mas')} title=${{ mas: 'Más es mejor', menos: 'Menos es mejor', pct_mas: 'Porcentaje, más es mejor', pct_menos: 'Porcentaje, menos es mejor', fecha: 'Fecha límite', si_no: 'Sí o no' }[tipo] || ''}>${I(ICONO_TIPO[tipo] || 'sube')}</span>`;
+}
+// Satisfacción del cliente del 1 al 5: carita dibujada (boca de triste a contenta), en el color de cada nivel.
+const BOCAS = ['M8 16.5c1.2-2.2 6.8-2.2 8 0', 'M8.5 16c1.4-1.2 5.6-1.2 7 0', 'M8.5 15.2h7', 'M8.5 14.5c1.4 1.4 5.6 1.4 7 0', 'M8 14c1.2 2.6 6.8 2.6 8 0'];
+const COLOR_CARITA = ['var(--rojo)', '#E8833A', 'var(--ambar)', '#6FBF5A', 'var(--verde)'];
+export function Carita({ n, tam = 22 }) {
+  if (!n) return html`<span class="carita vacia" style=${`width:${tam}px;height:${tam}px`} aria-label="Sin calificar"></span>`;
+  return html`<svg class="carita" width=${tam} height=${tam} viewBox="0 0 24 24" role="img" aria-label=${`${n} de 5`} style=${`--cc:${COLOR_CARITA[n - 1]}`}>
+    <circle cx="12" cy="12" r="10" fill="color-mix(in srgb, var(--cc) 18%, transparent)" stroke="var(--cc)" stroke-width="1.6" />
+    <circle cx="8.8" cy="10" r="1.2" fill="var(--cc)" /><circle cx="15.2" cy="10" r="1.2" fill="var(--cc)" />
+    <path d=${BOCAS[n - 1]} fill="none" stroke="var(--cc)" stroke-width="1.7" stroke-linecap="round" /></svg>`;
 }
 
 export function Avatar({ p, grande }) {

@@ -1,7 +1,7 @@
 // Capa de datos. En la fase 1 todo vive en el navegador (localStorage) con datos ficticios.
 // Cuando haya acceso a Supabase, se reemplaza este archivo por llamadas a tablas con RLS
 // manteniendo las mismas funciones públicas.
-import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270120';
+import { semilla, hoyISO, sumarDias, sumarDiasHabiles, ESTATUS, LAYOUT_INICIAL, VERSION_DATOS, fichaCliente, minutasEjemplo } from './datos.js?v=202611270230';
 
 const CLAVE = 'ssam-equipo-datos';
 const CLAVE_V4 = 'ssam-equipo-v4';
@@ -425,7 +425,7 @@ export function acuerdoATarea(mid, kid, uId) {
 // =====================================================================
 // Modo nube (Supabase): mismos datos en memoria, se suben en segundo plano.
 // =====================================================================
-import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270120';
+import { cargarTodo, subirDocs, subirAjustes, escucharCambios, actualizarMiPerfil } from './nube.js?v=202611270230';
 
 const COLECCIONES_RH = new Set(['hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas']);
 const COLECCIONES = ['actividades', 'clientes', 'proyectos', 'minutas', 'avisos', 'eventos', 'hitos', 'riesgos', 'areas', 'documentos', 'fm_ajustes', 'fm_trimestres', 'fm_prioridades', 'fm_reportes', 'fm_fichas'];
@@ -688,7 +688,7 @@ export async function cambiarMiPerfil(uId, cambios) {
 
 // ---------- Mapa de enfoque (Focus Map) ----------
 // Los datos llegan de la base; el código público no trae ninguno.
-import { AJUSTES_BASE } from './enfoque-datos.js?v=202611270120';
+import { AJUSTES_BASE } from './enfoque-datos.js?v=202611270230';
 export function datosEnfoque() {
   return { ajustes: estado.fm_ajustes?.[0] || AJUSTES_BASE, trimestres: estado.fm_trimestres || [], prioridades: estado.fm_prioridades || [],
     reportes: estado.fm_reportes || [], fichas: estado.fm_fichas || [] };

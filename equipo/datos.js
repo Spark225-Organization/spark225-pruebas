@@ -125,7 +125,7 @@ export const SALUD = [
   { id: 'atencion', nombre: 'Atención' },
   { id: 'riesgo', nombre: 'En riesgo' },
 ];
-export const CARITAS = ['😣', '🙁', '😐', '🙂', '😄'];
+export const CARITAS = [1, 2, 3, 4, 5]; // Niveles de satisfacción; se dibujan con <Carita> (sin emojis).
 export const COLORES_CLIENTE = ['#8B7CF6', '#2BB59A', '#4A9BE8', '#E0628E', '#A3C94A', '#38B2C9', '#C77DDB', '#E8A33D', '#5C7CFA', '#D9644A'];
 export const VERSION_DATOS = 5;
 
@@ -255,7 +255,7 @@ export function semilla() {
     mensajes: [
       { id: 'x1', canal: 'general', de: 'carlos', cuando: hace(0.3), texto: '¿Cómo vamos con el deck para mañana?' },
       { id: 'x2', canal: 'general', de: 'adan', cuando: hace(0.28), texto: 'Ya van 2 de 4 pasos, hoy lo cierro.' },
-      { id: 'x3', canal: 'general', de: 'paco', cuando: hace(0.1), texto: 'Subí las piezas de Carnot al Drive 🎨' },
+      { id: 'x3', canal: 'general', de: 'paco', cuando: hace(0.1), texto: 'Subí las piezas de Carnot al Drive' },
       { id: 'x4', canal: 'dm-adan-carlos', de: 'adan', cuando: hace(1.2), tipo: 'factura', archivo: 'Factura_Octubre.pdf', para: 'carlos', estatus: 'pagada' },
       { id: 'x5', canal: 'dm-adan-carlos', de: 'carlos', cuando: hace(1.1), texto: 'Listo, ya quedó.' },
       { id: 'x6', canal: 'dm-adan-paco', de: 'paco', cuando: hace(0.05), texto: '¿Revisas los banners cuando puedas?' },

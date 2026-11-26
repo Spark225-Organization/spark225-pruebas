@@ -1,7 +1,7 @@
 // Recorrido de inducción: bienvenida y pasos con foco sobre cada parte de la app.
 // Cada paso trae una mini animación que muestra el gesto (arrastrar, tocar, conectar).
 import { html, useState, useEffect, useLayoutEffect } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { I, Estrella } from './ui.js?v=202611270120';
+import { I, Estrella } from './ui.js?v=202611270230';
 
 export const PASOS = [
   { sel: '[data-tour="dias"]', demo: 'dias', t: 'Tus días', d: 'Toca un día para verlo. Para mover una tarea a otro día, arrástrala y suéltala sobre el día que quieras.' },
@@ -33,7 +33,7 @@ function Demo({ tipo }) {
   if (tipo === 'pipe') return html`<div class="demo d-pipe"><span class="dpp-col c1"></span><span class="dpp-col c2"></span><span class="dpp-col c3"></span>
     <span class="dpp-card fija f1"></span><span class="dpp-card fija f2"></span><span class="dpp-card mueve"></span><span class="dpp-cursor"></span></div>`;
   if (tipo === 'folder') return html`<div class="demo d-folder"><span class="dfo"><span class="dfo-tab"></span><span class="dfo-papel"></span><span class="dfo-frente">Carnot</span></span></div>`;
-  if (tipo === 'chat') return html`<div class="demo d-chat"><span class="dc-b o">¿Cómo vamos?</span><span class="dc-b m">Ya casi 🚀</span>
+  if (tipo === 'chat') return html`<div class="demo d-chat"><span class="dc-b o">¿Cómo vamos?</span><span class="dc-b m">Ya casi</span>
     <span class="dc-f"><b>Factura.pdf</b><span><i class="s1">Enviada</i><i class="s2">Recibida</i><i class="s3">Pagada</i></span></span></div>`;
   if (tipo === 'buscar') return html`<div class="demo d-buscar"><span class="db-caja"><span class="db-txt">carnot</span></span><span class="db-r r1"></span><span class="db-r r2"></span></div>`;
   return null;

@@ -1,10 +1,10 @@
 // Clientes: cada cliente con su logo y su semáforo de entrega a tiempo.
 // Al abrirlo ves todo lo suyo: datos, materiales, proyectos, tareas, minutas y quién lleva qué.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611270120';
-import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611270120';
-import { I, Anillo, Avatar, LogoCliente, Info, fechaRelativa, haceCuanto } from './ui.js?v=202611270120';
-import { NavClientes } from './proyectos.js?v=202611270120';
+import { hoyISO, CARITAS, ETAPAS_CLIENTE, PRIORIDADES } from './datos.js?v=202611270230';
+import { vigentes, visiblePara, participa, estatusVisible, actualizarCliente, calificar, avanceProyecto, guardarPrefs, prefsDe, cumplimientoCliente, VENTANA_DIAS } from './store.js?v=202611270230';
+import { I, Anillo, Avatar, LogoCliente, Info, Carita, fechaRelativa, haceCuanto } from './ui.js?v=202611270230';
+import { NavClientes } from './proyectos.js?v=202611270230';
 
 const ORDEN_SALUD = { riesgo: 0, atencion: 1, bien: 2 };
 export const NOMBRE_SALUD = { bien: 'Va bien', atencion: 'Atención', riesgo: 'En riesgo' };
@@ -50,7 +50,7 @@ export function Archivero({ ctx }) {
           <div class="cc-top"><${LogoCliente} c=${c} tam="l" /><${Avatar} p=${r} /></div>
           <b class="cc-nombre">${c.nombre}</b>
           ${etapa === 'activo' ? html`<${Semaforo} cu=${cu} corto />` : html`<span class="sema s-nada"><i></i>${ETAPAS_CLIENTE.find((e) => e.id === etapa).uno}</span>`}
-          <span class="cc-pie num">${suyas.length} ${suyas.length === 1 ? 'pendiente' : 'pendientes'}${venc ? html`<em>${venc} ${venc === 1 ? 'vencida' : 'vencidas'}</em>` : null}${sat ? html`<span class="cc-sat" title="Satisfacción">${CARITAS[sat - 1]}</span>` : null}</span>
+          <span class="cc-pie num">${suyas.length} ${suyas.length === 1 ? 'pendiente' : 'pendientes'}${venc ? html`<em>${venc} ${venc === 1 ? 'vencida' : 'vencidas'}</em>` : null}${sat ? html`<span class="cc-sat" title="Satisfacción"><${Carita} n=${sat} tam=${20} /></span>` : null}</span>
         </a>`;
       })}
       <button class="cli-card nueva" onClick=${() => ctx.crear('cliente')}>
@@ -147,11 +147,11 @@ export function DetalleCliente({ id, ctx }) {
       <section class="ca-panel">
         <h3>Satisfacción</h3>
         <div class="ca-sat">
-          <span class="ca-sat-grande">${sat ? CARITAS[sat - 1] : '·'}</span>
+          <span class="ca-sat-grande"><${Carita} n=${sat} tam=${52} /></span>
           <div class="ca-hist" aria-label="Historial de satisfacción">${hist.map((s, k) => html`<span key=${k} title=${s.fecha}><i style=${`height:${s.valor * 7}px`}></i><small>${mes(s.fecha)}</small></span>`)}</div>
         </div>
         <div class="ca-calificar" role="radiogroup" aria-label=${yaCalificado ? 'Cambiar la calificación de hoy' : 'Calificar hoy'}>
-          ${CARITAS.map((x, k) => html`<button key=${k} role="radio" aria-checked=${yaCalificado && sat === k + 1} aria-label=${`${k + 1} de 5`} onClick=${() => { calificar(c.id, k + 1, yo); ctx.toast('Satisfacción guardada'); }}>${x}</button>`)}
+          ${CARITAS.map((x, k) => html`<button key=${k} role="radio" aria-checked=${yaCalificado && sat === k + 1} aria-label=${`${k + 1} de 5`} onClick=${() => { calificar(c.id, k + 1, yo); ctx.toast('Satisfacción guardada'); }}><${Carita} n=${k + 1} tam=${26} /></button>`)}
         </div>
       </section>
 

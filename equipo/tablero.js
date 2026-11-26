@@ -2,12 +2,12 @@
 // tendencia por semana, cómo va cada persona y qué hay abierto por prioridad.
 // Todo sale de las tareas del Portal (que ya traen lo de Notion). No hay cifras de ejemplo.
 import { html, useState } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
-import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270120';
-import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270120';
-import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270120';
+import { hoyISO, sumarDias, PRIORIDADES } from './datos.js?v=202611270230';
+import { vigentes, visiblePara, cumplimiento, evaluarEntrega, VENTANA_DIAS, saludProyecto } from './store.js?v=202611270230';
+import { I, Avatar, LogoCliente, Info, fechaCorta } from './ui.js?v=202611270230';
 const T_ENTREGA = 'Porcentaje de tareas que se cerraron en su fecha compromiso, de las que vencieron en el periodo. Una tarea Alta pesa 3, una Media 2 y una Baja 1. Si la fecha la movió el cliente o algo externo, cuenta la nueva; si la movimos nosotros, cuenta la original. Verde: 95 % o más · amarillo: 85 a 94 % · rojo: menos de 85 %.';
-import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270120';
-import { MapaEnfoque } from './enfoque.js?v=202611270120';
+import { Semaforo, NOMBRE_SALUD } from './archivero.js?v=202611270230';
+import { MapaEnfoque } from './enfoque.js?v=202611270230';
 
 const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); return sumarDias(iso, -((d.getDay() + 6) % 7)); };
 const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00')).replace('.', '');

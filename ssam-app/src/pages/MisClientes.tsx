@@ -266,69 +266,63 @@ export default function MisClientes() {
               <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar material o #folio" className="h-9 w-full rounded-xl border border-border pl-9 pr-3 text-sm outline-none bg-background focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left text-[11px] font-semibold text-muted-foreground">
-                <tr>
-                  <th className="min-w-[280px] px-4 py-2.5">Material</th>
-                  <th className="whitespace-nowrap px-4 py-2.5">Etapa interna</th>
-                  <th className="whitespace-nowrap px-4 py-2.5">El cliente lo ve como</th>
-                  <th className="whitespace-nowrap px-4 py-2.5">Fecha comprometida</th>
-                  <th className="px-4 py-2.5">Cliente</th>
-                  <th className="px-4 py-2.5" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {lista.map((m) => {
-                  const mom = MOMENTOS.find((x) => x.id === momento(m))!;
-                  const vencida = isFechaVencida(m.fecha_comprometida, m.status) && mom.id !== "entregado";
-                  const msgs = data.comentariosCliente[m.id]?.count ?? 0;
-                  const corregir = pendientes.some((p) => p.m.id === m.id && p.tipo === "corregir");
-                  return (
-                    <tr key={m.id} onClick={() => navigate(`/materials/${m.id}`)} className="group cursor-pointer hover:bg-muted/40">
-                      <td className="px-4 py-4">
-                        <p className="font-semibold text-foreground underline-offset-2 group-hover:text-[#E37439] group-hover:underline">
-                          {m.folio != null && <span className="mr-1.5 font-mono text-[11px] font-normal text-muted-foreground/70">#{m.folio}</span>}
-                          {m.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{m.product_name ?? "—"}{m.indication_name ? ` · ${m.indication_name}` : ""}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {statusLabel(m.status as MaterialStatus)}
-                        {corregir && <span className="ml-1.5 rounded-full bg-[#D64545] px-1.5 py-0.5 text-[10px] font-semibold text-white">corregir</span>}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
-                          <span className="h-2 w-2 rounded-full" style={{ background: mom.color }} /> {mom.nombre}
-                        </span>
-                      </td>
-                      <td className={cn("whitespace-nowrap px-4 py-3 text-xs", vencida ? "font-semibold text-[#B23A3A] dark:text-[#F08A8A]" : "text-muted-foreground")}>
-                        {formatDate(m.fecha_comprometida)}{vencida ? " · vencida" : ""}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <span className="flex items-center gap-2">
-                          {m.visible_para_cliente === false && <span title="No visible para el cliente" className="inline-flex items-center gap-1 text-muted-foreground/70"><EyeOff className="h-3.5 w-3.5" /> oculto</span>}
-                          {msgs > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 font-semibold text-sky-800 dark:text-sky-300"><MessageSquare className="h-3 w-3" /> {msgs}</span>}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="inline-flex items-center gap-2">
-                          <EnviarAlCliente material={m} onDone={data.reload} compacto />
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setSubirPara(m); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground hover:border-[#E37439] hover:text-[#E37439]">
-                            <Upload className="h-3.5 w-3.5" /> Subir versión
-                          </button>
-                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1 text-xs font-semibold text-background group-hover:bg-[#E37439] group-hover:text-white">Ver detalle <ChevronRight className="h-3.5 w-3.5" /></span>
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {lista.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">Ningún material coincide.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {/* Una tarjeta por material: se abre al tocarla y las acciones quedan siempre a la vista */}
+          <ul className="divide-y divide-border">
+            {lista.map((m) => {
+              const mom = MOMENTOS.find((x) => x.id === momento(m))!;
+              const vencida = isFechaVencida(m.fecha_comprometida, m.status) && mom.id !== "entregado";
+              const msgs = data.comentariosCliente[m.id]?.count ?? 0;
+              const corregir = pendientes.some((p) => p.m.id === m.id && p.tipo === "corregir");
+              const abrir = () => navigate(`/materials/${m.id}`);
+              return (
+                <li key={m.id}>
+                  <div
+                    role="link"
+                    tabIndex={0}
+                    onClick={abrir}
+                    onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && abrir()}
+                    className="group grid cursor-pointer gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none sm:grid-cols-[minmax(0,1fr)_190px_120px] sm:items-center"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-semibold text-foreground underline-offset-2 group-hover:text-[#E37439] group-hover:underline">
+                        {m.folio != null && <span className="mr-1.5 font-mono text-xs font-normal text-muted-foreground/70">#{m.folio}</span>}
+                        {m.name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{m.product_name ?? "—"}{m.indication_name ? ` · ${m.indication_name}` : ""}</p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                        {corregir && <span className="rounded-full bg-[#D64545] px-2 py-0.5 text-white">Por corregir</span>}
+                        {m.visible_para_cliente === false && <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground"><EyeOff className="h-3 w-3" /> Oculto al cliente</span>}
+                        {msgs > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-800 dark:text-sky-300"><MessageSquare className="h-3 w-3" /> {msgs}</span>}
+                      </div>
+                    </div>
+                    <div className="text-xs">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                        <span className="h-2 w-2 rounded-full" style={{ background: mom.color }} /> {mom.nombre}
+                      </span>
+                      <span className="block text-muted-foreground">{statusLabel(m.status as MaterialStatus)}</span>
+                    </div>
+                    <div className={cn("text-xs", vencida ? "font-semibold text-[#B23A3A] dark:text-[#F08A8A]" : "text-muted-foreground")}>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">Entrega</span>
+                      {formatDate(m.fecha_comprometida)}{vencida ? " · vencida" : ""}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-background group-hover:bg-[#E37439] group-hover:text-white">
+                        Ver detalle <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setSubirPara(m); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:border-[#E37439] hover:text-[#E37439]">
+                        <Upload className="h-3.5 w-3.5" /> Subir versión
+                      </button>
+                      {/* Sus diálogos no deben abrir el material al hacer clic o escribir */}
+                      <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                        <EnviarAlCliente material={m} onDone={data.reload} compacto />
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+            {lista.length === 0 && <li className="px-4 py-10 text-center text-sm text-muted-foreground">Ningún material coincide.</li>}
+          </ul>
         </section>
         {dialogos}
       </div>

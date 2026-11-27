@@ -55,6 +55,13 @@ export function EnviarAlCliente({ material, onDone, compacto = false }: { materi
   );
 }
 
+/** El diálogo de envío, para abrirlo directo (por ejemplo, después de subir una versión). */
+export function DialogoEnviar({ material, onCerrar, onDone }: { material: Material; onCerrar: () => void; onDone: () => void }) {
+  const destino = destinoCliente(material.status);
+  if (!destino) return null;
+  return <Dialogo material={material} destino={destino} onCerrar={onCerrar} onDone={onDone} />;
+}
+
 function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; destino: string; onCerrar: () => void; onDone: () => void }) {
   const { user } = useAuth();
   const [archivos, setArchivos] = useState<StoredFile[] | null>(null);
@@ -110,6 +117,11 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
         incluir={destino === "aprobacion_cliente_grafico" && material.status === "desarrollo_grafico" ? ["entrega_diseno"] : []}
         onCerrar={onCerrar}
         onEnviar={async () => {
+          // 1) Lo último que subió Paco queda visible para el cliente (si no, la
+          //    base lo guarda como interno y el cliente seguiría viendo la anterior).
+          const pub = await StorageService.publicar(material.id);
+          if (pub.error) return { error: pub.error };
+          // 2) El material pasa a la revisión del cliente.
           const r = await mutateChangeStatus(material.id, destino);
           if (r.error) return { error: r.error };
           if (user && mensaje.trim()) {

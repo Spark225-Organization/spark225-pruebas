@@ -1,6 +1,7 @@
 // Mensajes de Spark225 en el portal del cliente: lo último que le escribió el
 // equipo (por ejemplo, «Atendimos tus correcciones» al reenviarle una versión).
 // Los nuevos se marcan hasta que el cliente los da por vistos.
+import { usePulso } from "@/lib/pulso";
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -22,6 +23,7 @@ export function MensajesSpark({ materiales, abrir }: { materiales: Material[]; a
       return "";
     }
   });
+  const pulso = usePulso();
   const ids = useMemo(() => new Set(materiales.map((m) => m.id)), [materiales]);
   const nombre = (id: string) => materiales.find((m) => m.id === id)?.name ?? "Material";
 
@@ -50,7 +52,7 @@ export function MensajesSpark({ materiales, abrir }: { materiales: Material[]; a
     return () => {
       vivo = false;
     };
-  }, [ids, user?.id, materiales]);
+  }, [ids, user?.id, materiales, pulso]);
 
   if (!msgs.length) return null;
   const nuevos = msgs.filter((m) => !vistos || m.created_at > vistos);

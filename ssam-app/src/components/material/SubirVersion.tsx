@@ -4,13 +4,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { X, Loader2, Upload, Paperclip, FileText } from "lucide-react";
+import { X, Loader2, Upload, Paperclip, FileText, CheckCircle2, Send } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { StorageService, type StoredFile } from "@/lib/storage";
+import { StorageService, esEvidenciaCliente, type StoredFile } from "@/lib/storage";
+import { DialogoEnviar, destinoCliente } from "@/components/material/EnviarAlCliente";
+import { avisarCambio } from "@/lib/pulso";
 import type { Material } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
 
-const esEvidencia = (f: StoredFile) => f.stage === "cambios_cliente" || /^Cambio_cliente_|^Marcas_|^Nota_de_voz_|^Correcciones_/.test(f.name);
 
 export function SubirVersion({ material, onCerrar, onListo }: { material: Material; onCerrar: () => void; onListo?: () => void }) {
   const { user } = useAuth();
@@ -19,9 +20,14 @@ export function SubirVersion({ material, onCerrar, onListo }: { material: Materi
   const [archivo, setArchivo] = useState<File | null>(null);
   const [nota, setNota] = useState("");
   const [subiendo, setSubiendo] = useState(false);
+  // Después de subir: «¿Se la envías ya al cliente?»
+  const [subida, setSubida] = useState<StoredFile | null>(null);
+  const [enviar, setEnviar] = useState(false);
+  const enRevisionCliente = /^aprobacion_cliente/.test(material.status);
+  const puedeEnviar = !!destinoCliente(material.status);
 
   useEffect(() => {
-    StorageService.list(material.id).then((fs) => setArchivos(fs.filter((f) => !esEvidencia(f) && f.category !== "link")));
+    StorageService.list(material.id).then((fs) => setArchivos(fs.filter((f) => !esEvidenciaCliente(f) && f.category !== "link")));
   }, [material.id]);
 
   // Una entrada por pieza, con su versión más reciente.
@@ -51,7 +57,7 @@ export function SubirVersion({ material, onCerrar, onListo }: { material: Materi
       const base = piezas.find((p) => p.id === pieza);
       // La versión nueva conserva el nombre de la pieza para que se agrupen.
       const f = base ? new File([archivo], base.name, { type: archivo.type || base.mimeType }) : archivo;
-      await StorageService.upload({
+      const nueva = await StorageService.upload({
         file: f,
         materialId: material.id,
         stage: material.status,
@@ -59,15 +65,48 @@ export function SubirVersion({ material, onCerrar, onListo }: { material: Materi
         uploadedByName: user.name,
         notes: nota.trim() || undefined,
         newVersionOf: base?.id,
+        // Si el cliente ya está revisando, la ve al momento.
+        visibleCliente: enRevisionCliente,
       });
-      toast.success(base ? `Versión ${base.version + 1} subida.` : "Pieza subida.");
       onListo?.();
-      onCerrar();
+      avisarCambio();
+      if (enRevisionCliente) {
+        toast.success(`Versión ${nueva.version} subida. El cliente ya la ve.`);
+        onCerrar();
+      } else {
+        setSubida(nueva);
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "No se pudo subir el archivo.");
     }
     setSubiendo(false);
   };
+
+  if (enviar) return <DialogoEnviar material={material} onCerrar={onCerrar} onDone={() => { onListo?.(); avisarCambio(); }} />;
+
+  if (subida) {
+    return createPortal(
+      <div className="fixed inset-0 z-[60] flex items-end justify-center bg-[#0E1E2A]/45 sm:items-center sm:p-6" onClick={onCerrar}>
+        <div role="dialog" aria-label="Versión subida" onClick={(e) => e.stopPropagation()} className="ssam-ficha w-full max-w-md rounded-t-3xl border border-border bg-card p-6 text-foreground shadow-2xl sm:rounded-3xl">
+          <p className="flex items-center gap-2 text-lg font-bold"><CheckCircle2 className="h-5 w-5 text-[#2E9E5B]" /> Versión {subida.version} guardada</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {puedeEnviar
+              ? "El cliente todavía no la ve. Se le mostrará en cuanto se la envíes."
+              : "Queda guardada en el material. El cliente la verá cuando el material llegue a su revisión."}
+          </p>
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={onCerrar} className="rounded-xl px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted">{puedeEnviar ? "Enviar después" : "Listo"}</button>
+            {puedeEnviar && (
+              <button type="button" onClick={() => setEnviar(true)} autoFocus className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E9E5B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#238048]">
+                <Send className="h-4 w-4" /> Enviar al cliente ahora
+              </button>
+            )}
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-[#0E1E2A]/45 sm:items-center sm:p-6" onClick={onCerrar}>

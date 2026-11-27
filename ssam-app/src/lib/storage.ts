@@ -27,6 +27,8 @@ export interface StoredFile {
   externalUrl?: string;
   /** Cloud URL — used by external storage drivers */
   cloudUrl?: string;
+  /** ¿El cliente puede verla? (file_versions.visibilidad = visible_para_cliente) */
+  visibleCliente?: boolean;
 }
 
 export interface UploadOptions {
@@ -39,6 +41,8 @@ export interface UploadOptions {
   notes?: string;
   /** If provided, creates a new version linked to this file */
   newVersionOf?: string;
+  /** Que el cliente la vea desde ya. Si no, queda interna hasta «Enviar al cliente». */
+  visibleCliente?: boolean;
 }
 
 // ─── Storage Driver Interface ────────────────────────────────────────────────
@@ -128,8 +132,9 @@ const supabaseDriver: StorageDriver = {
         tamano_bytes: opts.file?.size ?? null,
         es_final: true,
         subido_por: opts.uploadedBy,
-        // La evidencia que sube el cliente la ven él y el equipo.
-        ...(opts.stage === "cambios_cliente" ? { visibilidad: "visible_para_cliente" } : {}),
+        // La evidencia que sube el cliente la ven él y el equipo; las piezas del
+        // equipo quedan internas hasta que se envían al cliente (o se piden visibles).
+        visibilidad: opts.stage === "cambios_cliente" || opts.visibleCliente ? "visible_para_cliente" : "interno",
       })
       .select("id, fecha_carga")
       .single();
@@ -156,6 +161,7 @@ const supabaseDriver: StorageDriver = {
       notes: opts.notes,
       externalUrl: opts.externalUrl,
       cloudUrl,
+      visibleCliente: opts.stage === "cambios_cliente" || !!opts.visibleCliente,
     };
   },
 
@@ -190,6 +196,7 @@ const supabaseDriver: StorageDriver = {
           parentVersionId: i > 0 ? vs[i - 1].id : undefined,
           externalUrl: link ? v.storage_path : undefined,
           cloudUrl: link ? undefined : v.storage_path,
+          visibleCliente: v.visibilidad === "visible_para_cliente",
         });
       });
     }
@@ -227,6 +234,10 @@ const supabaseDriver: StorageDriver = {
   },
 };
 
+/** Archivos que subió el cliente al revisar (no son «la pieza»). */
+export const esEvidenciaCliente = (f: StoredFile) =>
+  f.stage === "cambios_cliente" || /^Cambio_cliente_|^Marcas_|^Nota_de_voz_|^Correcciones_/.test(f.name);
+
 // ─── Active Driver ────────────────────────────────────────────────────────────
 
 const ACTIVE_DRIVER: StorageDriver = supabaseDriver;
@@ -241,6 +252,40 @@ export const StorageService = {
   listStrict: (materialId: string) => ACTIVE_DRIVER.list(materialId),
   delete: (fileId: string) => ACTIVE_DRIVER.delete(fileId),
   getUrl: (file: StoredFile) => ACTIVE_DRIVER.getUrl(file),
+
+  /**
+   * Publica al cliente la versión más reciente de cada pieza del material
+   * (las evidencias del cliente no cuentan). Se llama al «Enviar al cliente»:
+   * así lo que sube Paco siempre llega a la revisión. Devuelve las versiones
+   * publicadas.
+   */
+  async publicar(materialId: string): Promise<{ publicadas: StoredFile[]; error: string | null }> {
+    let fs: StoredFile[];
+    try {
+      fs = await ACTIVE_DRIVER.list(materialId);
+    } catch (e: any) {
+      return { publicadas: [], error: e?.message ?? "No se pudieron leer los archivos." };
+    }
+    const ultimas = new Map<string, StoredFile>();
+    for (const f of fs) {
+      if (esEvidenciaCliente(f) || f.category === "link") continue;
+      const a = ultimas.get(f.name);
+      if (!a || f.version > a.version) ultimas.set(f.name, f);
+    }
+    const ocultas = [...ultimas.values()].filter((f) => !f.visibleCliente);
+    if (ocultas.length) {
+      const { data, error } = await supabase
+        .from("file_versions")
+        .update({ visibilidad: "visible_para_cliente" })
+        .in("id", ocultas.map((f) => f.id))
+        .select("id");
+      if (error) return { publicadas: [], error: `No se pudo mostrar la versión al cliente: ${error.message}` };
+      // Si las reglas de la base no dejan cambiarla, no hay error pero tampoco filas.
+      if ((data ?? []).length < ocultas.length)
+        return { publicadas: [], error: "La base no permitió mostrar la versión al cliente (falta el permiso del SQL 07)." };
+    }
+    return { publicadas: [...ultimas.values()], error: null };
+  },
 
   /** Returns all versions of a file (sorted oldest→newest) */
   async getVersionHistory(

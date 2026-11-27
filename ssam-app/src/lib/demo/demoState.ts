@@ -10,9 +10,33 @@ export type DemoRol = "admin" | "client" | "disenador";
 
 const CLAVE_ROL = "ssam-demo-rol";
 
+// El rol y el laboratorio van por pestaña (sessionStorage): así se puede tener
+// a Paco en una pestaña y al cliente en otra sin que se mezclen. localStorage
+// guarda el último elegido para abrir pestañas nuevas con ese rol.
+function leerSesion(clave: string): string | null {
+  try {
+    return sessionStorage.getItem(clave) ?? localStorage.getItem(clave);
+  } catch {
+    return null;
+  }
+}
+function guardarSesion(clave: string, valor: string | null) {
+  try {
+    if (valor) {
+      sessionStorage.setItem(clave, valor);
+      localStorage.setItem(clave, valor);
+    } else {
+      sessionStorage.removeItem(clave);
+      localStorage.removeItem(clave);
+    }
+  } catch {
+    /* nada */
+  }
+}
+
 export function rolDemo(): DemoRol | null {
   try {
-    const v = localStorage.getItem(CLAVE_ROL);
+    const v = leerSesion(CLAVE_ROL);
     return v === "admin" || v === "client" || v === "disenador" ? v : null;
   } catch {
     return null;
@@ -20,12 +44,7 @@ export function rolDemo(): DemoRol | null {
 }
 
 export function guardarRolDemo(rol: DemoRol | null) {
-  try {
-    if (rol) localStorage.setItem(CLAVE_ROL, rol);
-    else localStorage.removeItem(CLAVE_ROL);
-  } catch {
-    /* sin almacenamiento: el rol dura lo que la pestaña */
-  }
+  guardarSesion(CLAVE_ROL, rol);
 }
 
 // Ids fijos de las dos cuentas demo (existen en la base ficticia).
@@ -47,24 +66,14 @@ const CLAVE_LAB = "ssam-demo-laboratorio";
 /** Laboratorio con el que entra la cuenta de cliente demo. */
 export function laboratorioDemo() {
   let id: string | null = null;
-  try {
-    id = localStorage.getItem(CLAVE_LAB);
-  } catch {
-    /* nada */
-  }
+  id = leerSesion(CLAVE_LAB);
   return DEMO_LABORATORIOS.find((l) => l.empresa === id) ?? DEMO_LABORATORIOS[0];
 }
 
 /** Entra con un rol y recarga la app en la pantalla que le toca. */
 export function entrarDemo(rol: DemoRol, empresa?: string) {
   guardarRolDemo(rol);
-  if (empresa) {
-    try {
-      localStorage.setItem(CLAVE_LAB, empresa);
-    } catch {
-      /* nada */
-    }
-  }
+  if (empresa) guardarSesion(CLAVE_LAB, empresa);
   const base = import.meta.env.BASE_URL || "/";
   window.location.assign(base + (rol === "client" ? "portal" : rol === "disenador" ? "mis-clientes" : ""));
 }

@@ -5,6 +5,7 @@
 // material va al detalle, donde sube versiones, cambia el estatus (con su
 // checklist) y conversa con el cliente.
 // Un material es de Paco si es su responsable; el administrador ve todos.
+import { usePulso } from "@/lib/pulso";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -66,6 +67,7 @@ export default function MisClientes() {
   const [buscar, setBuscar] = useState("");
   const [momentoSel, setMomentoSel] = useState<Momento | "">("");
   const [nuevo, setNuevo] = useState(false);
+  const pulso = usePulso();
   const [subirPara, setSubirPara] = useState<Material | null>(null);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [vistos, setVistos] = useState<string>(() => {
@@ -128,7 +130,7 @@ export default function MisClientes() {
     return () => {
       vivo = false;
     };
-  }, [data.materials]);
+  }, [data.materials, pulso]);
 
   const esAdmin = user?.role === "admin";
   const mios = useMemo(
@@ -158,13 +160,21 @@ export default function MisClientes() {
   const misIds = useMemo(() => new Set(mios.map((m) => m.id)), [mios]);
   const misAvisos = useMemo(() => avisos.filter((a) => misIds.has(a.material_id)).slice(0, 30), [avisos, misIds]);
   const nuevos = misAvisos.filter((a) => !vistos || a.created_at > vistos);
-  const avisado = useMemo(() => ({ hecho: false }), []);
+  // Aviso emergente al entrar y cada vez que llega algo nuevo del cliente.
+  const avisado = useMemo(() => ({ hasta: "" }), []);
   useEffect(() => {
-    if (!avisado.hecho && nuevos.length) {
-      avisado.hecho = true;
-      toast(`Tienes ${nuevos.length} ${nuevos.length === 1 ? "aviso nuevo" : "avisos nuevos"} de tus clientes.`, { icon: "🔔" });
+    const ultimo = nuevos[0]?.created_at ?? "";
+    if (!ultimo || ultimo <= avisado.hasta) return;
+    const primeraVez = !avisado.hasta;
+    avisado.hasta = ultimo;
+    if (primeraVez) toast(`Tienes ${nuevos.length} ${nuevos.length === 1 ? "aviso nuevo" : "avisos nuevos"} de tus clientes.`, { icon: "🔔" });
+    else {
+      const a = nuevos[0];
+      const m = mios.find((x) => x.id === a.material_id);
+      const que = a.tipo === "rechazo" ? `rechazó ${m?.name ?? "un material"} · ${a.texto}` : a.tipo === "aprobacion" ? `aprobó ${m?.name ?? "un material"}` : `escribió en ${m?.name ?? "un material"}`;
+      toast(`${a.autor} ${que}`, { icon: "🔔", action: { label: "Abrir", onClick: () => navigate(`/materials/${a.material_id}`) } });
     }
-  }, [nuevos.length, avisado]);
+  }, [nuevos, avisado, mios, navigate]);
   const marcarVistos = () => {
     const ahora = new Date().toISOString();
     setVistos(ahora);

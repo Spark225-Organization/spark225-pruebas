@@ -4,8 +4,10 @@
 // fechas y la conversación con Spark225.
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, Download, FileText, ImageIcon, Check, MessageSquare, CalendarClock, ExternalLink } from "lucide-react";
-import { StorageService, type StoredFile } from "@/lib/storage";
+import { ArrowLeft, Download, FileText, ImageIcon, Check, MessageSquare, CalendarClock, ExternalLink, Sparkles, Columns2, X } from "lucide-react";
+import { StorageService, esEvidenciaCliente, type StoredFile } from "@/lib/storage";
+import { approvalsApi } from "@/lib/approvalsApi";
+import { usePulso } from "@/lib/pulso";
 import type { Material } from "@/lib/api-types";
 import { formatDate } from "@/lib/statusModel";
 import { momento, momentoIndice, pasoHecho, semaforo, TONO_CLASE, MOMENTOS } from "@/lib/portalModelo";
@@ -24,6 +26,10 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
   const [archivos, setArchivos] = useState<StoredFile[] | null>(null);
   const [verId, setVerId] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
+  const [comparar, setComparar] = useState(false);
+  const [ultimaDecision, setUltimaDecision] = useState<string | null>(null);
+  const [llegoNueva, setLlegoNueva] = useState<StoredFile | null>(null);
+  const pulso = usePulso();
 
   // El botón de contacto sabe qué material está viendo el cliente.
   useEffect(() => {
@@ -32,22 +38,42 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
     return () => setContextoContacto(null);
   }, [material?.id]);
 
+  // Al cambiar de material se empieza de cero.
+  useEffect(() => {
+    setArchivos(null);
+    setVerId(null);
+    setLlegoNueva(null);
+    setComparar(false);
+  }, [material?.id]);
+
+  // Archivos y última decisión. Se releen solos (pulso): si Paco envía una
+  // versión nueva mientras el cliente tiene la ficha abierta, aparece al momento.
   useEffect(() => {
     if (!material) return;
     let vivo = true;
-    setArchivos(null);
-    StorageService.list(material.id).then((fs) => {
+    Promise.all([StorageService.list(material.id), approvalsApi.list(material.id)]).then(([fs, a]) => {
       if (!vivo) return;
       // Las evidencias que sube el cliente no son «la pieza»: se ven en la conversación.
-      const piezas = fs.filter((f) => f.stage !== "cambios_cliente" && !/^Cambio_cliente_|^Marcas_|^Nota_de_voz_|^Correcciones_/.test(f.name));
-      const orden = [...piezas].sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || "") || b.version - a.version);
-      setArchivos(orden);
-      setVerId(orden[0]?.id ?? null);
+      const orden = fs
+        .filter((f) => !esEvidenciaCliente(f))
+        .sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || "") || b.version - a.version);
+      setUltimaDecision((a.data ?? [])[0]?.created_at ?? null);
+      setArchivos((antes) => {
+        const nueva = orden[0];
+        if (antes && nueva && !antes.some((f) => f.id === nueva.id)) {
+          // Llegó una versión mientras la ficha estaba abierta: se muestra y se avisa.
+          setLlegoNueva(nueva);
+          setVerId(nueva.id);
+        } else {
+          setVerId((v) => (v && orden.some((f) => f.id === v) ? v : (nueva?.id ?? null)));
+        }
+        return orden;
+      });
     });
     return () => {
       vivo = false;
     };
-  }, [material?.id, recarga]);
+  }, [material?.id, recarga, pulso]);
 
   useEffect(() => {
     if (!material) return;
@@ -79,6 +105,12 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
   const mom = MOMENTOS.find((x) => x.id === momento(material))!;
   const sem = semaforo(material);
   const piezaActual = piezas.find((p) => p.versiones.some((v) => v.id === verId));
+  // La decisión siempre es sobre la versión vigente de la pieza que se ve.
+  const vigentePieza = piezaActual?.versiones[0] ?? vigente;
+  const viendoAnterior = !!ver && !!vigentePieza && ver.id !== vigentePieza.id;
+  const anterior = piezaActual && piezaActual.versiones.length > 1 ? piezaActual.versiones[1] : null;
+  // «Nueva»: subida después de la última decisión del cliente.
+  const esNueva = !!vigentePieza && !!ultimaDecision && (vigentePieza.uploadedAt || "") > ultimaDecision && vigentePieza.version > 1;
 
   // Se monta en <body> para que ningún margen o transformación del listado la desplace.
   return createPortal(
@@ -124,14 +156,61 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
                   {piezaActual.versiones.map((v, k) => (
                     <button key={v.id} type="button" onClick={() => setVerId(v.id)} aria-pressed={v.id === verId} className={cn("rounded-lg px-2.5 py-1 text-xs font-semibold", v.id === verId ? "bg-[#E37439] text-white" : "text-[#4E5964] hover:bg-[#F3F4F6]")}>
                       v{v.version}
-                      {k === 0 && <span className="ml-1 font-normal opacity-80">vigente</span>}
+                      {k === 0 && <span className="ml-1 font-normal opacity-80">{esNueva ? "nueva" : "vigente"}</span>}
                     </button>
                   ))}
+                  {anterior && (
+                    <button type="button" onClick={() => setComparar((c) => !c)} aria-pressed={comparar} className={cn("ml-1 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold", comparar ? "bg-[#0E1E2A] text-white" : "text-[#0E1E2A] hover:bg-[#F3F4F6]")}>
+                      <Columns2 className="h-3.5 w-3.5" /> {comparar ? "Dejar de comparar" : `Comparar con v${anterior.version}`}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           )}
 
+          {(llegoNueva || esNueva) && vigentePieza && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#2E9E5B]/30 bg-[#2E9E5B]/10 px-3 py-2 text-sm text-[#0E1E2A]">
+              <Sparkles className="h-4 w-4 shrink-0 text-[#2E9E5B]" />
+              <span className="min-w-0 flex-1">
+                <b>Versión nueva: v{vigentePieza.version}</b> · Spark225 la subió el {formatDate(vigentePieza.uploadedAt)}
+                {anterior ? ". Puedes compararla con la anterior." : "."}
+              </span>
+              {anterior && !comparar && (
+                <button type="button" onClick={() => { setVerId(vigentePieza.id); setComparar(true); }} className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-[#0E1E2A] shadow-sm hover:bg-[#F3F4F6]">Comparar</button>
+              )}
+              {llegoNueva && (
+                <button type="button" onClick={() => setLlegoNueva(null)} aria-label="Cerrar aviso" className="rounded p-1 text-[#4E5964] hover:bg-white/60"><X className="h-3.5 w-3.5" /></button>
+              )}
+            </div>
+          )}
+          {viendoAnterior && vigentePieza && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#D99A12]/40 bg-[#F5C245]/15 px-3 py-2 text-sm text-[#0E1E2A]">
+              <span className="min-w-0 flex-1">Estás viendo la <b>versión {ver!.version}</b>, que ya no es la vigente. Tu decisión aplica a la <b>v{vigentePieza.version}</b>.</span>
+              <button type="button" onClick={() => setVerId(vigentePieza.id)} className="rounded-lg bg-[#0E1E2A] px-2.5 py-1 text-xs font-semibold text-white">Ver v{vigentePieza.version}</button>
+            </div>
+          )}
+
+          {comparar && anterior && vigentePieza ? (
+            <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-2">
+              {[anterior, vigentePieza].map((f, i) => (
+                <div key={f.id} className="relative flex min-h-[40vh] flex-col overflow-hidden rounded-2xl border border-[#E3E6EA] bg-white">
+                  <p className={cn("px-3 py-1.5 text-xs font-bold", i ? "bg-[#2E9E5B]/10 text-[#1E7D47]" : "bg-[#F3F4F6] text-[#4E5964]")}>
+                    {i ? `v${f.version} · vigente` : `v${f.version} · anterior`}
+                  </p>
+                  <div className="flex min-h-0 flex-1 items-center justify-center">
+                    {esImagen(f) ? (
+                      <img src={StorageService.getUrl(f)} alt={f.name} className="max-h-full max-w-full object-contain p-2" />
+                    ) : esPdf(f) ? (
+                      <iframe src={StorageService.getUrl(f)} title={`${f.name} v${f.version}`} className="h-full w-full" />
+                    ) : (
+                      <p className="text-sm text-[#7A8590]">Descarga el archivo para verlo.</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-[#E3E6EA] bg-white">
             {archivos === null ? (
               <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#E37439] border-t-transparent" aria-label="Cargando" />
@@ -163,11 +242,12 @@ export function MaterialFicha({ material, onClose, onCambio }: { material: Mater
               </div>
             )}
           </div>
+          )}
         </section>
 
         {/* Panel lateral */}
         <aside className="min-h-0 space-y-4 overflow-y-auto border-t border-[#E3E6EA] bg-white p-4 pb-24 sm:p-5 sm:pb-24 lg:border-l lg:border-t-0" aria-label="Detalle y acciones">
-          {momento(material) === "revisar" && <RevisionCliente material={material} vigente={ver ?? vigente} onDone={() => { setRecarga((n) => n + 1); onCambio(); }} />}
+          {momento(material) === "revisar" && <RevisionCliente material={material} vigente={vigentePieza} onDone={() => { setRecarga((n) => n + 1); onCambio(); }} />}
 
           <div>
             <p className="mb-2 text-xs font-semibold text-[#7A8590]">Etapa del material</p>

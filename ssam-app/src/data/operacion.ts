@@ -57,6 +57,8 @@ import {
   type DemoIdSet,
 } from "@/lib/mgmtHelpers";
 
+import { avisarCambio, EVENTO_CAMBIO } from "@/lib/pulso";
+
 // ─── QueryClient único ───────────────────────────────────────────────────
 export const operacionQueryKey: QueryKey = ["operacion"];
 
@@ -70,7 +72,11 @@ export const queryClient = new QueryClient({
 // Varias invalidaciones seguidas (mutación + recarga manual + aviso en vivo)
 // se juntan en una sola recarga.
 let recargaPendiente: Promise<void> | null = null;
+// Otra pestaña (demo) o la base en vivo cambió algo: se recarga la copia general.
+if (typeof window !== "undefined") window.addEventListener(EVENTO_CAMBIO, () => void invalidateOperacion());
 export function invalidateOperacion() {
+  // Lo que no vive en la copia general (archivos, decisiones) también se relee.
+  avisarCambio();
   if (!recargaPendiente) {
     recargaPendiente = new Promise<void>((listo) =>
       setTimeout(async () => {

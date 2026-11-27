@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { usePulso } from "@/lib/pulso";
 import { toast } from "sonner";
 import { MessageSquare, Send, Paperclip, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,15 +31,16 @@ export const CommentThread = ({ materialId }: { materialId: string }) => {
   const [adjunto, setAdjunto] = useState<{ name: string } | null>(null);
 
   const reload = useCallback(async () => {
-    setLoading(true);
     const r = await getComments(materialId);
     setComments(r.data ?? []);
     setLoading(false);
   }, [materialId]);
 
+  // Se relee solo cuando la otra parte escribe (pulso), sin perder lo que se está escribiendo.
+  const pulso = usePulso();
   useEffect(() => {
     reload();
-  }, [reload]);
+  }, [reload, pulso]);
 
   const send = async () => {
     if (!body.trim() || !user) return;

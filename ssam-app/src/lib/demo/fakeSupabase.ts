@@ -18,23 +18,49 @@ function cargar(): Base {
   }
   try {
     const t = localStorage.getItem(CLAVE_BASE);
-    if (t) return JSON.parse(t);
+    if (t) {
+      ultimoTexto = t;
+      return JSON.parse(t);
+    }
   } catch {
     /* base nueva */
   }
   return crearBase();
 }
+// Texto de la base tal como está guardada: sirve para saber si otra pestaña
+// (por ejemplo, Paco en una y el cliente en otra) la cambió.
+let ultimoTexto: string | null = null;
 let db: Base = cargar();
-let guardado: ReturnType<typeof setTimeout> | null = null;
+/** Guarda al instante, para que la otra pestaña vea el cambio enseguida. */
 function guardar() {
-  if (guardado) clearTimeout(guardado);
-  guardado = setTimeout(() => {
-    try {
-      localStorage.setItem(CLAVE_BASE, JSON.stringify(db));
-    } catch {
-      /* sin almacenamiento: los cambios duran la sesión */
+  try {
+    const t = JSON.stringify(db);
+    localStorage.setItem(CLAVE_BASE, t);
+    ultimoTexto = t;
+  } catch {
+    /* sin almacenamiento: los cambios duran la sesión */
+  }
+}
+/** Antes de leer o escribir, toma lo último que guardó cualquier pestaña. */
+function sincronizar() {
+  try {
+    const t = localStorage.getItem(CLAVE_BASE);
+    if (t && t !== ultimoTexto) {
+      db = JSON.parse(t);
+      ultimoTexto = t;
     }
-  }, 150);
+  } catch {
+    /* nada */
+  }
+}
+// Otra pestaña cambió la base o subió un archivo: avisa a la app para refrescar.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === CLAVE_BASE) sincronizar();
+    else if (e.key === CLAVE_ARCHIVOS) recargarArchivos();
+    else return;
+    window.dispatchEvent(new Event("ssam-datos-cambiaron"));
+  });
 }
 /** Regresa la base ficticia a como venía de fábrica. */
 export function reiniciarDemo() {
@@ -45,6 +71,7 @@ export function reiniciarDemo() {
     /* nada */
   }
   db = crearBase();
+  ultimoTexto = null;
 }
 
 // ── Quién soy y qué puedo ver ─────────────────────────────────────────────
@@ -183,6 +210,7 @@ class Consulta implements PromiseLike<Res> {
   }
 
   private ejecutar(): Res {
+    sincronizar();
     let filas: Fila[] = [];
     const t = this.tabla;
     if (this.op === "select") {
@@ -267,6 +295,7 @@ function moverA(m: Fila, nuevo: string) {
 }
 
 function rpc(nombre: string, p: Fila): Res {
+  sincronizar();
   const m = p.p_material_id ? material(p.p_material_id) : null;
   if (p.p_material_id && !m) return { data: null, error: { message: "Material no encontrado." } };
   switch (nombre) {
@@ -329,6 +358,19 @@ function aBlobUrl(dato: string) {
   }
 }
 const subidos = new Map<string, string>([...guardados.entries()].map(([k, v]) => [k, aBlobUrl(v)]));
+function recargarArchivos() {
+  try {
+    const t = JSON.parse(localStorage.getItem(CLAVE_ARCHIVOS) || "{}") as Record<string, string>;
+    for (const [k, v] of Object.entries(t)) {
+      if (!guardados.has(k)) {
+        guardados.set(k, v);
+        subidos.set(k, aBlobUrl(v));
+      }
+    }
+  } catch {
+    /* nada */
+  }
+}
 function guardarArchivos() {
   const lista = [...guardados.entries()];
   // Si no cabe todo, se quitan los más viejos hasta que quepa.
@@ -429,6 +471,7 @@ const storage = {
 
 // ── Sesión ────────────────────────────────────────────────────────────────
 function sesion() {
+  sincronizar();
   const id = yo();
   if (!id) return null;
   const p = db.profiles.find((x) => x.id === id);

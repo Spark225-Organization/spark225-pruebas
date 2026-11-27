@@ -156,6 +156,8 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
         uploadedByName: user.name,
         notes: notes.trim() || undefined,
         newVersionOf: newVersionOf?.id,
+        // Si el cliente ya lo está revisando, la ve al momento; si no, al enviarlo.
+        visibleCliente: /^aprobacion_cliente/.test(stage),
       });
 
       clearInterval(interval);

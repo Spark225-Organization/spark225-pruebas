@@ -21,6 +21,10 @@ const REALTIME_TABLES = [
   "indications",
   "business_units",
   "profiles",
+  // Para que el cliente vea al momento la versión que sube Paco y Paco la decisión del cliente.
+  "files",
+  "file_versions",
+  "approvals",
 ];
 
 const listeners = new Set<(s: RtStatus) => void>();

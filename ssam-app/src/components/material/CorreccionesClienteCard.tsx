@@ -1,6 +1,7 @@
 // Correcciones que pidió el cliente, arriba del detalle interno: la categoría
 // del rechazo, lo que escribió (lista numerada de notas) y las páginas que
 // marcó sobre la pieza. Es lo primero que ve Paco al abrir el material.
+import { usePulso } from "@/lib/pulso";
 import { useEffect, useState } from "react";
 import { XCircle, CheckCircle2, ExternalLink, ImageIcon, Upload, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ export function CorreccionesClienteCard({ material, onCambio }: { material: Mate
   const [recarga, setRecarga] = useState(0);
   const [ultima, setUltima] = useState<any | null>(null);
   const [archivos, setArchivos] = useState<StoredFile[]>([]);
+  const pulso = usePulso();
 
   useEffect(() => {
     let vivo = true;
@@ -45,7 +47,7 @@ export function CorreccionesClienteCard({ material, onCambio }: { material: Mate
     return () => {
       vivo = false;
     };
-  }, [material.id, material.status, recarga]);
+  }, [material.id, material.status, recarga, pulso]);
 
   if (!ultima) return null;
   const rechazo = ultima.decision === "cambios";

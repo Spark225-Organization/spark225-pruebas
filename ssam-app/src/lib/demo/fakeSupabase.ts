@@ -48,6 +48,10 @@ function sincronizar() {
     if (t && t !== ultimoTexto) {
       db = JSON.parse(t);
       ultimoTexto = t;
+    } else if (!t && ultimoTexto) {
+      // Otra pestaña restableció los datos de prueba.
+      db = crearBase();
+      ultimoTexto = null;
     }
   } catch {
     /* nada */

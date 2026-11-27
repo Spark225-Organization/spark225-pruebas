@@ -13,7 +13,8 @@ import type { Material } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
 
 
-export function SubirVersion({ material, onCerrar, onListo }: { material: Material; onCerrar: () => void; onListo?: () => void }) {
+/** preguntarEnvio=false cuando ya se abrió desde «Enviar al cliente»: al subir solo se cierra. */
+export function SubirVersion({ material, onCerrar, onListo, preguntarEnvio = true }: { material: Material; onCerrar: () => void; onListo?: () => void; preguntarEnvio?: boolean }) {
   const { user } = useAuth();
   const [archivos, setArchivos] = useState<StoredFile[] | null>(null);
   const [pieza, setPieza] = useState<string>("nueva");
@@ -70,8 +71,8 @@ export function SubirVersion({ material, onCerrar, onListo }: { material: Materi
       });
       onListo?.();
       avisarCambio();
-      if (enRevisionCliente) {
-        toast.success(`Versión ${nueva.version} subida. El cliente ya la ve.`);
+      if (enRevisionCliente || !preguntarEnvio) {
+        toast.success(enRevisionCliente ? `Versión ${nueva.version} subida. El cliente ya la ve.` : `Versión ${nueva.version} subida.`);
         onCerrar();
       } else {
         setSubida(nueva);

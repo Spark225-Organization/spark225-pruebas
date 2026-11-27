@@ -213,7 +213,7 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
         </div>
       </div>
     </div>
-    {subir && <SubirVersion material={material} onCerrar={() => setSubir(false)} onListo={() => setRecarga((n) => n + 1)} />}
+    {subir && <SubirVersion material={material} preguntarEnvio={false} onCerrar={() => setSubir(false)} onListo={() => setRecarga((n) => n + 1)} />}
     </>,
     document.body,
   );

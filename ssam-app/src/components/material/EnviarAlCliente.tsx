@@ -15,6 +15,8 @@ import { StorageService, type StoredFile } from "@/lib/storage";
 import { useAuth } from "@/lib/auth";
 import { ChecklistEnvio } from "@/components/material/ChecklistEnvio";
 import { SubirVersion } from "@/components/material/SubirVersion";
+import { PuntosCorreccion, usePuntos } from "@/components/material/PuntosCorreccion";
+import { cerrarEnVersion } from "@/lib/correcciones";
 import { formatDate } from "@/lib/statusModel";
 import type { Material } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
@@ -67,6 +69,8 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
   const [archivos, setArchivos] = useState<StoredFile[] | null>(null);
   const [rechazo, setRechazo] = useState<{ created_at: string; comentario: string | null } | null>(null);
   const [mensaje, setMensaje] = useState("");
+  const [editado, setEditado] = useState(false);
+  const { puntos: todos, setPuntos } = usePuntos(material.id);
   const [paso, setPaso] = useState<"mensaje" | "checklist">("mensaje");
   const [subir, setSubir] = useState(false);
   const [recarga, setRecarga] = useState(0);
@@ -81,21 +85,29 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
       const ult = (a.data ?? [])[0];
       const r = ult && ult.decision === "cambios" ? { created_at: ult.created_at, comentario: ult.comentario } : null;
       setRechazo(r);
-      setMensaje((m) => {
-        if (m) return m;
-        // Si hubo rechazo, se proponen sus correcciones numeradas como atendidas.
-        const notas = (r?.comentario ?? "").split("\n").filter((l) => /^\d+\./.test(l.trim()));
-        return notas.length
-          ? `Atendimos tus correcciones:\n${notas.map((l) => `${l.trim()} ✔`).join("\n")}`
-          : r
-            ? "Atendimos tus correcciones. Quedamos atentos a tu revisión."
-            : "Te compartimos el material para tu revisión.";
-      });
     })();
     return () => {
       vivo = false;
     };
   }, [material.id, recarga]);
+
+  // Correcciones que cuentan: las del último rechazo (si lo hubo) y cualquiera abierta.
+  const puntos = todos === null ? null : rechazo ? todos : todos.filter((p) => p.estado === "abierto");
+  const abiertos = (puntos ?? []).filter((p) => p.estado === "abierto");
+
+  // Mensaje propuesto: las correcciones atendidas, una por renglón. Se
+  // actualiza mientras Paco marca puntos, hasta que él edite el texto.
+  useEffect(() => {
+    if (editado || archivos === null) return;
+    const hechos = (puntos ?? []).filter((p) => p.estado === "resuelto");
+    setMensaje(
+      hechos.length
+        ? `Atendimos tus correcciones:\n${hechos.map((p, i) => `${i + 1}. ${p.texto} ✔`).join("\n")}`
+        : rechazo
+          ? "Atendimos tus correcciones. Quedamos atentos a tu revisión."
+          : "Te compartimos el material para tu revisión.",
+    );
+  }, [puntos, rechazo, archivos, editado]);
 
   // ¿Hay alguna versión subida después del rechazo?
   const vigente = useMemo(() => [...(archivos ?? [])].sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || ""))[0] ?? null, [archivos]);
@@ -117,6 +129,8 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
         incluir={destino === "aprobacion_cliente_grafico" && material.status === "desarrollo_grafico" ? ["entrega_diseno"] : []}
         onCerrar={onCerrar}
         onEnviar={async () => {
+          // 0) Sin correcciones abiertas (el botón ya lo impide; se revisa otra vez).
+          if (abiertos.length) return { error: `Faltan ${abiertos.length} correcciones por marcar como hechas.` };
           // 1) Lo último que subió Paco queda visible para el cliente (si no, la
           //    base lo guarda como interno y el cliente seguiría viendo la anterior).
           const pub = await StorageService.publicar(material.id);
@@ -124,6 +138,8 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
           // 2) El material pasa a la revisión del cliente.
           const r = await mutateChangeStatus(material.id, destino);
           if (r.error) return { error: r.error };
+          // Las correcciones hechas quedan ligadas a la versión que se envía.
+          await cerrarEnVersion((puntos ?? []).filter((p) => p.estado === "resuelto" && !p.resuelto_en_version_id).map((p) => p.id), vigente?.id ?? null);
           if (user && mensaje.trim()) {
             const v = vigente ? `\n\nArchivo: ${vigente.name} · versión ${vigente.version}` : "";
             await mutateCreateComment({ material_id: material.id, author_id: user.id, author_name: user.name, body: mensaje.trim() + v, interno: false });
@@ -167,18 +183,30 @@ function Dialogo({ material, destino, onCerrar, onDone }: { material: Material; 
             </div>
           )}
 
+          {puntos && puntos.length > 0 && (
+            <div className={cn("rounded-xl border p-3", abiertos.length ? "border-[#D64545]/30 bg-[#D64545]/[0.05]" : "border-[#2E9E5B]/30 bg-[#2E9E5B]/[0.05]")}>
+              {abiertos.length > 0 && (
+                <p className="mb-2 flex items-start gap-2 text-sm font-semibold text-[#B23A3A] dark:text-[#F08A8A]">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  {abiertos.length === 1 ? "Falta 1 corrección por marcar como hecha." : `Faltan ${abiertos.length} correcciones por marcar como hechas.`}
+                </p>
+              )}
+              <PuntosCorreccion puntos={puntos} setPuntos={setPuntos} compacto />
+            </div>
+          )}
+
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted-foreground">Mensaje para el cliente</span>
-            <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} rows={6} className="w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
+            <textarea value={mensaje} onChange={(e) => { setEditado(true); setMensaje(e.target.value); }} rows={6} className="w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
             <span className="mt-1 block text-[11px] text-muted-foreground">Lo verá en la conversación del material junto con la versión que le envías.</span>
           </label>
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-border px-6 py-4">
-          <p className="text-[11px] text-muted-foreground">Sigue el checklist obligatorio.</p>
+          <p className="text-[11px] text-muted-foreground">{abiertos.length ? "Marca todas las correcciones para continuar." : "Sigue el checklist obligatorio."}</p>
           <div className="flex gap-2">
             <button type="button" onClick={onCerrar} className="rounded-xl px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted">Cancelar</button>
-            <button type="button" onClick={() => setPaso("checklist")} disabled={archivos === null || sinArchivo} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E9E5B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#238048] disabled:opacity-40">
+            <button type="button" onClick={() => setPaso("checklist")} disabled={archivos === null || sinArchivo || puntos === null || abiertos.length > 0} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E9E5B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#238048] disabled:opacity-40">
               <Send className="h-4 w-4" /> Continuar al checklist
             </button>
           </div>

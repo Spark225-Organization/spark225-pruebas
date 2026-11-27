@@ -9,6 +9,7 @@ import { mutateCreateComment } from "@/data/operacion";
 import { useAuth } from "@/lib/auth";
 import { SubirVersion } from "@/components/material/SubirVersion";
 import { EnviarAlCliente } from "@/components/material/EnviarAlCliente";
+import { PuntosCorreccion, usePuntos } from "@/components/material/PuntosCorreccion";
 import { approvalsApi } from "@/lib/approvalsApi";
 import { StorageService, type StoredFile } from "@/lib/storage";
 import { nombreMotivo } from "@/lib/portalModelo";
@@ -30,6 +31,7 @@ export function CorreccionesClienteCard({ material, onCambio }: { material: Mate
   const [ultima, setUltima] = useState<any | null>(null);
   const [archivos, setArchivos] = useState<StoredFile[]>([]);
   const pulso = usePulso();
+  const { puntos, setPuntos } = usePuntos(material.id);
 
   useEffect(() => {
     let vivo = true;
@@ -79,9 +81,19 @@ export function CorreccionesClienteCard({ material, onCambio }: { material: Mate
         )}
       </div>
 
-      {ultima.comentario && (
+      {rechazo && puntos && puntos.length > 0 ? (
+        <div className="mt-3 rounded-xl border border-border bg-card p-3">
+          <PuntosCorreccion puntos={puntos} setPuntos={setPuntos} />
+          {ultima.comentario && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground hover:text-foreground">Ver el mensaje completo del cliente</summary>
+              <pre className="mt-1 whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground">{ultima.comentario}</pre>
+            </details>
+          )}
+        </div>
+      ) : ultima.comentario ? (
         <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-border bg-card p-3 font-sans text-sm leading-relaxed text-foreground">{ultima.comentario}</pre>
-      )}
+      ) : null}
 
       {archivos.length > 0 && (
         <div className="mt-3">
@@ -143,7 +155,7 @@ export function CorreccionesClienteCard({ material, onCambio }: { material: Mate
             <Upload className="h-4 w-4" /> Subir versión corregida
           </button>
           <EnviarAlCliente material={material} onDone={() => onCambio?.()} />
-          <span className="text-[11px] text-muted-foreground">Corrige, sube la versión y envíala de nuevo al cliente.</span>
+          <span className="text-[11px] text-muted-foreground">Marca cada corrección como hecha, sube la versión y envíala de nuevo.</span>
         </div>
       )}
       {subir && <SubirVersion material={material} onCerrar={() => setSubir(false)} onListo={() => { setRecarga((n) => n + 1); onCambio?.(); }} />}

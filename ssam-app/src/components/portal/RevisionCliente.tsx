@@ -3,6 +3,8 @@
 // rechazos), el motivo por escrito (texto o voz con transcripción) y evidencia
 // opcional (archivos y marcas sobre la pieza). Todo queda en el historial y
 // le llega al equipo de Spark225.
+import { PuntosCliente, textoNoQuedo } from "@/components/portal/PuntosCliente";
+import { crearPuntos, separarPuntos } from "@/lib/correcciones";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Highlighter, Mic, Square, Paperclip, PenLine, X, Loader2, FileText } from "lucide-react";
@@ -30,6 +32,12 @@ export function RevisionCliente({
   const [modo, setModo] = useState<null | "aprobar" | "rechazar">(null);
   const [corrigiendo, setCorrigiendo] = useState(false);
   const [inicial, setInicial] = useState<ResultadoCorreccion | null>(null);
+  const [noQuedo, setNoQuedo] = useState<Set<string>>(new Set());
+  const rechazarConPendientes = async () => {
+    const texto = noQuedo.size ? await textoNoQuedo(material.id, noQuedo) : "";
+    setInicial(texto ? { accion: "rechazar", archivos: [], texto, notas: [] } : null);
+    setModo("rechazar");
+  };
   const etapa = material.status === "aprobacion_cliente_medico" ? "el contenido médico" : "el diseño";
 
   return (
@@ -51,11 +59,17 @@ export function RevisionCliente({
           </span>
         </button>
       )}
+      <PuntosCliente materialId={material.id} noQuedo={noQuedo} setNoQuedo={setNoQuedo} />
+      {noQuedo.size > 0 && (
+        <p className="mt-2 text-[11px] font-semibold text-[#B23A3A]">
+          Marcaste {noQuedo.size === 1 ? "1 punto que no quedó" : `${noQuedo.size} puntos que no quedaron`}: rechaza la versión para que Spark225 lo corrija.
+        </p>
+      )}
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => { setInicial(null); setModo("aprobar"); }} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#2E9E5B] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[#238048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E9E5B]/40">
+        <button type="button" disabled={noQuedo.size > 0} onClick={() => { setInicial(null); setModo("aprobar"); }} className="disabled:cursor-not-allowed disabled:opacity-40 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#2E9E5B] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[#238048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E9E5B]/40">
           <CheckCircle2 className="h-4 w-4" /> Aprobar
         </button>
-        <button type="button" onClick={() => { setInicial(null); setModo("rechazar"); }} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D64545]/35 bg-white px-3 py-2.5 text-sm font-semibold text-[#B23A3A] hover:bg-[#FFF1F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D64545]/30">
+        <button type="button" onClick={rechazarConPendientes} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D64545]/35 bg-white px-3 py-2.5 text-sm font-semibold text-[#B23A3A] hover:bg-[#FFF1F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D64545]/30">
           <XCircle className="h-4 w-4" /> Rechazar
         </button>
       </div>
@@ -255,7 +269,9 @@ function Rechazar({ material, vigente, inicial, onCerrar, onDone }: { material: 
         subidos.length ? `Adjuntos: ${subidos.join(", ")}` : "",
       ].filter(Boolean).join("\n");
       // 2. Comentario visible para ambos lados, con todo el detalle.
-      await mutateCreateComment({ material_id: material.id, author_id: user.id, author_name: user.name, body: cuerpo, interno: false, requiere_cambio: true });
+      const c = await mutateCreateComment({ material_id: material.id, author_id: user.id, author_name: user.name, body: cuerpo, interno: false, requiere_cambio: true });
+      // 2b. Cada corrección queda como un punto que Paco marca como hecho.
+      if (c.data?.id) await crearPuntos(material.id, c.data.id, vigente?.id ?? null, user.id, separarPuntos(texto));
       // 3. Decisión: regresa a desarrollo con la categoría de rechazo registrada.
       const r = await mutateClientDecision(material.id, "cambios", vigente?.id ?? null, cuerpo, motivo);
       if (r.error) throw new Error(r.error);
@@ -305,9 +321,9 @@ function Rechazar({ material, vigente, inicial, onCerrar, onDone }: { material: 
               )}
             </button>
           </div>
-          <textarea value={texto + (parcial ? (texto ? " " : "") + parcial : "")} onChange={(e) => setTexto(e.target.value)} placeholder="Describe el motivo y lo que debe corregirse. Ej.: en la lámina 2, la referencia 3 no corresponde a la fuente citada." className="mt-2 min-h-[110px] w-full rounded-xl border border-[#E3E6EA] p-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
+          <textarea value={texto + (parcial ? (texto ? " " : "") + parcial : "")} onChange={(e) => setTexto(e.target.value)} placeholder={"Una corrección por renglón. Ej.:\nLámina 2: la referencia 3 no corresponde a la fuente citada.\nCambiar el color del titular al azul de marca."} className="mt-2 min-h-[110px] w-full rounded-xl border border-[#E3E6EA] p-3 text-sm outline-none focus:border-[#E37439] focus:ring-2 focus:ring-[#E37439]/20" />
           <p className="mt-1 text-[11px] text-[#7A8590]">
-            {Reconocedor ? "Al dictar, se transcribe aquí y el audio también se adjunta." : "Tu navegador no transcribe la voz; el audio se adjunta para que lo escuchemos."}
+            Cada renglón será un punto que Spark225 marcará como atendido. {Reconocedor ? "Al dictar, se transcribe aquí y el audio también se adjunta." : "Tu navegador no transcribe la voz; el audio se adjunta para que lo escuchemos."}
           </p>
         </div>
 

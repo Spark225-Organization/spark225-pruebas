@@ -5,6 +5,7 @@
 // material va al detalle, donde sube versiones, cambia el estatus (con su
 // checklist) y conversa con el cliente.
 // Un material es de Paco si es su responsable; el administrador ve todos.
+import { esPunto, listarPuntos, puntosVigentes, type Punto } from "@/lib/correcciones";
 import { usePulso } from "@/lib/pulso";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -70,6 +71,7 @@ export default function MisClientes() {
   const pulso = usePulso();
   const [subirPara, setSubirPara] = useState<Material | null>(null);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
+  const [avance, setAvance] = useState<Record<string, { hechos: number; total: number }>>({});
   const [vistos, setVistos] = useState<string>(() => {
     try {
       return localStorage.getItem(CLAVE_VISTOS + (user?.id ?? "")) ?? "";
@@ -104,7 +106,7 @@ export default function MisClientes() {
       }
       const { data: coms } = await (supabase as any)
         .from("comments")
-        .select("id, material_id, texto, visibilidad, created_at, profiles!comments_autor_id_fkey(nombre, rol)")
+        .select("id, material_id, texto, visibilidad, created_at, parent_id, requiere_cambio, profiles!comments_autor_id_fkey(nombre, rol)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (!vivo) return;
@@ -120,12 +122,23 @@ export default function MisClientes() {
         av.push({ id: `a-${f.material_id}-${f.created_at}`, material_id: f.material_id, tipo: rech ? "rechazo" : "aprobacion", autor: f.profiles?.nombre ?? "El cliente", texto: rech ? nombreMotivo(f.motivo) : f.comentario ? "con comentarios" : "", created_at: f.created_at });
       }
       for (const c of (coms ?? []) as any[]) {
-        if (!esCliente(c.profiles) || c.visibilidad === "interno") continue;
+        if (!esCliente(c.profiles) || c.visibilidad === "interno" || esPunto(c)) continue;
         if (/^(Rechazado|Aprobado con comentarios|Cambios solicitados)/.test(c.texto ?? "")) continue; // ya va en la decisión
         av.push({ id: `c-${c.id}`, material_id: c.material_id, tipo: "comentario", autor: c.profiles?.nombre ?? "El cliente", texto: String(c.texto ?? "").slice(0, 140), created_at: c.created_at });
       }
       av.sort((a, b) => b.created_at.localeCompare(a.created_at));
       setAvisos(av);
+      // Avance de las correcciones por material («2 de 3 atendidas»).
+      const ps = await listarPuntos();
+      if (!vivo) return;
+      const por: Record<string, { hechos: number; total: number }> = {};
+      const grupos = new Map<string, Punto[]>();
+      for (const x of ps) grupos.set(x.material_id, [...(grupos.get(x.material_id) ?? []), x]);
+      for (const [mid, lista] of grupos) {
+        const v = puntosVigentes(lista);
+        por[mid] = { hechos: v.filter((x) => x.estado === "resuelto").length, total: v.length };
+      }
+      setAvance(por);
     })();
     return () => {
       vivo = false;
@@ -146,7 +159,8 @@ export default function MisClientes() {
     for (const m of mios) {
       const d = decisiones[m.id];
       if (EN_DESARROLLO.includes(m.status) && d && ES_RECHAZO.has(String(d.decision))) {
-        out.push({ m, tipo: "corregir", detalle: `${nombreMotivo(d.motivo)}${d.comentario ? ` · ${d.comentario.split("\n").filter(Boolean).slice(-1)[0]}` : ""}` });
+        const a = avance[m.id];
+        out.push({ m, tipo: "corregir", detalle: a?.total ? `${nombreMotivo(d.motivo)} · ${a.hechos} de ${a.total} correcciones hechas` : `${nombreMotivo(d.motivo)}${d.comentario ? ` · ${d.comentario.split("\n").filter(Boolean).slice(-1)[0]}` : ""}` });
       } else if (LISTO_PARA_ENVIAR[m.status]) {
         out.push({ m, tipo: "enviar", detalle: LISTO_PARA_ENVIAR[m.status] });
       }
@@ -155,7 +169,7 @@ export default function MisClientes() {
       }
     }
     return out;
-  }, [mios, decisiones]);
+  }, [mios, decisiones, avance]);
 
   const misIds = useMemo(() => new Set(mios.map((m) => m.id)), [mios]);
   const misAvisos = useMemo(() => avisos.filter((a) => misIds.has(a.material_id)).slice(0, 30), [avisos, misIds]);

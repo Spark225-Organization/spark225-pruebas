@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { esPunto } from "@/lib/correcciones";
 import { usePulso } from "@/lib/pulso";
 import { toast } from "sonner";
 import { MessageSquare, Send, Paperclip, Lock } from "lucide-react";
@@ -73,10 +74,12 @@ export const CommentThread = ({ materialId }: { materialId: string }) => {
   };
 
   // El cliente solo ve los no internos (doble filtro: RLS + frontend).
-  const visible =
+  // Los puntos de corrección se ven en su propia lista, no en la conversación.
+  const visible = (
     can("comment") && user?.role !== "client"
       ? comments
-      : comments.filter((c) => !c.interno);
+      : comments.filter((c) => !c.interno)
+  ).filter((c) => !esPunto(c));
 
   return (
     <div className="space-y-4">
